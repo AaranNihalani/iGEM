@@ -128,11 +128,14 @@ reference for all descriptors. This encoding maps directly to the subsite specif
 framework used in protease biochemistry and is fully interpretable via the logistic
 regression coefficient matrix.
 
-The optional comparison representation is an ESM2 last-layer mean-pooled embedding
-(\texttt{esm2\_t6\_8M\_UR50D}, 8M parameters, 320-dimensional; HuggingFace
-\texttt{transformers}). When ESM2 is available, a 384-dimensional concatenated vector
-is used for the LightGBM comparison model only. The logistic regression classifier
-always uses VHSE8 features exclusively.
+Both the logistic regression and LightGBM classifiers were trained on the 64-dimensional
+VHSE8 feature vector exclusively; this is the feature set used for all results in this
+report. An optional ESM2 extension is implemented in the codebase
+(\texttt{esm2\_t6\_8M\_UR50D}, 320-dimensional mean-pooled embeddings; HuggingFace
+\texttt{transformers}): passing \texttt{--esm2} to \texttt{train\_models.py} would
+concatenate ESM2 embeddings with VHSE8 features (384-dimensional combined vector) for
+the LightGBM model only. ESM2 was not available in the current training environment and
+was not used.
 
 \subsection{Classifiers and Cross-Validation}
 
@@ -217,21 +220,25 @@ All values are means across folds. LR outperforms LGBM at the two smallest datas
 \subsection{Feature Importance}
 
 Figure~\ref{fig:feature_importance} shows the logistic regression coefficient matrix for
-each protease, reshaped to $8 \times 8$ (positions P4 through P4' vs.\ VHSE1 through
-VHSE8). Positive coefficients (blue) indicate that the corresponding physicochemical
-property at that position increases predicted cleavage probability; negative
-coefficients (red) indicate depletion. The MMP14 and MMP-9 panels show strong positive
-weight on steric bulk (VHSE2) at P1, consistent with the known preference for bulky
-hydrophobic residues (Leu, Tyr, Phe) at the MMP scissile bond. NE shows strong positive
-weight on electronic descriptors at P1, consistent with its preference for Val and Ala.
+MMP14, reshaped to $8 \times 8$ (positions P4 through P4' vs.\ VHSE1 through VHSE8).
+MMP14 is shown as the reference protease because it is the primary sensor target (Task~2
+LOD calculation, SGRSENIRTA motif). Positive coefficients (blue) indicate that the
+corresponding physicochemical property at that position increases predicted cleavage
+probability; negative coefficients (red) indicate depletion. Strong positive weight on
+steric bulk (VHSE2) at P1 is consistent with the known MMP14 preference for bulky
+hydrophobic residues (Leu, Tyr, Phe) at the scissile bond. The coefficient matrix can
+be generated for any panel protease by calling \texttt{plot\_feature\_importance(models\_dir,
+figures\_dir, protease=\textquotesingle{}NE\textquotesingle{})} etc.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.88\textwidth]{figures/fig_feature_importance.png}
-  \caption{Logistic regression coefficient heatmaps per protease. Rows: positions P4--P4';
+  \caption{Logistic regression coefficient heatmap for MMP14. Rows: positions P4--P4';
   columns: VHSE descriptors (VHSE1: hydrophobic; VHSE2: steric; VHSE3--5: electronic;
   VHSE6: H-bond donor; VHSE7: H-bond acceptor; VHSE8: charge). Colour scale:
-  \texttt{RdBu\_r} (blue = positive, red = negative contribution to predicted cleavage).}
+  \texttt{RdBu\_r} (blue = positive, red = negative contribution to predicted cleavage).
+  Equivalent plots for other panel proteases are available via
+  \texttt{plot\_feature\_importance()}.}
   \label{fig:feature_importance}
 \end{figure}
 
@@ -307,8 +314,11 @@ with their sequence coordinates.
 \subsection{Validation: SGRSENIR Analysis}
 
 The known sensor peptide for MMP14 is SGRSENIRTA (8-mer core: \texttt{SGRSENIR}),
-derived from the proMMP-2 autolytic cleavage site and optimised for signal-off
-electrochemical detection. Direct scoring via the selectivity pipeline returns:
+derived from the proMMP-2 autolytic cleavage site. It has been validated as an MMP14
+substrate with $k_\text{cat}/K_M = 5.5 \times 10^4\ \text{M}^{-1}\text{s}^{-1}$
+(Ohuchi et al.\ 1997), which underpins the Task~2 LOD calculation ($K_d = 7.0\ \text{nM}$,
+LOD $\approx 7\ \text{pM}$ at 0.1\% noise floor). Direct scoring via the ML selectivity
+pipeline returns:
 
 \begin{lstlisting}
 SGRSENIR: p_cleave = 0.098, selectivity = 0.143, joint score = 0.013
@@ -318,15 +328,16 @@ Per-protease probabilities:
 \end{lstlisting}
 
 \texttt{SGRSENIR} ranks outside the top 6{,}000 ML candidates for MMP14. Its low
-predicted MMP14 cleavage probability (0.098) and negative selectivity index ($S <1$) arise
-from two independent sources.
+predicted MMP14 cleavage probability (0.098) and negative selectivity index ($S < 1$)
+arise from two independent sources.
 
 First, SGRSENIR is not among the natural ECM substrates represented in MEROPS: it
-derives from the proMMP-2 Glu\textsuperscript{62}-Leu\textsuperscript{63} autolytic site,
-a synthetic engineering choice optimised for biosensor thermodynamics, not for maximal
-MMP14 kinetic efficiency ($k_\text{cat}/K_m$). The PSSM trained on natural MMP14 ECM
-substrates does not include SGRSENIR among its top-3 amino acids at every position,
-so it falls outside the $3^8$ enumerated candidate set entirely.
+was selected from the proMMP-2 Glu\textsuperscript{62}--Leu\textsuperscript{63} autolytic
+site for its biosensor-compatible sequence properties (charge distribution, methylene
+blue conjugation geometry) rather than for being a natural collagen/fibronectin cleavage
+site. The PSSM trained on natural MMP14 ECM substrates does not place SGRSENIR among
+its top-3 amino acids at every position, so it falls outside the $3^8$ enumerated
+candidate set entirely.
 
 Second, the FAP classifier assigns \texttt{SGRSENIR} a high probability (0.685), which
 suppresses selectivity. This is an artefact of the degenerate FAP model (Section~\ref{sec:fap})
@@ -341,11 +352,15 @@ properties required for the biosensor is an open experimental question.
   arc=2pt, left=6pt, right=6pt, top=4pt, bottom=4pt]
   \textbf{Interpretation.} The ML tool correctly identifies that SGRSENIR is not a
   natural MMP14 substrate by the MEROPS-derived PSSM criterion. This does not
-  invalidate the sensor design (which was optimised for signal-off performance), but
-  provides motivation to evaluate ML-predicted candidates such as \texttt{DVANYVEH} as
-  potentially superior biosensor peptides with better MMP14 cleavage efficiency.
-  The predicted NE substrate \texttt{PETISLPP} (selectivity 17.9) is the highest-confidence
-  recommendation from this analysis and is a strong candidate for experimental validation.
+  invalidate the existing sensor design: SGRSENIR has a validated
+  $k_\text{cat}/K_M = 5.5 \times 10^4\ \text{M}^{-1}\text{s}^{-1}$ and the Task~2
+  Hill-equation model confirms clinical feasibility at the 0.1\% SWV noise floor.
+  However, if wet-lab synthesis yields confirm that an ML-predicted candidate such as
+  \texttt{DVANYVEH} achieves a higher $k_\text{cat}/K_M$, the Task~2 LOD would improve
+  proportionally and the 30-min assay window could be shortened. Any adopted candidate
+  must have its $k_\text{cat}/K_M$ measured to re-run the Task~2 kinetic model before
+  committing to electrode fabrication. The predicted NE substrate \texttt{PETISLPP}
+  (selectivity 17.9) is the highest-confidence recommendation from this analysis.
 \end{tcolorbox}
 
 \subsection{FAP Confidence Caveat}\label{sec:fap}

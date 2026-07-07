@@ -20,3 +20,8 @@ substrate_predictor/models/
 # ESM2 embedding cache
 *.pkl_cache
 esm2_cache_*.pkl
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
