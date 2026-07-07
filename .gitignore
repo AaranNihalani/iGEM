@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.DS_Store
+
+# Downloaded raw data (large: pepunit.lib 436 MB, Substrate_search.txt 28 MB)
+cross_reactivity_matrix/data/raw/
+substrate_predictor/data/raw/
+
+# Generated intermediate data (recreated by pipeline)
+cross_reactivity_matrix/data/processed/
+substrate_predictor/data/processed/
+
+# Trained model artefacts (recreated by train_models.py)
+substrate_predictor/models/
+
+# Numpy PSSM arrays (recreated by run_all.py)
+*.npy
+
+# ESM2 embedding cache
+*.pkl_cache
+esm2_cache_*.pkl
