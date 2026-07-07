@@ -1,0 +1,172 @@
+\documentclass[10pt,a4paper]{article}
+
+% --- Layout ---
+\usepackage[margin=2cm, top=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+
+% --- Math ---
+\usepackage{amsmath, amssymb}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+
+% --- Graphics ---
+\usepackage{graphicx}
+\usepackage{float}
+
+% --- Sections ---
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{1.4ex plus .2ex}{0.5ex}
+\titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
+
+% --- Lists ---
+\usepackage{enumitem}
+\setlist{noitemsep, topsep=2pt, parsep=0pt}
+
+% --- Colours and links ---
+\usepackage{xcolor}
+\definecolor{linkblue}{rgb}{0.08,0.18,0.55}
+\definecolor{midgray}{gray}{0.40}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=linkblue, linkcolor=black, citecolor=midgray}
+
+% --- tcolorbox for callout ---
+\usepackage{tcolorbox}
+
+% --- Header / Footer ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textbf{Dry Lab Deliverable: Task 6} \textbullet{} Eton iGEM 2026}
+\rhead{\small Aaran Nihalani}
+\cfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+
+% --- Title block ---
+\begin{center}
+  {\LARGE\bfseries Cross-Reactivity Specificity Matrix}\\[0.15em]
+  {\normalsize Task 6 \textbullet{} Dry Lab Deliverable}\\[0.08em]
+  {\small Aaran Nihalani \textbullet{} Eton iGEM 2026 \textbullet{} \today}
+\end{center}
+\vspace{0.3em}\hrule\vspace{0.5em}
+
+% === PLACEHOLDER: replace this paragraph once results are generated ===
+This section presents the quantitative cross-reactivity specificity matrix for the six-protease
+diagnostic panel. A position-specific scoring matrix (PSSM) was constructed for each protease
+from confirmed cleavage-site sequences extracted from the MEROPS substrate database. Each panel
+substrate motif was then scored against all six PSSMs to populate a $6 \times 6$ matrix of
+normalised cleavage scores. The diagonal entry for each protease equals 1.0 (self-score); all
+off-diagonal values below 0.05 are considered orthogonal, and values at or above 0.20 are
+flagged as potentially cross-reactive.
+
+% ============================================================
+\section{Task 6: Cross-Reactivity Specificity Matrix}
+% ============================================================
+
+\subsection{Motivation and Approach}
+
+% PLACEHOLDER: write after analysis is complete
+A multiplexed electrochemical biosensor requires that each protease substrate motif is cleaved
+selectively by its target protease and not by other panel members. Even closely related proteases,
+such as the three M10-family metalloproteinases (MMP14, MMP-8, MMP-9), have distinct subsite
+preferences that can be quantified. The PSSM approach converts the body of experimentally
+confirmed cleavage events in the MEROPS database into a per-protease residue preference profile
+at each of the eight positions flanking the scissile bond (P4 through P4'), and then asks how
+well each panel motif fits each profile.
+
+\subsection{Data Source and PSSM Construction}
+
+% PLACEHOLDER: fill in counts from parse_merops.py output
+Confirmed cleavage-site sequences were downloaded from the MEROPS bulk release
+(file \texttt{pepunit.lib}, accessed July 2026). Records were filtered to the six MEROPS
+identifiers listed in Table~\ref{tab:merops_ids}. After removing entries with non-standard
+amino acids, the following training set sizes were obtained:
+
+\vspace{0.4em}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}p{2.5cm}p{2.5cm}X@{}}
+\toprule
+\textbf{Protease} & \textbf{MEROPS ID} & \textbf{Confirmed windows} & \textbf{Notes} \\
+\midrule
+MMP14 & MER000220 & [N] & Family M10 \\
+MMP-8 & MER000218 & [N] & Family M10 \\
+MMP-9 & MER000219 & [N] & Family M10 \\
+Neutrophil elastase & MER000053 & [N] & Family S1 \\
+FAP & MER005153 & [N] & Family S9; low data \\
+Fecal serine proteases & MER000001/3/53 & [N] & Union of three sub-entries \\
+\bottomrule
+\end{tabularx}
+\label{tab:merops_ids}
+\vspace{0.6em}
+
+Each PSSM is an $8 \times 20$ log-odds matrix computed with a Laplace pseudocount of 0.5
+and Swiss-Prot background amino acid frequencies as the null model. Log-odds scores are
+base-2: positive values indicate enrichment, negative values indicate depletion at that
+position.
+
+\subsection{Specificity Matrix Results}
+
+% PLACEHOLDER: values filled in from specificity_matrix_normalised.csv
+Table~\ref{tab:specificity} shows the normalised specificity matrix. Each entry is the
+PSSM log-odds score of the column motif under the row protease's matrix, divided by the
+self-score (diagonal) so that the diagonal equals 1.00. Entries at or above 0.20
+are highlighted in the heatmap (Figure~\ref{fig:heatmap}) and flagged in the table.
+
+\vspace{0.4em}
+% PLACEHOLDER TABLE: replace with actual values from outputs
+\begin{tabularx}{\textwidth}{@{}p{3.2cm}XXXXXXX@{}}
+\toprule
+\textbf{Protease} & \textbf{MMP14} & \textbf{MMP-8} & \textbf{MMP-9} & \textbf{NE} & \textbf{Fecal} & \textbf{FAP} \\
+\midrule
+MMP14   & 1.00 & [val] & [val] & [val] & [val] & [val] \\
+MMP-8   & [val] & 1.00 & [val] & [val] & [val] & [val] \\
+MMP-9   & [val] & [val] & 1.00 & [val] & [val] & [val] \\
+NE      & [val] & [val] & [val] & 1.00 & [val] & [val] \\
+Fecal   & [val] & [val] & [val] & [val] & 1.00 & [val] \\
+FAP     & [val] & [val] & [val] & [val] & [val] & 1.00 \\
+\bottomrule
+\end{tabularx}
+\label{tab:specificity}
+\vspace{0.6em}
+
+\begin{figure}[H]
+  \centering
+  % PLACEHOLDER: replace path once figure is generated
+  \includegraphics[width=0.96\textwidth]{figures/fig_specificity_heatmap.png}
+  \caption{Cross-reactivity specificity matrix heatmap. Rows: proteases; columns: substrate
+  motifs. Colour scale: \texttt{RdYlGn\_r} (red = high cross-reactivity, green = orthogonal).
+  Diagonal entries (self-score = 1.00) are outlined in black. Cell values are normalised scores
+  to two decimal places; cells at or above 0.20 are annotated in red. All motif sequences
+  are given in the column headers.}
+  \label{fig:heatmap}
+\end{figure}
+
+\subsection{Interpretation}
+
+% PLACEHOLDER: complete after results are available
+The M10-family metalloproteinases (MMP14, MMP-8, MMP-9) share a preference for hydrophobic
+residues at P1' and a loose [P/A]-X-[L/I]-[G/A] motif at P2-P1. Cross-reactivity within
+this subfamily is expected and will be assessed quantitatively once PSSM scores are computed.
+The S1-family serine proteases (NE, trypsin-like fecal) cleave C-terminal to small, hydrophobic
+(elastase) or basic (trypsin) residues at P1 and are structurally distinct from the MMPs,
+predicting low cross-reactivity across the metalloproteinase/serine proteinase boundary.
+
+\begin{tcolorbox}[colback=gray!7, colframe=gray!40, boxrule=0.4pt,
+  arc=2pt, left=6pt, right=6pt, top=4pt, bottom=4pt]
+  \textbf{Caveats.} FAP (MER005153) has fewer than 20 confirmed cleavage entries in MEROPS;
+  its PSSM is low-confidence and the FAP row should be interpreted cautiously.
+  The fecal serine protease row represents a heterogeneous mixture of trypsin-like,
+  chymotrypsin-like, and elastase-like activities collapsed into a single PSSM by
+  pooling all three MEROPS entry sets; this introduces additional uncertainty.
+  Both issues are documented quantitatively via 95\% bootstrap confidence intervals
+  computed from 500 resamples of each training window set.
+\end{tcolorbox}
+
+\end{document}
