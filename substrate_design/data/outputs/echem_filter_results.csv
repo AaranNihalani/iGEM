@@ -1,0 +1,5 @@
+sequence,passed,charge,mw_da,no_cys,no_trp,charge_ok,no_poly_pro,mw_ok,met_warning
+PRSLSGLK,True,2,857.0,True,True,True,True,True,False
+PLGLAGQS,True,0,741.8,True,True,True,True,True,False
+AAPVSGIG,True,0,670.8,True,True,True,True,True,False
+PLGVALAA,True,0,710.9,True,True,True,True,True,False

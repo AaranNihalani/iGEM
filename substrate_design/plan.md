@@ -3,6 +3,36 @@
 
 ---
 
+## Project structure — two parallel strands
+
+This repo spans two distinct diagnostic systems being built in parallel. Understanding both is necessary to know where Task 8 sits.
+
+**Strand A — Chronic wound protease diagnostic (this task)**
+A 3-plex electrochemical biosensor for wound-fluid MMP-2, MMP-9, and NE. Signal-off SWV with methylene blue redox label. Output: posterior P(healing) from a Bayesian kinetic deconvolution of three activity channels. This is the primary dry-lab development strand.
+
+**Strand B — Cancer biosensor (MMP14 / DNA-hairpin / Cas12a)**
+A point-of-care serum assay for CRC detection using MMP14 activity to trigger a toehold strand displacement cascade into Cas12a amplification. Structural feasibility is scored via ESM2 embeddings + AlphaFold3 geometry to estimate k_open. AlphaFold3 prediction complete (pTM = 0.74). RMSD vs 2B3P and SASA calculations in progress.
+
+The two strands share the same electrochemical sensor physics and the same Bayesian framework; they are otherwise independent.
+
+---
+
+## Remaining large tasks — full roadmap
+
+This plan covers **Task 8**. The table below shows all remaining major tasks across both strands so the development sequence is clear.
+
+| Task | Description | Strand | Status |
+|---|---|---|---|
+| Post-Meeting 1–5 | Bayesian landscape model, Hill equation, Marcus theory, clinical threshold mapping, sample volume calculations | A | **Done** — implemented in Protease Landscape Dry Lab Update (05 Jul 2026) |
+| **Task 8** | 3-plex device-ready substrate selection (this document) | A | **Current** |
+| Task 6 / Post-Meeting 6 | Cross-reactivity specificity matrix (repo: `cross_reactivity_matrix/`) | A | **Done** |
+| Task 7 / Post-Meeting 7 | ML substrate predictor — VHSE8 + LR/LGBM (repo: `substrate_predictor/`) | A | **Done** |
+| **Task 9** | Bayesian multi-analyte kinetic deconvolution — digital twin forward model + MCMC inversion + identifiability analysis. Requires mentor scoping meeting before development starts. This is the Best Model nomination. | A | Pending |
+| Structural feasibility scorer | ESM2 + AlphaFold3 geometric features trained to estimate k_open for the cancer biosensor hairpin. Feeds directly into the Strand B kinetics model. | B | In progress — AlphaFold3 done; RMSD/SASA in progress |
+| Software tool | Web app + CLI wrapping the kinetics model and structural scorer. Targets Best Software Tool prize. Only starts once both models have working v1. | A+B | Pending |
+
+---
+
 ## Background and scope
 
 This task takes the existing ML substrate predictor (Task 7) and PSSM cross-reactivity matrix (Task 6) and produces three device-ready peptide sequences the wet lab can order — one per protease channel in the chronic-wound diagnostic 3-plex: MMP-2, MMP-9, and neutrophil elastase (NE).
@@ -189,7 +219,7 @@ Four coupled physical layers:
 
 1. **Reaction-diffusion transport** — PDE model of protease diffusion to the SAM. Damköhler number Da governs kinetic- vs diffusion-limited regime. Validated against response vs stirring rate.
 2. **Surface Michaelis-Menten cleavage** — in the sub-K_M linear regime: `v_j = Σᵢ (kcat/KM)ᵢⱼ × [Eᵢ] × θⱼ`. Matrix seeded from PSSM/VHSE8, then refined by measured sfGFP kinetics.
-3. **Marcus-theory electron transfer** — k_ET as a function of MB tunnelling distance (β ≈ 0.9 Å⁻¹). Task 3 Marcus model reused directly. Literature values: k⁰ ≈ 1.5 cm s⁻¹, α ≈ 0.37, 8.0 Å monolayer.
+3. **Marcus-theory electron transfer** — k_ET as a function of MB tunnelling distance (β ≈ 0.40 Å⁻¹ for flexible peptide tethers). Post-Meeting Task 3 Marcus model reused directly; current design (n = 23 spacer residues) gives k_ET ≈ 680 s⁻¹, well within the SWV-compatible window (1–10⁴ s⁻¹).
 4. **SWV forward model** — produces R(t) = i_MB/i_Fc as a function of [Eᵢ] and time.
 
 Buffer design constraint: MMP assays require Ca²⁺/Zn²⁺ at pH 7.5; NE works best at pH 8.0 with 0.5 M NaCl. The digital twin models buffer-dependent kcat/KM as a parameter, outputting predicted channel sensitivity under any compromise buffer. This is a genuine design contribution.
@@ -218,11 +248,12 @@ Every dry-lab model feeds a named experimental assay:
 ```
 Substrate Predictor + Cross-Reactivity Matrix
         ↓ three locked sequences
-Construct synthesis → sfGFP-fusion cleavage screen (Devoy 2024)
+Construct synthesis → sfGFP-fusion cleavage screen
+        (team's own construct: FLAG-G4S-sfGFP-G4S-ybbR-G4S-[substrate]-G4S-S6-His6)
         ↓ measured kcat/KM
-Updates kinetic/LOD model (Task 2) + deconvolution matrix
+Updates kinetic/LOD model (Post-Meeting Task 2) + deconvolution matrix
         ↓
-Digital twin ↔ Bayesian deconvolution
+Digital twin ↔ Bayesian deconvolution (Task 9)
         ↓ validated on
 Multiplexed electrode R(t) curves → disease posterior → healing call
 ```
@@ -273,7 +304,7 @@ All of these report **concentration LOD** from **abundance sensors**. This proje
 | ✅ | González-Fernández et al. (Biosens. Bioelectron. 2016) | MB vs Fc superiority |
 | ✅ | Eckhard et al. 2016 (Matrix Biol. 49:37; PXD002265) | PICS profiling; data publicly available on ProteomeXchange |
 | ✅ | Murphy et al. 1994 (J. Biol. Chem. 269:6632) | MMP-2 substrate kcat/KM = 3.97×10⁵ |
-| ✅ | Devoy et al. 2024 (Front. Bioeng. Biotechnol. 12:1347953) | sfGFP fusion cleavage platform |
+| ✅ | Team construct — sfGFP fusion (FLAG-G4S-sfGFP-G4S-ybbR-G4S-[substrate]-G4S-S6-His6) | Internal cleavage reporter; Sfp/PPTase CoA conjugation; not an external tool |
 | ❌ | "Zhu et al. 2023 ACS Appl. Bio Mater." | Cannot be verified — do not cite. Use Ding et al. 2024 (Microchim. Acta 191:5) or ACS AMI 2021, 13, DOI 10.1021/acsami.1c04933 |
 | ⚠️ | AAPV kcat/KM | Always report buffer. "~120,000 M⁻¹s⁻¹" is condition-specific; Wiesner 2005 gives 33,915 M⁻¹s⁻¹ |
 

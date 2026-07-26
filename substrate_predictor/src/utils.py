@@ -17,12 +17,13 @@ MEROPS_IDS = {
     'MMP14': ['M10.014'],
     'MMP-8': ['M10.002'],
     'MMP-9': ['M10.004'],
+    'MMP-2': ['M10.003'],
     'NE':    ['S01.131'],
     'FAP':   ['S09.007'],
     'Fecal': ['S01.151', 'S01.152', 'S01.153'],
 }
 
-PROTEASE_ORDER = ['MMP14', 'MMP-8', 'MMP-9', 'NE', 'Fecal', 'FAP']
+PROTEASE_ORDER = ['MMP14', 'MMP-8', 'MMP-9', 'MMP-2', 'NE', 'Fecal', 'FAP']
 
 # Minimum positives for full-confidence training
 MIN_POSITIVES = {'high': 200, 'medium': 50, 'low': 0}
