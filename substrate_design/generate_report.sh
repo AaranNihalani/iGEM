@@ -8,4 +8,5 @@ echo "Compiling LaTeX (pass 1)..."
 pdflatex -interaction=nonstopmode report_task8.tex > /dev/null
 echo "Compiling LaTeX (pass 2, cross-refs)..."
 pdflatex -interaction=nonstopmode report_task8.tex > /dev/null
+rm -f report_task8.aux report_task8.log report_task8.out
 echo "Done. Output: report_task8.pdf"

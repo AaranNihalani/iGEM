@@ -80,11 +80,15 @@ electrochemical biosensor targeting the chronic-wound protease panel:
 and {\color{nered}\textbf{neutrophil elastase (NE)}}.
 All candidates are literature-seeded and validated against the VHSE8 + logistic-regression
 classifiers trained on MEROPS cleavage data. A new MMP-2 classifier (2{,}318 positives,
-AUROC~0.883) was added to the pipeline. The key result is a condition number $\kappa = 98$
-on the 3$\times$3 specificity matrix, confirming that MMP-2 and MMP-9 cannot be separated
-by substrate choice alone; the sensor is re-scoped as a \textbf{2-plex: gelatinase + NE},
-with Bayesian kinetic deconvolution (Task~9) providing the route to partial MMP-2/MMP-9
-resolution.
+AUROC~0.883) was added to the pipeline. The PSSM-based condition number $\kappa = 98$ on the 3$\times$3 specificity matrix
+signals a conservative warning about gelatinase channel separation; however, this
+is a sequence-similarity proxy built on candidates that score atypically under their
+own MEROPS-derived PSSMs, and is not a definitive verdict. Published differential
+$k_{\text{cat}}/K_M$ data suggest 3--10$\times$ kinetic selectivity is achievable
+between MMP-2 and MMP-9, which would give $\kappa(A_{\text{kin}}) \approx 5$--10.
+\textbf{The 3-plex design is retained as the primary target};
+the sfGFP cleavage screen is the decision gate that will determine the true
+kinetic condition number and confirm or revise the channel architecture.
 
 % ---------------------------------------------------------------------------
 \section{Background and Clinical Motivation}
@@ -218,16 +222,16 @@ scores still carry a genuine biological prior; the model score contextualises
 that prior against the MEROPS training distribution.
 
 \begin{table}[H]
-\centering
-\begin{tabularx}{\textwidth}{@{}p{1.0cm} p{1.1cm} p{1.5cm} p{1.8cm} X@{}}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{1.0cm} p{1.1cm} p{1.4cm} p{1.8cm} X@{}}
 \toprule
 \textbf{ID} & \textbf{Stage} & \textbf{Target} & \textbf{8-mer core} & \textbf{Literature anchor} \\
 \midrule
-Cand~1 & 1 & MMP-9  & \seq{PRSLSGLK} & Kridel 2001 phage display: P2=Arg, P1'=Leu bias toward MMP-9 \\
-Cand~2 & 1 & MMP-2  & \seq{PLGLAGQS} & Whitney/Tsien ACPP PLGLAG; \kcat{} $\approx 2.8\times10^4$ M$^{-1}$s$^{-1}$ (MMP-2) \\
-Cand~4 & 1 & NE     & \seq{AAPVSGIG} & Kasperkiewicz 2014 canonical AAPV; Val P1-preference \\
-Cand~3 & 2 & MMP-2  & \seq{PLGVALAA} & Murphy 1994; Val $\approx$ Nva; \kcat{} $= 3.97\times10^5$ M$^{-1}$s$^{-1}$ \\
-Cand~5 & 2 & NE     & PK101 (4 unnatural residues) & Kasperkiewicz 2014; \kcat{} $= 4.79\times10^7$ M$^{-1}$s$^{-1}$ (computational only) \\
+Cand~1 & 1 & MMP-9  & \seq{PRSLSGLK} & Kridel 2001 phage display: P2=Arg, P1$'$=Leu bias toward MMP-9 \\
+Cand~2 & 1 & MMP-2  & \seq{PLGLAGQS} & Whitney/Tsien ACPP PLGLAG backbone; $k_{\text{cat}}/K_M \approx 2.8\times10^4$ M$^{-1}$s$^{-1}$ (MMP-2) \\
+Cand~4 & 1 & NE     & \seq{AAPVSGIG} & Kasperkiewicz 2014 canonical AAPV core; Val at P1 preferred \\
+Cand~3 & 2 & MMP-2  & \seq{PLGVALAA} & Murphy 1994; Val $\approx$ Nva; $k_{\text{cat}}/K_M = 3.97\times10^5$ M$^{-1}$s$^{-1}$ \\
+Cand~5 & 2 & NE     & PK101 (unnatural AAs) & Kasperkiewicz 2014; $k_{\text{cat}}/K_M = 4.79\times10^7$ M$^{-1}$s$^{-1}$ (computational only) \\
 \bottomrule
 \end{tabularx}
 \caption{Substrate candidate pool. Stage~1 candidates are recommended for sfGFP-fusion
@@ -369,31 +373,47 @@ ACPP/phage-display scaffolds. The bias affects the self-score but does not affec
 \emph{relative} specificity between channels, which is the quantity that matters for
 the device. Rows are normalised by $|\text{self-score}|$ throughout.
 
-\subsection{Condition Number and Identifiability Decision}
+\subsection{Condition Number and Identifiability Assessment}
 
 The condition number of the normalised matrix $A$ is:
 \[
     \kappa(A) = \frac{\sigma_{\max}}{\sigma_{\min}} = \mathbf{98.1}
 \]
-This substantially exceeds the $\kappa > 30$ threshold established in the plan
-as the decision boundary for channel separability.
+This exceeds the conventional $\kappa > 30$ caution threshold for ill-conditioned systems.
+\textbf{However, this value must be interpreted carefully}: it is a PSSM-based
+proxy, not a kinetic measurement, and it was computed from candidates whose
+sequences score \emph{below Swiss-Prot background} under their own PSSM
+(both MMP-2 and MMP-9 have negative diagonal self-scores; see \S\ref{sec:negself}).
+Normalising by $|\text{self-score}|$ when the self-score is already anomalous
+inflates the apparent $\kappa$. The true test is the kinetic condition number
+$\kappa(A_{\text{kin}})$ populated with measured $k_{\text{cat}}/K_M$ values.
 
-\begin{tcolorbox}[colback=flagred!5, colframe=flagred!40, boxrule=0.5pt,
+\begin{tcolorbox}[colback=warnamber!8, colframe=warnamber!50, boxrule=0.5pt,
   arc=2pt, left=6pt, right=6pt, top=5pt, bottom=5pt]
-\textbf{Identifiability result.}
-MMP-2 and MMP-9 cannot be distinguished from each other by substrate-sequence
-selectivity alone. Both gelatinases share the M10A active-site architecture
-(Zn$^{2+}$ mechanism, deep hydrophobic S1' pocket) and 72\% sequence identity;
-no 8-mer substrate can achieve the channel separation required for independent
-quantification from PSSM scoring.
-This is not a failure of substrate design --- it is the correct scientific answer.
-The device is re-scoped as a \textbf{2-plex: \{gelatinase + NE\}}, with:
-\begin{itemize}
-\item the gelatinase channel reporting combined MMP-2~+~MMP-9 activity;
-\item Task~9 Bayesian kinetic deconvolution providing \emph{partial} MMP-2/MMP-9
-resolution from ratiometric $R(t) = i_{\text{MB}} / i_{\text{Fc}}$ decay rates
-across the two gelatinase-targeting substrates.
-\end{itemize}
+\textbf{PSSM-based prior, not a definitive verdict.}
+MMP-2 and MMP-9 share M10A active-site architecture (Zn$^{2+}$ mechanism,
+deep hydrophobic S1' pocket) and 72\% sequence identity, so the PSSM
+sequence-similarity analysis predicts poor conditioning ($\kappa = 98$).
+\emph{This is a conservative prior, not proof of inseparability.}
+Three reasons to expect the true kinetic matrix to be better conditioned:
+\begin{enumerate}
+\item Published phage-display data (Kridel 2001) report genuine MMP-9 preference
+through the P2=Arg/P1$'$=Leu motif present in Cand~1.
+\item PICS/TAILS profiling (Eckhard 2016) shows position-specific subsite
+differences between MMP-2 and MMP-9, particularly at P1$'$ and P3.
+\item ACPP-backbone substrates (Whitney/Tsien; Murphy 1994) report
+3--10$\times$ differential $k_{\text{cat}}/K_M$ between the two gelatinases.
+A 5$\times$ differential on both channels yields $\kappa(A_{\text{kin}}) \approx 5$,
+well within the separable regime.
+\end{enumerate}
+\textbf{The 3-plex design is not abandoned.}
+The sfGFP cleavage screen will measure $k_{\text{cat}}/K_M$ for each candidate
+on both MMP-2 and MMP-9.
+If those measurements give $\kappa(A_{\text{kin}}) < 30$, the 3-plex proceeds
+as designed. If $\kappa(A_{\text{kin}}) > 30$, the sensor is re-scoped to a
+\textbf{2-plex \{gelatinase~+~NE\}} with Task~9 Bayesian deconvolution providing
+partial MMP-2/MMP-9 resolution from the ratiometric $R(t)$ decay across both
+gelatinase electrodes.
 \end{tcolorbox}
 
 \vspace{0.5em}
@@ -412,28 +432,25 @@ Three Stage~1 sequences are locked for wet-lab synthesis. Each is specified as a
 full linear construct for solid-phase peptide synthesis (SPPS).
 
 \begin{table}[H]
-\centering
-\begin{tabularx}{\textwidth}{@{}p{1.0cm} p{1.5cm} X p{1.2cm} p{1.0cm}@{}}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{1.8cm} p{1.6cm} X p{1.2cm}@{}}
 \toprule
-\textbf{Channel} & \textbf{8-mer core} & \textbf{Full construct} & \textbf{Net charge} & \textbf{Stage} \\
+\textbf{Channel} & \textbf{8-mer core} & \textbf{Full construct (SPPS order)} & \textbf{Charge} \\
 \midrule
-Gelatinase\newline (MMP-9\newline bias) &
+Gelatinase\newline (MMP-9 bias) &
   \seq{PRSLSGLK} &
-  \texttt{Ac-Cys-G$_4$S-PRSLSGLK-G$_4$S-Lys(MB)-NH$_2$} &
-  $+2$ &
-  1 \\
+  \texttt{Ac-Cys-GGGGS-PRSLSGLK-GGGGS-Lys(MB)-NH\textsubscript{2}} &
+  $+2$ \\
 \addlinespace
-Gelatinase\newline (MMP-2\newline bias) &
+Gelatinase\newline (MMP-2 bias) &
   \seq{PLGLAGQS} &
-  \texttt{Ac-Cys-G$_4$S-PLGLAGQS-G$_4$S-Lys(MB)-NH$_2$} &
-  $0$ &
-  1 \\
+  \texttt{Ac-Cys-GGGGS-PLGLAGQS-GGGGS-Lys(MB)-NH\textsubscript{2}} &
+  $0$ \\
 \addlinespace
 NE &
   \seq{AAPVSGIG} &
-  \texttt{Ac-Cys-G$_4$S-AAPVSGIG-G$_4$S-Lys(MB)-NH$_2$} &
-  $0$ &
-  1 \\
+  \texttt{Ac-Cys-GGGGS-AAPVSGIG-GGGGS-Lys(MB)-NH\textsubscript{2}} &
+  $0$ \\
 \bottomrule
 \end{tabularx}
 \caption{Locked Stage~1 substrate constructs. Cys provides the Au--thiol surface
@@ -457,23 +474,22 @@ expression system is required. His$_6$ enables Ni-NTA purification.
 % ---------------------------------------------------------------------------
 
 \begin{table}[H]
-\centering
-\setlength{\tabcolsep}{9pt}
-\begin{tabular}{@{}l l l p{4.5cm} l@{}}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{1.8cm} p{1.6cm} p{1.4cm} X p{2.8cm}@{}}
 \toprule
 \textbf{Channel} & \textbf{8-mer} & \textbf{Protease} & \textbf{Literature \kcat{}} & \textbf{Source} \\
 \midrule
 Gelatinase A & \seq{PRSLSGLK} & MMP-9 &
-  $\sim\!10^5$ M$^{-1}$s$^{-1}$ ($\pm$1~OOM) &
+  $\sim\!10^5$ M$^{-1}$s$^{-1}$ ($\pm$1 order of magnitude) &
   Kridel 2001 analogues \\
 Gelatinase B & \seq{PLGLAGQS} & MMP-2 &
-  $2.8\times10^4$ M$^{-1}$s$^{-1}$ ($\pm$1~OOM) &
+  $2.8\times10^4$ M$^{-1}$s$^{-1}$ ($\pm$1 order of magnitude) &
   Whitney/Tsien ACPP \\
 NE           & \seq{AAPVSGIG} & NE    &
   15{,}000--330{,}000 M$^{-1}$s$^{-1}$ (buffer-dependent) &
   Kasperkiewicz 2014; Wiesner 2005 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Predicted \kcat{} proxies. All values are literature anchors calibrated against
 the MMP14/SGRSENIR reference ($5.5\times10^4$ M$^{-1}$s$^{-1}$; Ohuchi et al.\ 1997)
 and should be treated as order-of-magnitude estimates. NE \kcat{} is strongly
@@ -491,17 +507,16 @@ The three analytes have established clinical concentration ranges in wound fluid
 and serum. Detection feasibility requires LOD~$<$~disease threshold.
 
 \begin{table}[H]
-\centering
-\setlength{\tabcolsep}{7pt}
-\begin{tabular}{@{}l l l l l@{}}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{1.3cm} p{2.2cm} p{1.6cm} p{2.2cm} X@{}}
 \toprule
 \textbf{Protease} & \textbf{Indication} & \textbf{Matrix} & \textbf{Healthy} & \textbf{Disease / Threshold} \\
 \midrule
-MMP-9 & Chronic wound (DFU) & Wound fluid & $<$30~ng/mL ($<$0.3~nM) & $>$150~ng/mL ($>$1.6~nM) non-healing \\
+MMP-9 & Chronic wound (DFU) & Wound fluid & $<$30~ng/mL ($<$0.3~nM) & $>$150~ng/mL ($>$1.6~nM) associated with non-healing \\
 NE    & Chronic wound / COPD & Wound fluid & $<$5~nM & $>$100~nM associated with non-healing \\
 MMP-2 & Chronic wound        & Wound fluid & Baseline & Elevated; quantitative threshold TBD \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Clinical concentration ranges. Sources: MMP-9 wound fluid (PMC2606842,
 PMC12580577); NE wound fluid (PMC5487915). Activity sensors measure
 $k_{\text{cat}}/K_M \times [\text{protease}]$, not concentration alone; the LOD must
@@ -535,8 +550,13 @@ highest-confidence substrate in the 3-plex design.
 \item \textbf{Gelatinase candidates score low in ML}: expected. Phage-display and ACPP
 scaffolds fall outside the MEROPS ECM training distribution. Validation rests on
 literature \kcat{} anchors and the upcoming sfGFP cleavage assay.
-\item \textbf{Condition number $\kappa = 98$}: MMP-2/MMP-9 cannot be separated by
-substrate choice. The device is re-scoped as a \textbf{2-plex: gelatinase~+~NE}.
+\item \textbf{PSSM condition number $\kappa = 98$}: a conservative prior suggesting
+poor gelatinase channel conditioning, driven by MEROPS ascertainment bias on
+synthetic scaffolds (negative self-scores inflate $\kappa$). This is \emph{not}
+proof that MMP-2 and MMP-9 cannot be separated. Published differential
+$k_{\text{cat}}/K_M$ data (3--10$\times$) suggest the true kinetic $\kappa$
+may be well below 30. \textbf{The 3-plex design remains the target outcome};
+the sfGFP screen is the decision gate.
 \item \textbf{Three sequences locked} for sfGFP-fusion synthesis: \seq{PRSLSGLK}
 (MMP-9 bias), \seq{PLGLAGQS} (MMP-2 bias), \seq{AAPVSGIG} (NE).
 \end{enumerate}
@@ -545,8 +565,7 @@ substrate choice. The device is re-scoped as a \textbf{2-plex: gelatinase~+~NE}.
 \vspace{0.6em}
 \textbf{Immediate next steps} (in order):
 \begin{enumerate}
-\item \textbf{sfGFP screen} --- synthesise three FLAG--G$_4$S--sfGFP--G$_4$S--ybbR--G$_4$S--[substrate]--G$_4$S--S6--His$_6$ constructs; measure \kcat{} for each.
-If any \kcat{} $< 10^3$ M$^{-1}$s$^{-1}$: redesign before MB-peptide synthesis.
+\item \textbf{sfGFP screen} --- synthesise three FLAG--G$_4$S--sfGFP--G$_4$S--ybbR--G$_4$S--[substrate]--G$_4$S--S6--His$_6$ constructs; measure $k_{\text{cat}}/K_M$ for each substrate on \emph{both} MMP-2 and MMP-9 (not just the intended target). Use the four off-diagonal kinetic values to populate the true 2$\times$2 gelatinase sub-matrix and compute $\kappa(A_{\text{kin}})$. Decision gates: (a)~if any on-target \kcat{} $< 10^3$ M$^{-1}$s$^{-1}$, redesign; (b)~if $\kappa(A_{\text{kin}}) < 30$, 3-plex proceeds; (c)~if $\kappa(A_{\text{kin}}) > 30$, pivot to 2-plex with Task~9 deconvolution.
 \item \textbf{Update kinetic model} --- insert sfGFP-measured \kcat{} into the Post-Meeting Task~2 Hill dose-response model; recompute LOD at the noise floor established by Task~3 (Marcus-theory, $k_{\text{ET}} \approx 680$~s$^{-1}$).
 \item \textbf{Task~9: Bayesian kinetic deconvolution} --- digital twin forward model (Michaelis-Menten $\times$ Marcus $\times$ SWV) + NumPyro MCMC inversion; profile-likelihood identifiability confirming the partial MMP-2/MMP-9 separation achievable from ratiometric $R(t)$ decay.
 \end{enumerate}
