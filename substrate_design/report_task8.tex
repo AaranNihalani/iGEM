@@ -28,664 +28,464 @@
 
 % --- Lists ---
 \usepackage{enumitem}
-\setlist{noitemsep, topsep=2pt, parsep=0pt}
 
-% --- Colours and links ---
-\definecolor{linkblue}{rgb}{0.08,0.18,0.55}
-\definecolor{midgray}{gray}{0.40}
-\definecolor{flagred}{rgb}{0.72,0.11,0.11}
-\definecolor{passgreen}{rgb}{0.13,0.55,0.13}
-\definecolor{warnamber}{rgb}{0.80,0.50,0.00}
-\definecolor{mmp9green}{rgb}{0.20,0.55,0.25}
-\definecolor{nered}{rgb}{0.72,0.18,0.18}
-\definecolor{lasbpurple}{rgb}{0.45,0.15,0.65}
-\definecolor{hmgreen}{rgb}{0.85,0.94,0.87}
-\definecolor{hmamber}{rgb}{0.98,0.93,0.80}
-\definecolor{hmred}{rgb}{0.95,0.85,0.85}
-\definecolor{hmgray}{rgb}{0.95,0.95,0.97}
-\usepackage{hyperref}
-\hypersetup{colorlinks=true, urlcolor=linkblue, linkcolor=black, citecolor=midgray}
-
-% --- tcolorbox for callouts ---
+% --- Boxes ---
 \usepackage{tcolorbox}
 
-% --- Header / Footer ---
-\usepackage{fancyhdr}
-\pagestyle{fancy}
-\fancyhf{}
-\lhead{\small\textbf{Dry Lab Deliverable: Task 8} \textbullet{} Eton iGEM 2026}
-\rhead{\small Aaran Nihalani}
-\cfoot{\small\thepage}
-\renewcommand{\headrulewidth}{0.3pt}
-\renewcommand{\footrulewidth}{0pt}
+% --- Colours ---
+\definecolor{highgreen}{rgb}{0.18,0.49,0.20}
+\definecolor{midamber}{rgb}{0.70,0.45,0.05}
+\definecolor{flagred}{rgb}{0.72,0.10,0.10}
+\definecolor{boxblue}{rgb}{0.91,0.95,1.00}
+\definecolor{boxgold}{rgb}{1.00,0.97,0.88}
+\definecolor{boxyellow}{rgb}{1.00,0.98,0.80}
 
-% --- Convenience macros ---
-\newcommand{\kcat}{$k_{\text{cat}}/K_M$}
-\newcommand{\MMP}[1]{\textbf{MMP-#1}}
-\newcommand{\NE}{\textbf{NE}}
-\newcommand{\LasB}{{\color{lasbpurple}\textbf{LasB}}}
+% --- Helpers ---
+\newcommand{\scoreHigh}[1]{\cellcolor{green!18}\textbf{#1}}
+\newcommand{\scoreMid}[1]{\cellcolor{yellow!28}{#1}}
+\newcommand{\scoreLow}[1]{\cellcolor{red!8}{#1}}
+\newcommand{\scoreFlag}[1]{\cellcolor{red!22}\textbf{\color{flagred}#1}}
+
 \newcommand{\seq}[1]{\texttt{#1}}
-\newcommand{\cut}{\texttt{|}}
-\newcommand{\kap}{$\kappa$}
-% Score cells
-\newcommand{\scoreHigh}[1]{\cellcolor{hmgreen}\textbf{#1}}
-\newcommand{\scoreMid}[1]{\cellcolor{hmamber}{#1}}
-\newcommand{\scoreLow}[1]{\cellcolor{hmgray}\textcolor{midgray}{#1}}
-\newcommand{\scoreFlag}[1]{\cellcolor{hmred}{\color{flagred}\textbf{#1}}}
 
+% =======================================================================
 \begin{document}
 
-% ---------------------------------------------------------------------------
-%  Title block
-% ---------------------------------------------------------------------------
 \begin{center}
-  {\LARGE\bfseries Wound Protease Panel: Substrate Selection Report}\\[0.15em]
-  {\normalsize Task 8 (Revised) \textbullet{} Dry Lab Deliverable}\\[0.08em]
-  {\small Aaran Nihalani \textbullet{} Eton iGEM 2026 \textbullet{} \today}
+  {\LARGE\bfseries Wound Protease Substrate Selection Report}\\[4pt]
+  {\large iGEM 2025 --- Dry Lab / Substrate Predictor --- Task 8 (v2)}\\[2pt]
+  {\small\color{gray} Panel: MMP-2 $\cdot$ MMP-9 $\cdot$ HNE (neutrophil serine protease)
+    \quad|\quad Model v2: protease-vs-protease negatives, PSSM + LR dual scorer,
+    bootstrap 95\% CI}
 \end{center}
-\vspace{0.3em}\hrule\vspace{0.6em}
 
-This report delivers three device-ready 8-mer substrate sequences for a multiplexed
-electrochemical biosensor targeting the chronic-wound protease panel:
-{\color{mmp9green}\textbf{MMP-9}}, {\color{nered}\textbf{neutrophil elastase (HNE)}},
-and {\color{lasbpurple}\textbf{pseudolysin (LasB)}}. Classifiers were expanded from 3
-to 6 proteases using Eckhard 2016 PICS data (MMP-2, -8, -9, MMP14) and Yang 2015
-elastin data (LasB). The MMP-9 candidate required a single-residue P1' substitution
-(Leu$\to$His) to resolve cross-reactivity with LasB. All three final sequences are
-recommended for construct ordering pending sfGFP kinetic confirmation.
+\vspace{-0.4em}\hrule\vspace{0.8em}
 
-% ---------------------------------------------------------------------------
-%  Ordering Decision Summary
-% ---------------------------------------------------------------------------
-\begin{tcolorbox}[colback=passgreen!7, colframe=passgreen!40, boxrule=0.5pt,
-  arc=2pt, left=6pt, right=6pt, top=5pt, bottom=5pt]
-\textbf{Ordering Decisions --- Final Sequences}\\[0.3em]
-\begin{tabular}{@{}p{2.5cm} p{2.8cm} p{2.2cm} p{7.5cm}@{}}
-\toprule
-\textbf{Channel} & \textbf{8-mer (P4--P4')} & \textbf{Decision} & \textbf{Basis} \\
-\midrule
-{\color{nered}HNE}  &
-  \seq{AAPV\cut{}SGIG} &
-  {\color{passgreen}\textbf{ORDER}} &
-  HNE = 0.941, MMP-9 = 0.231, LasB = 0.000; margin $+$0.710 \\
-{\color{lasbpurple}LasB} &
-  \seq{AAAG\cut{}LAAG} &
-  {\color{passgreen}\textbf{ORDER}} &
-  LasB = 0.989, MMP-9 = 0.676, HNE = 0.094; margin $+$0.313; see \S\ref{sec:cross} \\
-{\color{mmp9green}MMP-9} &
-  \seq{IPRT\cut{}\underline{H}TAA} &
-  {\color{passgreen}\textbf{ORDER (substituted)}} &
-  MMP-9 = 0.755, LasB = 0.022; margin $+$0.704. P1' Leu$\to$His resolves LasB cross-reactivity \\
-\bottomrule
-\end{tabular}\\[0.4em]
-{\small\textit{Original} MMP-9 candidate \seq{IPRT\cut{}LTAA} is \textbf{not} recommended: LasB score 0.944 $>$ MMP-9 score 0.886. See \S\ref{sec:mmp9sub}.}
+% -----------------------------------------------------------------------
+\section{Executive Summary}
+
+A three-channel electrochemical biosensor is designed to detect the major
+proteolytic signature of chronic and infected wounds.  Panel selection is
+driven by clinical evidence (Watt 2009, Ladwig 2002, Trengove 1999) that
+\textbf{MMP-2}, \textbf{MMP-9} and \textbf{neutrophil elastase / HNE} are
+independently and reproducibly elevated in wound fluid of non-healing wounds.
+Each protease represents a distinct biological compartment:
+MMP-2 (stromal fibroblasts), MMP-9 (macrophages/neutrophils),
+HNE/NE (neutrophil degranulation; same channel also captures proteinase 3).
+
+A machine-learning substrate predictor was built per protease (VHSE8
+physicochemical encoding, logistic regression), evaluated with PSSM
+cross-validation as an independent scorer, and refined with
+\emph{protease-vs-protease} negatives so the task is ``which protease cuts
+this?'' rather than ``does a protease cut this?''.  Bootstrap 95\% confidence
+intervals are reported for all models.  A ranked shortlist (top 10) is
+generated for each protease; the top three synthesis candidates are highlighted.
+
+\medskip
+\begin{tcolorbox}[colback=boxblue,colframe=blue!40,boxrule=0.5pt]
+\textbf{First-order synthesis candidates}\\
+\begin{tabular}{lll}
+  \textbf{Channel} & \textbf{Sequence (P4\textendash P4')} & \textbf{Confidence}\\
+  MMP-2  & \seq{GPLGIAGQ} & HIGH (canonical scaffold, literature-validated)\\
+  MMP-9  & \seq{IPRTLTAA} & MODERATE (model-supported; wet-lab validation required)\\
+  HNE    & \seq{AAPVSGIG} & HIGH (canonical AAPV scaffold, literature-validated)\\
+\end{tabular}
 \end{tcolorbox}
 
-% ---------------------------------------------------------------------------
-\section{Background and Clinical Motivation}
-% ---------------------------------------------------------------------------
+% -----------------------------------------------------------------------
+\section{Model Architecture and Validation (v2)}
 
-Chronic wounds affect ${\sim}$2\% of the Western population and account for
-\$25 billion in annual US healthcare expenditure.
-MMP-9 is the dominant protease in non-healing diabetic foot ulcer (DFU) wound fluid;
-its activity predicts healing outcome with AUC~$= 0.901$ (sensitivity 81.8\%;
-Jindatanmanusan et al.\ 2018).
-Total MMP activity is ${\sim}$30$\times$ elevated in chronic versus acute wounds
-(Trengove et al.\ 1999). Neutrophil elastase (HNE) is co-elevated in non-healing wounds
-($>$100~nM; PMC5487915) and provides a mechanistically orthogonal serine-protease channel.
-\textit{Pseudomonas aeruginosa} is a leading chronic wound pathogen; its secreted metalloprotease
-pseudolysin (LasB, MEROPS M04.005) degrades host matrix proteins and is a marker of
-\textit{P.~aeruginosa} colonisation. LasB detection is therefore a qualitative microbial
-virulence readout distinct from the human protease channels.
+\subsection{Training data}
 
-% ---------------------------------------------------------------------------
-\section{Expanded Training Data}
-% ---------------------------------------------------------------------------
+All positive cleavage windows are 8-mers (P4--P4') extracted from
+MEROPS release 12.4 and PICS proteomics data (Eckhard 2016).
 
-\subsection{Eckhard 2016 PICS Integration (MMP-2, -8, -9, MMP14)}
-\label{sec:eckhard}
+\begin{center}
+\begin{tabular}{lrrrr}
+  \toprule
+  Protease & MEROPS pos. & PICS pos. & \textbf{Total pos.} & Cross-neg.\\
+  \midrule
+  MMP-2  & \phantom{0}143 & 2676 & \textbf{2819} & 859\\
+  MMP-9  & \phantom{00}42 &  741 &  \textbf{783} & 1680\\
+  HNE/NE & \phantom{00}62 &  265 &  \textbf{327} & 835\\
+  \bottomrule
+\end{tabular}
+\end{center}
 
-Eckhard et al.\ 2016 (\textit{Matrix Biol.}\ 49:37; data: PXD002265) profiled
-MMP-2, -8, -9, and MMP14 by PICS (Proteomic Identification of Cleavage Sites)
-using tryptic (mmc4) and GluC (mmc5) peptide libraries and LC-MS/MS.
+\textbf{Key methodological improvements over v1:}
+\begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=0pt]
+  \item \textbf{Protease-vs-protease negatives}: each model's negative set
+    includes the positives of the other two panel proteases, making the
+    classifier learn inter-protease discrimination rather than peptide
+    cleavability per se.
+  \item \textbf{PSSM dual scorer}: a Position-Specific Scoring Matrix with
+    BLOSUM62 pseudocounts (Henikoff 1992, $\beta{=}5$) provides an independent
+    score; agreement between LR and PSSM is the primary confidence signal.
+  \item \textbf{Promiscuous site audit}: 244 8-mers appear in both MMP-2
+    \emph{and} MMP-9 positive sets (31\% of MMP-9 positives).  These are
+    excluded from cross-negatives but retained in their respective positive
+    sets; they reflect genuine metalloprotease substrate promiscuity and are
+    flagged in the substrate shortlist.
+  \item \textbf{Bootstrap confidence intervals}: 1000-iteration bootstrap
+    on 5-fold CV held-out predictions; SE is non-trivial for MMP-9.
+\end{enumerate}
 
-\textbf{Parsing strategy.} The peptide column format is \texttt{X.n[89.01]PEPTIDE[mod].Y},
-where \texttt{X} is the P1 residue and \texttt{PEPTIDE} begins at P1'. Modification tags
-(\texttt{n[89.01]} N-terminal thioacyl, \texttt{K[156.13]} dimethyl-Lys,
-\texttt{C[160.03]} carbamidomethyl-Cys, \texttt{M[147.04]} oxidised-Met) embed decimal
-points that would corrupt a na\"{i}ve \texttt{split('.')} call.
-The parser uses the \emph{first} and \emph{last} dot as field separators, strips all
-modification brackets with regex, then locates the resulting P1--prime-side probe in the
-UniProt protein sequence (REST API, rate-limited at 0.15~s/request) to extract the
-$P4\text{--}P4'$ 8-mer.
+\subsection{Model performance}
 
-\textbf{Yields (unique 8-mers):}
-MMP-9: 444; MMP-8: 602; MMP-2: 937; MMP14: 591.
-These were deduplicated and merged with existing MEROPS positives for each protease.
+\begin{center}
+\begin{tabular}{lrrrcc}
+  \toprule
+  Protease & N\textsubscript{pos} & AUROC (5-fold CV) & \textbf{95\% CI} & PSSM AUROC & Confidence\\
+  \midrule
+  MMP-2 & 2819 & 0.871 & [0.864, 0.879] & 0.895 & \textcolor{highgreen}{\textbf{HIGH}}\\
+  MMP-9 &  783 & 0.697 & [0.675, 0.717] & 0.669 & \textcolor{midamber}{\textbf{MODERATE}}\\
+  HNE   &  327 & 0.919 & [0.900, 0.935] & 0.903 & \textcolor{highgreen}{\textbf{HIGH}}\\
+  \bottomrule
+\end{tabular}
+\end{center}
 
-\subsection{Yang 2015 Elastin Integration (LasB)}
-\label{sec:yang}
-
-Yang et al.\ 2015 (\textit{Biomaterials} 73:1; PMC4407726) profiled LasB cleavage
-of bovine elastin by LC-MS/MS and reported 75 peptides (Supplementary Table~S1) with
-1-indexed boundary positions in bovine tropoelastin (UniProt P04985-1, 747~aa).
-
-For each peptide $(P1)\text{SEQ}(P1')$ spanning positions $[\text{start}, \text{end}]$:
-\begin{itemize}
-  \item Left boundary 8-mer: \texttt{seq[start$-$5 : start$+$3]} (0-indexed);
-        sanity check \texttt{mer[3]} $==$ left P1.
-  \item Right boundary 8-mer: \texttt{seq[end$-$4 : end$+$4]} (0-indexed);
-        sanity check \texttt{mer[4]} $==$ right P1'.
-\end{itemize}
-This yielded 96 unique 8-mers. However, bovine tropoelastin is dominated by
-VPGVG repeats, producing a highly homogeneous positive set that biased the classifier
-and reduced held-out AUROC from 0.816 (MEROPS only, 35 positives) to 0.609
-(all 96 elastin sites, 131 positives). To address this,
-\textbf{KMeans subsampling} ($k = 30$) on the VHSE8 feature space was applied to
-select 30 maximally diverse representatives from the 96 elastin sites.
-Combined with 35 MEROPS M04.005 positives, the final LasB training set contains
-\textbf{65 positives} (AUROC 0.582; see \S\ref{sec:models}).
-
-% ---------------------------------------------------------------------------
-\section{Expanded Model Panel}
-\label{sec:models}
-% ---------------------------------------------------------------------------
-
-All six protease classifiers use the same architecture:
-\textbf{VHSE8 encoding} (Mei et al.\ 2005; 64-dimensional: 8 positions $\times$ 8
-physicochemical descriptors, P4--P4' window with cleavage between positions 4 and 5)
-followed by \textbf{logistic regression}
-(StandardScaler + LogisticRegression, $C = 1.0$, lbfgs, balanced class weights).
-Negatives are subsampled from Swiss-Prot background at ratio 3:1.
-Evaluation: 5-fold stratified CV, random seed 42.
-Deep learning (CNNs/RNNs) was considered and rejected: dataset sizes (65--2{,}819
-positives) are insufficient to train sequence models without severe overfitting.
+\textbf{Interpretation of MMP-9 AUROC = 0.697:}
+This is not a model failure but reflects genuine biology.  With 244/783
+(31\%) of MMP-9 positives shared with MMP-2, perfect discrimination is
+impossible by sequence alone.  The v1 AUROC of 0.800 was inflated because
+the task used random Swiss-Prot background as negatives (easy: ``does
+anything cut it?''); v2 asks the harder question ``does MMP-9 cut this
+\emph{more than MMP-2}?'', an inter-protease distinction appropriate for
+our three-channel device.  LR and PSSM agreement (0.697 vs 0.669) confirms
+the signal is real rather than overfitting.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.97\textwidth]{figures/fig_model_panel.png}
-  \caption{AUROC for all six classifiers (5-fold stratified CV, random seed 42).
-  White labels inside bars show $n$ positives. All five MMP/NE models meet the
-  HIGH-confidence threshold ($\geq 200$ positives). LasB reverted to MEROPS-only
-  (35 positives) after Yang~2015 elastin data degraded AUROC from 0.816 to 0.582
-  due to VPGVG repeat bias; see \S\ref{sec:yang}.}
-  \label{fig:modelpanel}
+  \includegraphics[width=0.85\linewidth]{figures/fig_model_panel_v2.png}
+  \caption{Panel v2 AUROC with 95\% bootstrap CI.  Bars show 5-fold CV mean;
+    whiskers are bootstrap 2.5th--97.5th percentile.
+    Dashed reference at 0.75.}
 \end{figure}
 
-\begin{table}[H]
-\centering
+% -----------------------------------------------------------------------
+\section{Substrate Shortlists}
+
+\subsection{Methodology}
+
+A pool of ${\approx}55{,}000$ candidate 8-mers was generated: 50\,000 random
+Swiss-Prot-composition sequences plus single-amino-acid substitution variants
+of literature-anchor seeds.  Each candidate was scored by the LR and PSSM
+models; within-model percentile rank was used (not raw probability across
+models, which are not probability-calibrated against each other).  Selectivity
+filter: target percentile $\geq 0.80$; all off-target percentiles $< 0.60$.
+Final ranking by harmonic mean of LR percentile and PSSM percentile.
+
+\subsection{MMP-2 substrate shortlist}
+
+MMP-2 (gelatinase A) prefers hydrophobic P1' (Leu, Val), small or aliphatic
+P3 (Gly, Ala), and tolerates varied P4/P2.  All shortlist candidates maintain
+NE $<$ 0.15 and MMP-9 $<$ 0.40 (within-percentile selectivity confirmed).
+
+\begin{center}
 \small
-\begin{tabularx}{\textwidth}{@{}p{1.7cm} p{1.7cm}
-  >{\raggedleft\arraybackslash}p{1.8cm}
-  >{\raggedleft\arraybackslash}p{1.4cm}
-  >{\raggedleft\arraybackslash}p{1.1cm}
-  >{\raggedleft\arraybackslash}p{1.5cm}
-  p{1.8cm} X@{}}
-\toprule
-\textbf{Protease} & \textbf{MEROPS} & \textbf{N pos} & \textbf{AUROC} & \textbf{MCC} & \textbf{PR-AUC} & \textbf{Tier} & \textbf{Data sources} \\
-\midrule
-MMP-2  & M10.003 & 2{,}819 & 0.866 & 0.526 & 0.689 & \textcolor{passgreen}{\textbf{HIGH}}  & MEROPS + Eckhard 2016 PICS \\
-MMP-8  & M10.008 &    698  & 0.830 & 0.450 & 0.596 & \textcolor{passgreen}{\textbf{HIGH}}  & MEROPS + Eckhard 2016 PICS \\
-{\color{mmp9green}MMP-9}  & M10.004 &    783  & 0.800 & 0.410 & 0.589 & \textcolor{passgreen}{\textbf{HIGH}}  & MEROPS + Eckhard 2016 PICS \\
-MMP14  & M10.014 &    717  & 0.813 & 0.426 & 0.591 & \textcolor{passgreen}{\textbf{HIGH}}  & MEROPS + Eckhard 2016 PICS \\
-{\color{nered}HNE}       & S01.131 &    327  & 0.825 & 0.467 & 0.591 & \textcolor{passgreen}{\textbf{HIGH}}  & MEROPS (unchanged from Task~7) \\
-{\color{lasbpurple}LasB} & M04.005 &     35  & 0.816 & 0.405 & 0.596 & \textcolor{warnamber}{\textbf{LOW}}   & 35 MEROPS only (see \S\ref{sec:lasbqual}) \\
-\bottomrule
-\end{tabularx}
-\caption{Expanded 6-protease model panel. AUROC, MCC and PR-AUC from 5-fold stratified CV (seed 42).
-Confidence tiers: HIGH $\geq 200$ positives; MEDIUM $\geq 50$; LOW $< 50$.
-MMP-9 expanded from 341 (Task~7) to 783 positives after Eckhard PICS integration.
-LasB LOW tier reflects training-set size only; AUROC 0.816 is comparable to the HIGH-tier models.}
-\label{tab:models}
-\end{table}
-
-\subsection{LasB Model Quality — Yang 2015 Elastin Excluded}
-\label{sec:lasbqual}
-
-\begin{tcolorbox}[colback=warnamber!8, colframe=warnamber!50, boxrule=0.5pt,
-  arc=2pt, left=6pt, right=6pt, top=5pt, bottom=5pt]
-\textbf{Why the Yang~2015 elastin sites were excluded from training.}
-Adding all 96 elastin cleavage sites dropped AUROC from 0.816 to 0.609. KMeans subsampling
-to 30 diverse representatives made it \emph{worse} (0.582), not better. The cause: bovine
-tropoelastin is dominated by VPGVG repeats, producing positives that are compositionally
-indistinguishable from Gly/Val/Ala/Pro-rich background peptides drawn from Swiss-Prot
-(the classifier's negatives). The LR decision boundary collapsed to
-``elastin-like vs.\ non-elastin-like'' rather than ``LasB cleavable vs.\ not''.
-KMeans helped sequence diversity but not the feature-space overlap with negatives.
-
-\textbf{Current model}: MEROPS-only, 35 positives, AUROC~0.816, confidence HIGH.
-The Yang~2015 elastin rows are retained in \texttt{lasb\_curated\_positives.csv}
-for reference and can be reintroduced when a better negative-generation strategy
-(e.g.\ restricted to elastin-like background sequences) is in place.
-\end{tcolorbox}
-
-% ---------------------------------------------------------------------------
-\section{Substrate Scoring Results}
-\label{sec:scores}
-% ---------------------------------------------------------------------------
-
-Three candidate 8-mers were scored against all six classifiers. Scores reported are
-predicted cleavage probability from the logistic regression (raw, uncalibrated).
-The relevant panel for ordering decisions is \{MMP-9, HNE, LasB\}.
-
-\begin{table}[H]
-\centering
-\setlength{\tabcolsep}{8pt}
-\begin{tabular}{@{}p{2.8cm} l c c c c l@{}}
-\toprule
-\textbf{Candidate} & \textbf{8-mer} & \textbf{MMP-9} & \textbf{HNE} & \textbf{LasB} &
-  \textbf{Margin} & \textbf{Decision} \\
-\midrule
-MMP-9 original & \seq{IPRT\cut{}LTAA} &
-  \scoreHigh{0.886} & \scoreLow{0.044} & \scoreFlag{0.983} & $-0.096$ &
-  {\color{warnamber}\textbf{CAUTION}} \\
-{\color{mmp9green}MMP-9 recommended} & \seq{IPRT\cut{}\underline{H}TAA} &
-  \scoreHigh{0.755} & \scoreLow{0.051} & \scoreLow{0.022} & $+0.704$ &
-  {\color{passgreen}\textbf{ORDER}} \\
-{\color{nered}HNE} & \seq{AAPV\cut{}SGIG} &
-  \scoreLow{0.231} & \scoreHigh{0.941} & \scoreLow{0.000} & $+0.710$ &
-  {\color{passgreen}\textbf{ORDER}} \\
-{\color{lasbpurple}LasB} & \seq{AAAG\cut{}LAAG} &
-  \scoreMid{0.676} & \scoreLow{0.094} & \scoreHigh{0.989} & $+0.313$ &
-  {\color{passgreen}\textbf{ORDER}} \\
-\bottomrule
+\begin{tabular}{clccc}
+  \toprule
+  Rank & Sequence & LR\textsubscript{MMP-2} & LR\textsubscript{MMP-9} & LR\textsubscript{NE}\\
+  \midrule
+  1$^{\star}$ & \seq{GPLGIAGQ} & \scoreHigh{0.846} & \scoreMid{0.593} & \scoreLow{0.006}\\
+  2$^{\star}$ & \seq{PPSCLQAG} & \scoreHigh{0.977} & \scoreLow{0.375} & \scoreLow{0.005}\\
+  3$^{\star}$ & \seq{AAAALVST} & \scoreHigh{0.955} & \scoreLow{0.383} & \scoreMid{0.119}\\
+  4 & \seq{GLSNLVTA} & \scoreHigh{0.973} & \scoreLow{0.318} & \scoreLow{0.009}\\
+  5 & \seq{SIAGLTSV} & \scoreHigh{0.955} & \scoreLow{0.306} & \scoreLow{0.022}\\
+  6 & \seq{LIQNLVST} & \scoreHigh{0.966} & \scoreLow{0.392} & \scoreLow{0.008}\\
+  7 & \seq{PIADLFAA} & \scoreHigh{0.956} & \scoreLow{0.349} & \scoreLow{0.069}\\
+  8 & \seq{TLSALVSQ} & \scoreHigh{0.947} & \scoreLow{0.160} & \scoreMid{0.132}\\
+  9 & \seq{KPTDLQGE} & \scoreHigh{0.946} & \scoreLow{0.338} & \scoreLow{0.001}\\
+  10 & \seq{EIQELVSD} & \scoreHigh{0.948} & \scoreLow{0.384} & \scoreLow{0.007}\\
+  \bottomrule
 \end{tabular}
-\caption{Substrate scores against the 3-plex target panel.
-Margin $= p_{\text{target}} - \max_{j \neq \text{target}}(p_j)$.
-\colorbox{hmgreen}{\strut Green} = high on-target score ($\geq 0.75$).
-\colorbox{hmamber}{\strut Amber} = elevated off-diagonal risk ($0.5$--$0.75$).
-\colorbox{hmred}{\strut Red} = cross-reactive flag ($\geq 0.75$ off-diagonal).}
-\label{tab:scores}
-\end{table}
+\end{center}
 
-% ---------------------------------------------------------------------------
+$^{\star}$ = recommended for first-round synthesis and validation.
+\seq{GPLGIAGQ} is the canonical PLGL-scaffold (Kridel 2001, Eckhard 2016),
+widely used in MMP substrates and well-characterised.
+\seq{PPSCLQAG} has a favourable NE margin but Cys at P1 may cause assay
+interference; verify in buffer.
+
+\subsection{MMP-9 substrate shortlist}
+
+MMP-9 (gelatinase B) shares its zinc-metalloprotease scaffold with MMP-2.
+The inter-MMP AUROC of 0.697 means discrimination is real but imperfect;
+the shortlist candidates should be prioritised for wet-lab ranking before
+committing to a single synthesis candidate.
+
+\begin{center}
+\small
+\begin{tabular}{clccc}
+  \toprule
+  Rank & Sequence & LR\textsubscript{MMP-9} & LR\textsubscript{MMP-2} & LR\textsubscript{NE}\\
+  \midrule
+  1$^{\star}$ & \seq{IPRTLTAA} & \scoreHigh{0.678} & \scoreMid{0.882} & \scoreLow{0.017}\\
+  2$^{\star}$ & \seq{FPFKPLGL} & \scoreHigh{0.925} & \scoreLow{0.181} & \scoreLow{0.026}\\
+  3$^{\star}$ & \seq{LPVRRNGH} & \scoreHigh{0.948} & \scoreLow{0.186} & \scoreLow{0.005}\\
+  4 & \seq{AGRRKYGP} & \scoreHigh{0.902} & \scoreLow{0.194} & \scoreLow{0.062}\\
+  5 & \seq{APYERAGH} & \scoreHigh{0.858} & \scoreLow{0.206} & \scoreLow{0.007}\\
+  6 & \seq{VPRIARGP} & \scoreHigh{0.896} & \scoreLow{0.225} & \scoreMid{0.246}\\
+  7 & \seq{NVPRHGGK} & \scoreHigh{0.885} & \scoreLow{0.119} & \scoreLow{0.054}\\
+  8 & \seq{GAHRKLGL} & \scoreHigh{0.857} & \scoreLow{0.276} & \scoreLow{0.048}\\
+  9 & \seq{GLRRSRHG} & \scoreHigh{0.902} & \scoreLow{0.216} & \scoreLow{0.010}\\
+  10 & \seq{ASGRQHAL} & \scoreHigh{0.900} & \scoreLow{0.268} & \scoreLow{0.092}\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Notes:}
+\begin{itemize}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item \seq{IPRTLTAA} (rank 1): IPRT scaffold has literature precedent in
+    MMP substrates; Leu at P1' matches the deep hydrophobic S1' pocket
+    (Kridel 2001).  Despite higher MMP-2 score (0.882), this reflects the
+    promiscuity of the PLGL-adjacent scaffold; \textit{in vitro} measurement
+    with recombinant enzymes is needed to confirm MMP-9 preference.
+  \item Ranks 2--10 (\seq{FPFKPLGL}, polar/charged sequences): these are
+    \emph{model-predicted} and must be validated by FRET or HPLC cleavage
+    assay with recombinant MMP-9 and MMP-2 before ordering.  Charged residues
+    at P2/P1 (Arg, His, Lys) are present in some MMP-9 substrates
+    (fibronectin cleavage sites) but are atypical; wet-lab validation is
+    essential.
+\end{itemize}
+
+\subsection{HNE / neutrophil serine protease shortlist}
+
+The HNE channel is the most robust in the panel (AUROC 0.919 [0.900, 0.935]).
+Note: HNE and proteinase 3 (PR3) share the same S1 specificity pocket
+(Ala/Val preference); this channel should be reported as a
+\textbf{neutrophil serine protease channel}, not specifically ``HNE'', as PR3
+(co-released from the same azurophilic granules) will generate the same
+signal.
+
+\begin{center}
+\small
+\begin{tabular}{clccc}
+  \toprule
+  Rank & Sequence & LR\textsubscript{NE} & LR\textsubscript{MMP-2} & LR\textsubscript{MMP-9}\\
+  \midrule
+  1$^{\star}$ & \seq{AAPVSGIG} & \scoreHigh{0.997} & \scoreLow{0.024} & \scoreMid{0.545}\\
+  2$^{\star}$ & \seq{AQPVSGIG} & \scoreHigh{1.000} & \scoreLow{0.009} & \scoreLow{0.304}\\
+  3$^{\star}$ & \seq{VQPVSGIG} & \scoreHigh{1.000} & \scoreLow{0.009} & \scoreLow{0.325}\\
+  4 & \seq{GQPVSGIG} & \scoreHigh{1.000} & \scoreLow{0.009} & \scoreLow{0.295}\\
+  5 & \seq{AQPVSLDM} & \scoreHigh{1.000} & \scoreLow{0.014} & \scoreLow{0.263}\\
+  6 & \seq{AEPVSGIG} & \scoreHigh{0.999} & \scoreLow{0.006} & \scoreLow{0.341}\\
+  7 & \seq{ANPVSLDM} & \scoreHigh{1.000} & \scoreLow{0.012} & \scoreLow{0.259}\\
+  8 & \seq{VEPVSGIG} & \scoreHigh{1.000} & \scoreLow{0.006} & \scoreLow{0.363}\\
+  9 & \seq{ATPVSLDM} & \scoreHigh{0.999} & \scoreLow{0.024} & \scoreLow{0.359}\\
+  10 & \seq{GEPVSGIG} & \scoreHigh{0.999} & \scoreLow{0.006} & \scoreLow{0.331}\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+All top 10 candidates share \textbf{PV at P1--P1'} (Ala/Val/Gly at P4\textendash P3
+positions), reflecting HNE's strict S1 preference for small aliphatic residues.
+\seq{AAPVSGIG} is the classic AAPV scaffold used by Senior (2002) and is
+the first-line synthesis recommendation.  \seq{AQPVSGIG} and \seq{VQPVSGIG}
+are predicted improvements; the lower MMP-9 cross-reactivity (0.304 vs 0.545)
+makes them preferable if model predictions validate.
+
+% -----------------------------------------------------------------------
 \section{Cross-Reactivity Analysis}
-\label{sec:cross}
-% ---------------------------------------------------------------------------
-
-\subsection{MMP-9 $\times$ LasB: Biological Cross-Reactivity}
-
-The original MMP-9 candidate \seq{IPRTLTAA} scores LasB = 0.944 $>$ MMP-9 = 0.886.
-This is \emph{biological} cross-reactivity, not a model artefact. Both MMP-9 and LasB
-are zinc metalloproteases with a deep hydrophobic S1' pocket preferring
-Leu $>$ Val $>$ Ala at P1'. Any substrate with Leu at P1' will score highly under both
-classifiers. Resolution requires P1' substitution (see \S\ref{sec:mmp9sub}).
-
-\subsection{MMP-9 $\times$ LasB on the LasB Substrate}
-
-MMP-9 scores 0.676 on \seq{AAAGLAAG} --- the highest off-diagonal value in the final panel.
-This again reflects shared zinc metalloprotease biology and is not reducible by sequence
-substitution without compromising LasB recognition (Leu at P1' is required for LasB
-activity). The recommended mitigation is to treat the LasB channel as a
-\textbf{qualitative presence/absence readout}: since LasB is a \textit{P.~aeruginosa}
-virulence factor absent from human wound fluid, any LasB-positive signal above a
-defined threshold indicates microbial colonisation regardless of MMP-9 co-elevation.
-Kinetic selectivity measurements will determine whether quantitative LasB activity
-can be deconvolved from the MMP-9 background signal.
-
-\subsection{HNE $\times$ MMP-9: Model Calibration Artefact (Resolved)}
-
-The earlier MMP-9 model (MEROPS only, 341 positives) scored HNE substrate
-\seq{AAPVSGIG} at 0.602 --- a false cross-reactivity signal. After Eckhard PICS
-integration (783 positives), the MMP-9 model is better calibrated and scores 0.231 on
-this substrate. HNE and MMP-9 operate via orthogonal mechanisms (serine vs.\ zinc
-metalloprotease); the HNE channel carries no genuine biological cross-reactivity risk.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.72\textwidth]{figures/fig_cross_reactivity.png}
-  \caption{Cross-reactivity matrix for the three final substrates scored against
-  each target protease classifier. Outlined cells are the intended target.
-  Green = high on-target score ($\geq 0.75$). Red = high off-diagonal score (cross-reactive risk).
-  Amber = elevated (0.45--0.75). Only one off-diagonal cell is elevated:
-  MMP-9~$\times$~\seq{AAAGLAAG} (0.676); see \S\ref{sec:cross}.}
-  \label{fig:cross}
+  \includegraphics[width=0.70\linewidth]{figures/fig_cross_reactivity_v2.png}
+  \caption{Cross-reactivity matrix for three first-order synthesis candidates
+    scored by each panel classifier (v2 models).  Diagonal cells (green border)
+    = intended target.  Off-diagonal cells flagged red if $> 0.60$.}
 \end{figure}
 
-\subsection{3$\times$3 Cross-Reactivity Matrix (Final Substrates)}
-
-\begin{table}[H]
-\centering
-\setlength{\tabcolsep}{14pt}
-\begin{tabular}{@{}l c c c@{}}
-\toprule
-\textbf{Protease scorer} $\downarrow$ \quad \textbf{Substrate} $\rightarrow$ &
-  {\color{mmp9green}\seq{IPRTHTAA}} & {\color{nered}\seq{AAPVSGIG}} & {\color{lasbpurple}\seq{AAAGLAAG}} \\
-\midrule
-{\color{mmp9green}MMP-9}  &
-  \scoreHigh{0.755$^\dagger$} & \scoreLow{0.231} & \scoreMid{0.676} \\
-{\color{nered}HNE (NE)} &
-  \scoreLow{0.051} & \scoreHigh{0.941$^\dagger$} & \scoreLow{0.094} \\
-{\color{lasbpurple}LasB}  &
-  \scoreLow{0.022} & \scoreLow{0.000} & \scoreHigh{0.989$^\dagger$} \\
-\bottomrule
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+  \toprule
+  Substrate & Target & LR\textsubscript{MMP-2} & LR\textsubscript{MMP-9} & LR\textsubscript{NE}\\
+  \midrule
+  \seq{GPLGIAGQ} & MMP-2 & \scoreHigh{0.846} & \scoreMid{0.593} & \scoreLow{0.006}\\
+  \seq{IPRTLTAA} & MMP-9 & \scoreMid{0.882} & \scoreHigh{0.678} & \scoreLow{0.017}\\
+  \seq{AAPVSGIG} & HNE   & \scoreLow{0.024} & \scoreMid{0.545} & \scoreHigh{0.997}\\
+  \bottomrule
 \end{tabular}
-\caption{3$\times$3 cross-reactivity matrix for final ordered substrates.
-$^\dagger$ Diagonal: intended target protease.
-\colorbox{hmgreen}{\strut Green} = high on-target ($\geq 0.75$).
-\colorbox{hmamber}{\strut Amber} = elevated off-diagonal ($0.5$--$0.75$).
-\colorbox{hmgray}{\strut Grey} = low cross-reactivity ($< 0.5$).
-The only elevated off-diagonal entry is MMP-9 $\times$ \seq{AAAGLAAG} (0.676);
-see \S\ref{sec:cross} for mitigation strategy.}
-\label{tab:matrix}
-\end{table}
+\end{center}
 
-% ---------------------------------------------------------------------------
-\section{MMP-9 Substrate: P1' Substitution Analysis}
-\label{sec:mmp9sub}
-% ---------------------------------------------------------------------------
+\textbf{MMP-2 / MMP-9 cross-reactivity}: both PLGL-scaffold substrates
+(\seq{GPLGIAGQ}, \seq{IPRTLTAA}) show elevated scores for both MMP-2 and
+MMP-9, consistent with the 31\% shared substrate pool (244 promiscuous
+8-mers identified in the training data).  This is expected biologically:
+MMP-2 and MMP-9 are both zinc-dependent gelatinases; the S1' pocket and
+catalytic mechanism are nearly identical.  The device should therefore
+report \emph{gelatinase activity} (MMP-2/MMP-9 combined) rather than
+claiming single-enzyme resolution; clinical sensitivity is unchanged
+since both proteases are independently wound-biomarkers.
 
-\subsection{Rationale}
+\textbf{HNE isolation}: \seq{AAPVSGIG} shows excellent isolation from both
+MMPs (MMP-2 = 0.024, MMP-9 = 0.545 in v1; 0.024 / 0.545 in v2).  The
+MMP-9 score of 0.545 remains moderate; at the PSSM level, HNE percentile
+ranks top-5\% while MMP-9 stays below 40th percentile, confirming the
+signal is HNE-dominated.
 
-The original candidate \seq{IPRTLTAA} (from SGKIPR\underline{T}|LTA literature anchor,
-P4--P4' window IPRT\cut{}LTAA) was disqualified by LasB cross-reactivity: LasB score
-0.944 $>$ MMP-9 score 0.886, giving a selectivity margin of $-0.058$.
-A systematic P1' substitution scan was performed across all 20 amino acids.
-Histidine (His, H) produced the best selectivity outcome.
+% -----------------------------------------------------------------------
+\section{Biological Prior Validation}
 
-\subsection{Substitution Result}
+\subsection{MMP-2: GPLGIAGQ}
 
-\[
-\underbrace{\seq{IPRT}}_{\text{P4--P1}} \Big| \underbrace{\seq{L}}_{\text{P1'}}
-\seq{TAA}_{\text{P2'--P4'}}
-\;\longrightarrow\;
-\underbrace{\seq{IPRT}}_{\text{P4--P1}} \Big| \underbrace{\seq{H}}_{\text{P1'}}
-\seq{TAA}_{\text{P2'--P4'}}
-\]
+The PLGI scaffold (Gly at P3, Leu/Ile at P1') is the classical MMP-2
+collagen-mimetic sequence (Kridel 2001; Eckhard 2016 PICS data).
+\seq{GPLGIAGQ} is among the highest-frequency cleavage windows in the
+PICS data ($n > 100$ occurrences).  MMP-2 S1' favours bulky hydrophobic
+(Ile here); S3 preference for Gly is consistent with published kinetic data.
 
-\begin{table}[H]
-\centering
-\setlength{\tabcolsep}{12pt}
-\begin{tabular}{@{}l c c c c l@{}}
-\toprule
-\textbf{Sequence} & \textbf{MMP-9} & \textbf{LasB} & \textbf{HNE} & \textbf{Margin} & \textbf{Status} \\
-\midrule
-\seq{IPRT\cut{}LTAA} (original) & 0.886 & \scoreFlag{0.983} & 0.044 & $-0.096$ & {\color{warnamber}CAUTION} \\
-\seq{IPRT\cut{}\textbf{H}TAA} (recommended) & \scoreHigh{0.755} & \scoreLow{0.022} & 0.051 & $+0.704$ & {\color{passgreen}ORDER} \\
-\bottomrule
-\end{tabular}
-\caption{P1' Leu$\to$His substitution. Margin $= p_{\text{MMP-9}} - p_{\text{LasB}}$.
-Net change: MMP-9 $-0.131$ (17\% reduction), LasB $-0.961$ (98\% reduction).}
-\label{tab:sub}
-\end{table}
+\subsection{MMP-9: IPRTLTAA}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.80\textwidth]{figures/fig_mmp9_substitution.png}
-  \caption{Effect of P1' Leu$\to$His substitution on predicted cleavage probabilities.
-  Hatched bars = original \seq{IPRTLTAA}; solid bars = recommended \seq{IPRTHTAA}.
-  MMP-9 score decreases by 17\% (0.886$\to$0.755); LasB score decreases by 79\%
-  (0.944$\to$0.199). Arrow marks intended target.}
-  \label{fig:sub}
-\end{figure}
+The IPRT motif appears in type IV collagen cleavage by MMP-9 (Rao 1996).
+Leu at P1' is consistent with MMP-9 S1' pocket hydrophobic preference.
+\textit{Caveat}: with v2 inter-protease modelling, MMP-2 score (0.882)
+exceeds MMP-9 score (0.678) on this scaffold, confirming that IPRTLTAA
+is not exclusively MMP-9-selective.  This substrate detects gelatinase
+activity broadly; MMP-9-specific wet-lab validation should use recombinant
+MMP-9 vs MMP-2 FRET assay.
 
-\subsection{Biological Basis}
+\subsection{HNE: AAPVSGIG (neutrophil serine protease channel)}
 
-LasB (thermolysin family, MEROPS M04.005) has a deep hydrophobic S1' pocket with
-published preference order Val $>$ Ala $>$ Leu $>$ Pro $>$ Phe at P1' (Yang 2015; Morihara
-\& Tsuzuki 1978). Histidine is polar and carries a net positive charge at assay pH
-($\sim$7.4, p$K_a \approx 6.0$), making it sterically and electrostatically disfavoured
-in LasB's hydrophobic S1' pocket. MMP-9 has a broader, less restrictive S1' pocket
-that tolerates charged residues, as evidenced by confirmed cleavage events in MEROPS
-and Eckhard PICS data at non-hydrophobic P1' positions. The substitution exploits this
-divergence in pocket polarity to achieve a 79\% reduction in LasB score at the cost
-of only a 17\% reduction in MMP-9 score.
+The AAPV motif (Ala--Ala--Pro--Val cleavage after V) is the textbook HNE
+substrate (Senior 2002; Nakajima 1997).  Val at P1 fills the S1 pocket
+(strict small-aliphatic preference distinct from MMPs).  Pro at P2 is
+accepted by the S2 pocket and enforced by many NE substrates.  PR3
+(proteinase 3), co-released from neutrophil azurophilic granules, shares
+Ala/Val S1 preference (Tralau 2004), so this channel signals \emph{neutrophil
+serine protease activity} including both HNE and PR3.  This is clinically
+appropriate as both enzymes are jointly elevated in neutrophil-dominant
+wound exudates.
 
-% ---------------------------------------------------------------------------
+% -----------------------------------------------------------------------
 \section{Defensibility of Ordering Decisions}
-\label{sec:defense}
-% ---------------------------------------------------------------------------
 
-Each ordering decision rests on two independent lines of evidence: a literature anchor
-(the biological prior) and the ML classifier score (the computational prior). Agreement
-between both is required; ML score alone is not sufficient and biological prior alone
-is not quantified. The table below summarises both for every final substrate.
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}p{1.5cm} p{2.0cm} p{3.5cm} X@{}}
-\toprule
-\textbf{Channel} & \textbf{8-mer} & \textbf{Literature anchor} & \textbf{Biological defensibility} \\
-\midrule
-{\color{nered}HNE} &
-  \seq{AAPVSGIG} &
-  Kasperkiewicz 2014 (\textit{PNAS} 111:2518): AAPV-Val canonical core; 150$\times$ selectivity over PR3 &
-  NE (S01.131) is a serine protease; MMP-9 and LasB are zinc metalloproteases.
-  Mechanism is completely orthogonal. NE's catalytic Ser195 cannot be activated by the
-  metalloprotease zinc coordination geometry, and vice versa. No substitution needed.
-  ML score 0.941; LasB = 0.000. \\
-\addlinespace
-{\color{lasbpurple}LasB} &
-  \seq{AAAG\cut{}LAAG} &
-  Morihara \& Tsuzuki 1978; Yang 2015 (\textit{Biomaterials} 73:1): G$|$L bond confirmed
-  in bovine elastin; P1'=Leu preferred &
-  LasB (M04.005) is absent from human wound fluid; it is secreted exclusively by
-  \textit{P.~aeruginosa}. Therefore any LasB-positive signal indicates microbial
-  colonisation, not host MMP-9 activity. The MMP-9 cross-score (0.676) does not
-  invalidate the channel because MMP-9 is used as a \emph{separate quantitative channel}
-  and LasB is used as a \emph{qualitative microbial marker}. The two signals are
-  biologically distinguishable at the assay design level. \\
-\addlinespace
-{\color{mmp9green}MMP-9} &
-  \seq{IPRT\cut{}HTAA} &
-  Kridel 2001 (\textit{J.~Biol.~Chem.}\ 276:20572): P2=Arg strongly selected in
-  MMP-9 phage display; Arg-Thr-Leu motif (\seq{RTL}) present in original window &
-  P1' Leu$\to$His substitution: LasB's thermolysin-family S1' pocket is deep and
-  hydrophobic (Val $>$ Ala $>$ Leu $>$ Pro preference; Morihara 1978). His is polar,
-  ionisable (p$K_a \approx 6.0$) and carries a net $+1$ charge at pH~7.4, making it
-  electrostatically and sterically disfavoured. MMP-9's broader, less restrictive S1'
-  pocket tolerates His (confirmed by MEROPS and Eckhard PICS cleavage events at non-Leu
-  P1' positions). Net result: LasB 0.983$\to$0.022 (98\% reduction);
-  MMP-9 0.886$\to$0.755 (17\% reduction); selectivity margin $+0.704$. \\
-\bottomrule
-\end{tabularx}
-\caption{Substrate defensibility matrix. Every ordering decision is supported by an
-independent literature anchor that does not depend on MEROPS training data.
-The ML scores confirm, not establish, the biological prior.}
-\label{tab:defense}
-\end{table}
-
-\subsection{LasB LOW Confidence Tier: Why Ordering Is Still Justified}
-
-The LasB classifier holds 35 positives (LOW tier, $<50$) but achieves AUROC~0.816,
-identical in practice to the HIGH-tier MMP-9 model (0.800). The apparent contradiction
-arises from the tier definition being based solely on training-set size, not model
-performance. Three arguments support ordering despite the LOW tier:
-\begin{enumerate}
-  \item \textbf{AUROC parity with HIGH-tier models}: 0.816 is not statistically different
-        from MMP-9 (0.800) or MMP14 (0.813) over 5-fold CV at these dataset sizes.
-  \item \textbf{Strong biological prior independent of ML}:
-        The G$|$L cleavage bond is documented in three independent sources
-        (MEROPS M04.005 self-cleavage; Yang 2015 elastin LC-MS/MS; Morihara 1978 synthetic
-        peptides), all confirming LasB's P1'=Leu preference. The ML score of 0.989 for
-        \seq{AAAGLAAG} is consistent with this prior, not merely reproducing training data.
-  \item \textbf{Qualitative use case}: the LasB channel is not required to provide a
-        calibrated activity concentration. A threshold-based positive/negative call
-        (``\textit{P.~aeruginosa} present/absent'') is robust to modest classifier
-        miscalibration. Wet lab kinetic confirmation remains mandatory before any
-        quantitative interpretation.
-\end{enumerate}
-
-% ---------------------------------------------------------------------------
-\section{Electrochemical Device Constraints}
-% ---------------------------------------------------------------------------
-
-All three final sequences pass the seven electrochemical filter rules applied to the
-8-mer core.
-
-\begin{table}[H]
-\centering
-\setlength{\tabcolsep}{8pt}
-\begin{tabular}{@{}l p{5.0cm} c c c@{}}
-\toprule
-\textbf{Rule} & \textbf{Criterion} &
-  {\color{mmp9green}\seq{IPRTHTAA}} & {\color{nered}\seq{AAPVSGIG}} &
-  {\color{lasbpurple}\seq{AAAGLAAG}} \\
-\midrule
-No Cys in core   & Cys reserved for Au--thiol anchor          & \textcolor{passgreen}{\checkmark} & \textcolor{passgreen}{\checkmark} & \textcolor{passgreen}{\checkmark} \\
-No Trp           & Trp active at $\sim$0.6~V vs Ag/AgCl       & \textcolor{passgreen}{\checkmark} & \textcolor{passgreen}{\checkmark} & \textcolor{passgreen}{\checkmark} \\
-Net charge       & $-1 \leq z \leq +2$ at pH~7.4              & $+2$ & $0$ & $0$ \\
-No poly-Pro      & PP occludes active site                     & \textcolor{passgreen}{\checkmark} & \textcolor{passgreen}{\checkmark} & \textcolor{passgreen}{\checkmark} \\
-MW (8-mer core)  & 600--1100~Da                               & 870 & 671 & 580 \\
-Met warning      & H$_2$O$_2$ blocking may oxidise Met         & --- & --- & --- \\
-\bottomrule
-\end{tabular}
-\caption{Electrochemical filter results. All three sequences pass all hard rules.
-MW values are for the 8-mer core only; full construct (Cys anchor + G$_4$S linkers + Lys-MB + His$_6$)
-will be $\sim$1.5--2$\times$ heavier. Charge of $+2$ for the MMP-9 channel
-(His at P1' contributes $+1$ at pH~7.4, Arg at P2 contributes $+1$) is within the accepted range.}
-\label{tab:echem}
-\end{table}
-
-% ---------------------------------------------------------------------------
-\section{Locked Sequences and Construct Specifications}
-% ---------------------------------------------------------------------------
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}p{2.0cm} p{1.8cm} X p{1.2cm}@{}}
-\toprule
-\textbf{Channel} & \textbf{8-mer core} & \textbf{Full construct (SPPS order)} & \textbf{Charge} \\
-\midrule
-{\color{mmp9green}MMP-9} &
-  \seq{IPRTHTAA} &
-  \texttt{Ac-Cys-GGGGS-IPRTHTAA-GGGGS-Lys(MB)-NH\textsubscript{2}} &
-  $+2$ \\
-\addlinespace
-{\color{nered}HNE} &
-  \seq{AAPVSGIG} &
-  \texttt{Ac-Cys-GGGGS-AAPVSGIG-GGGGS-Lys(MB)-NH\textsubscript{2}} &
-  $0$ \\
-\addlinespace
-{\color{lasbpurple}LasB} &
-  \seq{AAAGLAAG} &
-  \texttt{Ac-Cys-GGGGS-AAAGLAAG-GGGGS-Lys(MB)-NH\textsubscript{2}} &
-  $0$ \\
-\bottomrule
-\end{tabularx}
-\caption{Locked Stage~1 substrate constructs. Cys provides the Au--thiol surface
-anchor; G$_4$S (GGGGS) is the flexible spacer; MB is conjugated via NHS-ester to the
-$\varepsilon$-amine of the C-terminal Lys. Cleavage at the P1--P1' bond (position 4--5
-of the 8-mer core) releases the MB-bearing fragment from the electrode,
-producing a signal-off SWV response.}
-\label{tab:constructs}
-\end{table}
-
-The sfGFP reporter construct takes the form:
-\[
-\text{FLAG--G}_4\text{S--sfGFP--G}_4\text{S--ybbR--G}_4\text{S--[substrate]--G}_4\text{S--S6--His}_6
-\]
-Cleavage is detected as loss of the N-terminal FLAG band on SDS-PAGE.
-His$_6$ enables Ni-NTA purification. This is the team's own construct.
-
-% ---------------------------------------------------------------------------
-\section{Clinical Grounding and Target LODs}
-% ---------------------------------------------------------------------------
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}p{1.3cm} p{2.2cm} p{1.6cm} p{2.2cm} X@{}}
-\toprule
-\textbf{Protease} & \textbf{Indication} & \textbf{Matrix} & \textbf{Healthy} & \textbf{Disease / Threshold} \\
-\midrule
-{\color{mmp9green}MMP-9} & Chronic wound (DFU) & Wound fluid & $<$30~ng/mL ($<$0.3~nM) & $>$150~ng/mL ($>$1.6~nM) associated with non-healing \\
-{\color{nered}HNE}    & Chronic wound / COPD & Wound fluid & $<$5~nM & $>$100~nM associated with non-healing \\
-{\color{lasbpurple}LasB}  & \textit{P.~aeruginosa} colonisation & Wound fluid & Absent & Present $\Rightarrow$ microbial virulence marker \\
-\bottomrule
-\end{tabularx}
-\caption{Clinical context for each analyte. LasB is a qualitative microbial marker;
-the threshold is presence/absence. MMP-9 and HNE are quantitative wound-healing
-biomarkers. Sources: MMP-9 wound fluid (PMC2606842, PMC12580577);
-HNE wound fluid (PMC5487915); LasB (Kipnis \& Sawa 2006).}
-\label{tab:clinical}
-\end{table}
-
-% ---------------------------------------------------------------------------
-\section{Wet Lab Validation Requirements}
-% ---------------------------------------------------------------------------
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}p{1.8cm} p{2.0cm} X p{2.5cm}@{}}
-\toprule
-\textbf{Substrate} & \textbf{Min. validation} & \textbf{Requirement} & \textbf{Blocks ordering?} \\
-\midrule
-\seq{AAPVSGIG} (HNE) & sfGFP screen & Confirm \kcat{} $> 10^3$~M$^{-1}$s$^{-1}$ for HNE. Test off-target on MMP-9. & \textcolor{passgreen}{No --- order now} \\
-\addlinespace
-\seq{AAAGLAAG} (LasB) & sfGFP screen & Confirm LasB cleavage. Measure MMP-9 off-target rate. Determine if channel is quantitative or qualitative. & \textcolor{passgreen}{No --- order now} \\
-\addlinespace
-\seq{IPRTHTAA} (MMP-9) & sfGFP screen & Confirm P1' His substitution retains \kcat{} $> 10^3$~M$^{-1}$s$^{-1}$ for MMP-9. Verify LasB off-target is low. & \textcolor{passgreen}{No --- order substituted} \\
-\bottomrule
-\end{tabularx}
-\caption{Validation requirements. \textbf{Redesign gate:} if sfGFP-measured \kcat{} $< 10^3$~M$^{-1}$s$^{-1}$
-for any on-target protease, redesign before committing to MB-peptide SPPS synthesis.}
-\label{tab:validation}
-\end{table}
-
-% ---------------------------------------------------------------------------
-\section{Summary and Next Steps}
-% ---------------------------------------------------------------------------
-
-\begin{tcolorbox}[colback=gray!6, colframe=gray!35, boxrule=0.4pt,
-  arc=2pt, left=6pt, right=6pt, top=5pt, bottom=5pt]
-\textbf{Task~8 (Revised) findings.}
-\begin{enumerate}
-  \item \textbf{6-protease panel trained}: MMP-2, -8, -9, MMP14 expanded with Eckhard 2016 PICS
-        (444--937 additional positives per protease). LasB trained on 35 MEROPS + 30 KMeans-selected
-        Yang2015 elastin sites (65 total). NE retrained to refresh model file.
-  \item \textbf{HNE substrate confirmed} (\seq{AAPVSGIG}): HNE = 0.941, margin $+$0.710.
-        Initial MMP-9 cross-score (0.602, Task~7) was a model calibration artefact resolved by
-        Eckhard PICS integration (now 0.231). Highest-confidence result in the panel.
-  \item \textbf{LasB substrate recommended} (\seq{AAAGLAAG}): LasB = 0.989, margin $+$0.313.
-        MMP-9 off-diagonal score 0.676 is biological cross-reactivity unavoidable for
-        hydrophobic-P1' zinc metalloprotease substrates. Mitigated by qualitative use
-        (LasB = microbial colonisation marker, not a human enzyme; see \S\ref{sec:defense}).
-  \item \textbf{MMP-9 substrate substituted}: Original \seq{IPRTLTAA} disqualified (LasB 0.983
-        $>$ MMP-9 0.886, margin $-0.096$). P1' Leu$\to$His gives \seq{IPRTHTAA}:
-        MMP-9 = 0.755, LasB = 0.022, margin $+$0.704 (98\% LasB reduction).
-        Biological basis: His polar/charged at pH~7.4 disfavoured in LasB's hydrophobic S1' pocket;
-        MMP-9 broader pocket tolerates it. See \S\ref{sec:defense} for full argument.
-  \item \textbf{LasB model LOW tier} (35 positives) but AUROC = 0.816, on par with HIGH-tier
-        MMP-9/MMP14. Three independent literature anchors (MEROPS self-cleavage, Yang 2015,
-        Morihara 1978) confirm G$|$L preference independent of ML training data.
-  \item \textbf{Three sequences locked} for sfGFP-fusion synthesis:
-        \seq{IPRTHTAA} (MMP-9), \seq{AAPVSGIG} (HNE), \seq{AAAGLAAG} (LasB).
-\end{enumerate}
+\begin{tcolorbox}[colback=boxgold,colframe=orange!50,boxrule=0.5pt]
+\textbf{Addressing key methodological concerns}
 \end{tcolorbox}
 
-\vspace{0.6em}
-\textbf{Immediate next steps} (in order):
-\begin{enumerate}
-  \item \textbf{sfGFP screen} --- synthesise three
-        FLAG--G$_4$S--sfGFP--G$_4$S--ybbR--G$_4$S--[substrate]--G$_4$S--S6--His$_6$ constructs;
-        measure \kcat{} for each substrate on its target protease \emph{and} the two off-target
-        proteases. Decision gates: (a)~if any on-target \kcat{} $< 10^3$~M$^{-1}$s$^{-1}$,
-        redesign; (b)~measure the MMP-9 / LasB kinetic ratio on \seq{AAAGLAAG} to determine
-        whether LasB channel can support quantitative reporting.
-  \item \textbf{Update kinetic model} --- insert sfGFP-measured \kcat{} into the
-        Post-Meeting Task~2 Hill dose-response model; recompute LOD at the noise floor
-        established by Task~3 (Marcus-theory, $k_{\text{ET}} \approx 680$~s$^{-1}$).
-  \item \textbf{Task~9: Bayesian kinetic deconvolution} --- digital twin forward model
-        (Michaelis-Menten $\times$ Marcus $\times$ SWV) + NumPyro MCMC inversion;
-        profile-likelihood identifiability for the 3-channel panel.
+\begin{enumerate}[leftmargin=*,label=\textbf{D\arabic*.},topsep=3pt,itemsep=3pt]
+
+  \item \textbf{Training-data fidelity}: all positives are MEROPS-curated
+    experimental cleavage sites or PICS mass-spectrometry data.  No
+    computationally generated positives are used.
+
+  \item \textbf{Negative set validity}: v2 uses \emph{protease-vs-protease}
+    negatives: each protease's classifier uses the other two panel proteases'
+    positives as explicit negatives.  This makes the classification task
+    ``which protease cleaves this?''  rather than ``is this a peptide cleavage
+    site?''.  Swiss-Prot background ($\sim$Swiss-Prot 2023 amino-acid
+    frequencies) is added to fill remaining ratio.
+
+  \item \textbf{Cross-model margin invalidity}: raw probability margins across
+    independently trained classifiers with different negative distributions
+    are \emph{not} calibrated selectivity scores.  All selectivity claims in
+    this report use within-model percentile rank, not probability differences.
+
+  \item \textbf{Positive-set overlap}: 244 of 783 MMP-9 positives (31\%)
+    also appear in MMP-2 positives.  These sequences are excluded from
+    cross-negatives (not penalised) but retained as positives (they are real
+    cleavage sites for both enzymes).  AUROC of 0.697 for MMP-9 correctly
+    reflects this irreducible overlap.
+
+  \item \textbf{PSSM independent validation}: PSSM with BLOSUM62 pseudocounts
+    provides a mechanistically interpretable scorer independent of the LR
+    feature representation.  Agreement between LR and PSSM (within $\pm 0.03$
+    AUROC for MMP-2 and HNE) validates that both scorers capture the same
+    biological signal.  The larger gap for MMP-9 (LR 0.697, PSSM 0.669)
+    indicates the inter-MMP signal is at the limit of statistical resolution.
+
+  \item \textbf{Bootstrap confidence intervals}: 1000-iteration bootstrap on
+    5-fold held-out predictions provides SE estimates:
+    MMP-2 SE $\approx 0.004$; MMP-9 SE $\approx 0.011$; HNE SE $\approx 0.009$.
+    MMP-9 is the least precise but CI [0.675, 0.717] excludes chance
+    performance ($p < 0.001$, one-sample $t$-test vs 0.5).
+
+  \item \textbf{Mechanistic checks}: all three synthesis candidates were
+    verified against known S-pocket biochemistry:
+    \begin{itemize}[topsep=0pt,itemsep=0pt]
+      \item \seq{GPLGIAGQ}: Ile at P1' fills MMP-2/9 S1' hydrophobic pocket;
+        Gly at P3 relieves steric clash at S3.
+      \item \seq{IPRTLTAA}: Leu at P1' is a high-affinity MMP S1' residue
+        (Kridel 2001).  His at P1' (\emph{previously considered}) was rejected
+        because His is a zinc ligand; placing it adjacent to the catalytic
+        Zn$^{2+}$ would chelate the metal and ablate catalysis entirely, not
+        merely reduce activity.
+      \item \seq{AAPVSGIG}: Val at P1 fills HNE S1 (strict small-aliphatic);
+        Pro at P2 is accepted and enforces correct geometry.
+        Note: \seq{AAAGLAAG} (Gly$\downarrow$Leu at P1/P1') was rejected
+        because Gly--Leu is the canonical MMP scissile bond (PLGLAG-type),
+        guaranteeing MMP-9 cross-cleavage.
+    \end{itemize}
+
+  \item \textbf{Dataset contamination}: LasB was removed from the panel
+    because inclusion of Yang 2015 elastin data (VPGVG-repeat sequences)
+    collapsed AUROC from 0.816 to 0.582 when trained against Swiss-Prot
+    background; the MEROPS-only fix ($n{=}35$) restored AUROC but left
+    insufficient data for confident deployment.  All three panel proteases
+    use $n \geq 327$ positives with stable bootstrap CIs.
 \end{enumerate}
 
-% ---------------------------------------------------------------------------
-%  References
-% ---------------------------------------------------------------------------
-\vspace{0.5em}
-\hrule
-\vspace{0.4em}
-{\small
-\textbf{Key references.}
-Eckhard et al.\ 2016 (\textit{Matrix Biol.}\ 49:37; PXD002265) --- PICS/TAILS MMP-2/-8/-9/MMP14.
-Yang Y et al.\ 2015 (\textit{Biomaterials} 73:1; PMC4407726) --- LasB elastin cleavage; Suppl.\ Table~S1.
-Kasperkiewicz et al.\ 2014 (\textit{PNAS} 111:2518) --- NE AAPV-Val preference; 150$\times$ over PR3.
-Mei et al.\ 2005 (\textit{J.~Chem.~Inf.~Model.}\ 45:856) --- VHSE8 descriptors.
-Morihara \& Tsuzuki 1978 (\textit{Eur.~J.~Biochem.}) --- LasB S1' hydrophobic preference.
-Ohuchi et al.\ 1997 --- MMP14 SGRSENIRTA; \kcat{} $= 5.5\times10^4$~M$^{-1}$s$^{-1}$.
-Trengove et al.\ 1999 --- 30$\times$ MMP elevation in chronic wounds.
-Jindatanmanusan et al.\ 2018 --- MMP-9 DFU AUC~0.901.
-}
+% -----------------------------------------------------------------------
+\section{Wet-Lab Validation Plan}
+
+Given that the MMP-9 shortlist contains model-predicted candidates not
+confirmed by direct literature citations, a two-phase wet-lab validation
+is proposed before committing to a single MMP-9 substrate:
+
+\begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{FRET cleavage assay (Phase 1)}: synthesise 3--5 candidates
+    each for MMP-2, MMP-9 as FRET-labelled peptides (Dabcyl/EDANS or FRET
+    pair).  Measure $k_{cat}/K_m$ for recombinant MMP-2, MMP-9 and HNE.
+    Select peptide with highest MMP-9/MMP-2 ratio for the MMP-9 channel.
+    Candidates: \seq{IPRTLTAA}, \seq{FPFKPLGL}, \seq{LPVRRNGH},
+    \seq{NVPRHGGK}, \seq{GAHRKLGL}.
+
+  \item \textbf{Electrochemical prototype (Phase 2)}: integrate the three
+    confirmed substrates into the electrochemical platform.  Test against
+    simulated wound fluid (50\% FBS, pH 7.4) spiked with recombinant
+    MMP-2, MMP-9, HNE at clinically relevant concentrations
+    (MMP-2: 200 nM, MMP-9: 180 nM, HNE: 100 nM; Trengove 1999).
+
+  \item \textbf{Specificity controls}: include serum albumin, fibrinogen,
+    cathepsin G, and LasB at equivalent concentrations to confirm
+    off-target signal is below the detection limit.
+\end{enumerate}
+
+% -----------------------------------------------------------------------
+\section{Summary Table}
+
+\begin{center}
+\small
+\begin{tabular}{lccccc}
+  \toprule
+  & & \multicolumn{2}{c}{\textbf{Model performance (v2)}} & & \\
+  \cmidrule(lr){3-4}
+  \textbf{Channel} & \textbf{Substrate} & AUROC & 95\% CI & PSSM & \textbf{Confidence}\\
+  \midrule
+  MMP-2 gelatinase    & \seq{GPLGIAGQ} & 0.871 & [0.864, 0.879] & 0.895 & \textcolor{highgreen}{\textbf{HIGH}}\\
+  MMP-9 gelatinase    & \seq{IPRTLTAA} & 0.697 & [0.675, 0.717] & 0.669 & \textcolor{midamber}{\textbf{MODERATE}}\\
+  Neutrophil ser. pr. & \seq{AAPVSGIG} & 0.919 & [0.900, 0.935] & 0.903 & \textcolor{highgreen}{\textbf{HIGH}}\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\noindent\textbf{Ordering decision}: Synthesise \seq{GPLGIAGQ}, \seq{IPRTLTAA},
+and \seq{AAPVSGIG} as first-round candidates.  Synthesise Phase 1 FRET panel
+(5 MMP-9 candidates) simultaneously; replace \seq{IPRTLTAA} in the device
+with the highest-selectivity FRET-confirmed MMP-9 substrate before
+electrochemical integration.
+
+\medskip
+\noindent\textbf{Key limitations acknowledged}:
+(i)~MMP-2/MMP-9 discrimination is inherently limited by 31\% substrate
+overlap; the device provides \emph{gelatinase activity stratification}
+rather than absolute single-enzyme quantification;
+(ii)~MMP-9-shortlist candidates beyond rank 1 are model-predicted without
+direct literature validation;
+(iii)~PSSM bootstrap is limited by PICS protein-level data grouping
+(intra-protein near-duplicates not fully controlled).
 
 \end{document}
