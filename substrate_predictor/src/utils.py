@@ -21,9 +21,12 @@ MEROPS_IDS = {
     'NE':    ['S01.131'],
     'FAP':   ['S09.007'],
     'Fecal': ['S01.151', 'S01.152', 'S01.153'],
+    # LasB (M04.005) not in current Substrate_search.txt snapshot;
+    # training set is built from literature-curated cleavage sites (see build_lasb.py)
+    'LasB':  ['M04.005'],
 }
 
-PROTEASE_ORDER = ['MMP14', 'MMP-8', 'MMP-9', 'MMP-2', 'NE', 'Fecal', 'FAP']
+PROTEASE_ORDER = ['MMP14', 'MMP-8', 'MMP-9', 'MMP-2', 'NE', 'Fecal', 'FAP', 'LasB']
 
 # Minimum positives for full-confidence training
 MIN_POSITIVES = {'high': 200, 'medium': 50, 'low': 0}
