@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")"
 echo "Generating figures..."
-python3 generate_figures.py
+python generate_figures.py
 echo "Compiling LaTeX (pass 1)..."
 pdflatex -interaction=nonstopmode report_task8.tex > /dev/null
 echo "Compiling LaTeX (pass 2, cross-refs)..."
