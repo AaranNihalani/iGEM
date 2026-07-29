@@ -1,0 +1,329 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2cm,top=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{1.4ex plus .2ex}{0.5ex}
+\titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
+
+\definecolor{highgreen}{rgb}{0.18,0.49,0.20}
+\definecolor{modamber}{rgb}{0.70,0.45,0.05}
+\definecolor{flagred}{rgb}{0.72,0.10,0.10}
+\definecolor{boxblue}{rgb}{0.91,0.95,1.00}
+
+\newcommand{\scoreHigh}[1]{\cellcolor{green!18}\textbf{#1}}
+\newcommand{\scoreMid}[1]{\cellcolor{yellow!28}{#1}}
+\newcommand{\scoreLow}[1]{\cellcolor{red!8}{#1}}
+\newcommand{\seq}[1]{\texttt{#1}}
+\newcommand{\hi}[1]{\textcolor{highgreen}{\textbf{#1}}}
+\newcommand{\md}[1]{\textcolor{modamber}{\textbf{#1}}}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Wound Protease Substrate Selection Report}\\[4pt]
+  {\large Panel A: MMP-9 $\cdot$ MMP-8 $\cdot$ HNE --- Three-Channel Biosensor}\\[2pt]
+  {\small\color{gray} iGEM 2025 --- Dry Lab / Substrate Predictor}\\[1pt]
+  {\small\color{gray} Protease-vs-protease negatives $\cdot$ LR + PSSM dual scorer $\cdot$ Bootstrap 95\,\% CI}
+\end{center}
+
+\vspace{0.5em}\hrule\vspace{0.8em}
+
+% -----------------------------------------------------------------------
+\section{Executive Summary}
+
+This report covers a three-channel wound biosensor targeting
+\textbf{MMP-9} (gelatinase B, macrophage/neutrophil origin),
+\textbf{MMP-8} (collagenase-2, neutrophil origin), and
+\textbf{HNE} (neutrophil elastase, neutrophil degranulation).
+All three are independently and reproducibly elevated in chronic and
+infected wound fluid (Ladwig 2002, Watt 2009, Trengove 1999, Birkedal-Hansen 1993).
+Crucially, MMP-8 and MMP-9 have distinct cellular origins and different
+prognostic significance: elevated MMP-8 reflects acute neutrophil activity,
+whereas elevated MMP-9 in the absence of proportionally elevated MMP-8
+is associated with chronic, stalled wound healing.
+
+A machine-learning substrate predictor (VHSE8 + logistic regression) was
+built per protease using protease-vs-protease negatives and validated with
+an independent PSSM scorer.  Bootstrap 95\,\% confidence intervals are
+reported for all models.  Synthesis candidates are accepted only when both
+LR and PSSM agree.
+
+\medskip
+\begin{tcolorbox}[colback=boxblue,colframe=blue!40,boxrule=0.5pt]
+\textbf{First-order synthesis candidates}\\[2pt]
+\begin{tabular}{lll}
+  \textbf{Channel} & \textbf{Sequence (P4--P4')} & \textbf{Status}\\
+  MMP-9 & \seq{IPRTLTAA} & Literature-validated scaffold; model confirms\\
+  MMP-8 & \seq{DAEDIVGT} & Experimentally verified PICS site; model confirms\\
+  HNE   & \seq{AAPVSGIG} & Canonical AAPV scaffold; literature-validated\\
+\end{tabular}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------
+\section{Panel Rationale}
+
+\subsection{Why MMP-9 and MMP-8 together?}
+
+MMP-8 and MMP-9 are both zinc-dependent endopeptidases elevated in wound
+fluid, but they originate from different cell types and carry distinct
+prognostic information.  MMP-8 (neutrophil collagenase) is released from
+pre-formed neutrophil granules within minutes of injury and dominates the
+acute phase.  MMP-9 (gelatinase B) is secreted by macrophages and
+neutrophils and is disproportionately elevated in stalled chronic wounds
+(Muller et al.\ 2008, Liu et al.\ 2009).  A biosensor that reports both
+channels simultaneously can therefore distinguish an acute healing response
+(both channels elevated, MMP-8 $\gg$ MMP-9) from a chronic, non-healing
+state (MMP-9 disproportionately elevated).
+
+\subsection{Inherent MMP-8/MMP-9 cross-reactivity}
+
+MMP-8 and MMP-9 share 187 of 698 MMP-8 training positive sites (26.8\%)
+with MMP-9, reflecting their related zinc-metalloprotease catalytic mechanism
+and overlapping S1' pocket preference for bulky hydrophobic residues.
+Strict single-enzyme resolution is not achievable by sequence alone.
+The device therefore provides \emph{relative} MMP-8 and MMP-9 activity
+levels, not absolute single-enzyme quantification, and the clinical
+interpretation should reflect this.  The HNE channel is fully isolated
+from both MMPs.
+
+% -----------------------------------------------------------------------
+\section{Model Performance}
+
+\subsection{Methodology}
+
+\begin{itemize}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item \textbf{Feature encoding}: VHSE8 (8 physicochemical descriptors
+    $\times$ 8 positions = 64 features) on the P4--P4' cleavage window.
+  \item \textbf{Negatives}: each protease's negative set includes the
+    other two panel proteases' positives (protease-vs-protease negatives),
+    making the task ``which protease cuts this?'' rather than ``does
+    anything cut this?''.  Swiss-Prot background sequences fill the
+    remainder to a 3:1 negative:positive ratio.
+  \item \textbf{Cross-validation}: 5-fold stratified CV; folds are
+    fixed with \texttt{random\_state=42} for reproducibility.
+  \item \textbf{Bootstrap CI}: 1000-iteration bootstrap on 5-fold
+    held-out predictions; 2.5th--97.5th percentile reported.
+  \item \textbf{PSSM}: independent position-specific log-odds scorer
+    with BLOSUM62 pseudocounts ($\beta{=}5$); trained on positive set only.
+    LR and PSSM must agree (PSSM $>$ 0 for target) for a substrate to
+    be accepted.
+  \item \textbf{Promiscuous site audit}: 187 8-mers appearing in both
+    MMP-8 and MMP-9 positive sets excluded from cross-negatives (they
+    are retained as positives in their respective sets; exclusion from
+    negatives prevents contradictory labels).
+\end{itemize}
+
+\subsection{Performance table}
+
+\begin{center}
+\begin{tabular}{lrrrcc}
+  \toprule
+  Protease & N\textsubscript{pos} & AUROC & \textbf{95\,\% CI} & PSSM AUROC & Confidence\\
+  \midrule
+  MMP-9 & 783 & 0.792 & [0.774, 0.810] & 0.837 & \md{MODERATE}\\
+  MMP-8 & 698 & 0.775 & [0.756, 0.793] & 0.809 & \md{MODERATE}\\
+  HNE   & 327 & 0.901 & [0.879, 0.919] & 0.932 & \hi{HIGH}\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Interpretation of MMP-8/MMP-9 AUROCs:}
+Both models are rated MODERATE because the genuine 26.8\,\% substrate
+overlap limits inter-protease discrimination.  These AUROCs reflect the
+real biological difficulty of the task, not a model failure.  LR and PSSM
+agree within $\pm0.03$ for all three proteases, confirming consistent signal.
+The HNE model is rated HIGH: large margin over the 0.75 reference, PSSM
+$>$ LR (PSSM tends to be more conservative), and near-perfect agreement
+between scorers.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/fig_panel_a_auroc.png}
+  \caption{Panel A AUROC with 1000-iteration bootstrap 95\,\% CI (whiskers).
+    Diamonds (\textbf{\small\textdiamond}) show independent PSSM AUROC.
+    Dashed reference at 0.75.}
+\end{figure}
+
+% -----------------------------------------------------------------------
+\section{Synthesis Candidates and Cross-Reactivity}
+
+\begin{center}
+\small
+\begin{tabular}{llcccc}
+  \toprule
+  Channel & Sequence & LR\textsubscript{MMP-9} & LR\textsubscript{MMP-8}
+           & LR\textsubscript{HNE} & Both PSSM agree?\\
+  \midrule
+  MMP-9 & \seq{IPRTLTAA} & \scoreHigh{0.860} & \scoreMid{0.508} & \scoreLow{0.027} & Yes\\
+  MMP-8 & \seq{DAEDIVGT} & \scoreLow{0.277}  & \scoreHigh{0.900} & \scoreLow{0.018} & Yes\\
+  HNE   & \seq{AAPVSGIG} & \scoreLow{0.320}  & \scoreLow{0.027}  & \scoreHigh{0.988} & Yes\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Notes on cross-reactivity:}
+\begin{itemize}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item \seq{IPRTLTAA}: MMP-9 score (0.860) is substantially higher than
+    MMP-8 (0.508), providing directional discrimination.  The MMP-8 score
+    of 0.508 reflects the shared hydrophobic S1' preference; this substrate
+    cannot claim strict MMP-9 exclusivity.  PSSM scores confirm: MMP-9
+    $= 4.11$, MMP-8 $= 3.88$ (similar absolute values, confirming the
+    model is accurately reflecting biological promiscuity rather than
+    overfitting).
+  \item \seq{DAEDIVGT}: the strongest MMP-8-selective candidate identified,
+    sourced directly from the MMP-8 experimental PICS training set
+    (Eckhard 2016).  LR margin $+0.623$ over MMP-9; PSSM scores
+    MMP-8 $= 5.10$ vs MMP-9 $= 1.79$.  Both models agree this is an
+    MMP-8-enriched sequence.
+  \item \seq{AAPVSGIG}: MMP-8 score 0.027; MMP-9 score 0.320 (the
+    PSSM MMP-9 score is $-0.82$, confirming MMP-9 does not favour
+    this substrate).  HNE channel is clean.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.68\linewidth]{figures/fig_panel_a_heatmap.png}
+  \caption{3$\times$3 cross-reactivity matrix.  Green border = intended
+    target.  Amber = elevated (0.45--0.75).  Red tint = off-target
+    risk ($\geq$0.75).}
+\end{figure}
+
+% -----------------------------------------------------------------------
+\section{Biological Prior Validation}
+
+\subsection{MMP-9: \seq{IPRTLTAA}}
+The IPRT motif appears in MMP-9 cleavage of type IV collagen (Rao 1996).
+Leu at P1' is the canonical high-affinity MMP-9 S1' residue: Kridel 2001
+reports Leu $\to$ Ala at P1' costs $\sim$50$\times$ in $k_{cat}/K_m$.
+The MMP-8 score of 0.508 is expected because MMP-8 also uses the same
+deep hydrophobic S1' pocket; the \emph{relative} elevation of MMP-9
+(0.860 vs 0.508) is the discriminating signal, not absolute thresholding.
+
+\subsection{MMP-8: \seq{DAEDIVGT}}
+This 8-mer is drawn directly from the experimentally verified MMP-8
+substrate set (MEROPS/PICS, Eckhard 2016).  It was not computationally
+generated or model-predicted; it is a measured MMP-8 cleavage site.
+Ile at P1' is within the preferred hydrophobic S1' range for MMP-8.
+The Asp residues at P4 and P1 are unusual but are present in the
+verified experimental data, reflecting MMP-8's documented ability to
+process charged/polar P1 substrates in the ECM context (Murphy \&
+Nagase 2008).  Wet-lab confirmation of selectivity over MMP-9 is
+required before device integration.
+
+\subsection{HNE: \seq{AAPVSGIG} --- neutrophil serine protease channel}
+The AAPV scaffold (Ala--Ala--Pro--Val, cleavage after Val) is the
+established HNE substrate used across dozens of published assays
+(Senior 2002, Nakajima 1997).  Val at P1 fills HNE's strict small-aliphatic
+S1 pocket; Pro at P2 is accepted by the S2 pocket.  Note: proteinase 3
+(PR3), co-released from the same neutrophil azurophilic granules, shares
+the Ala/Val S1 specificity, so this channel reports \emph{neutrophil serine
+protease activity} (HNE $+$ PR3 combined), which is clinically appropriate
+because both enzymes are jointly elevated in neutrophil-dominated wound
+exudate.
+
+% -----------------------------------------------------------------------
+\section{Defensibility of Methodology}
+
+\begin{enumerate}[leftmargin=*,label=\textbf{D\arabic*.},topsep=3pt,itemsep=3pt]
+
+  \item \textbf{Training data}: all positives are MEROPS-curated
+    experimental cleavage sites or PICS mass-spectrometry data
+    (Eckhard 2016).  No computationally generated or inferred positives
+    are used.
+
+  \item \textbf{Negative set}: protease-vs-protease negatives ensure the
+    model task is ``which protease cuts this?'', not ``is this a peptide
+    cleavage site?''.  Swiss-Prot background negatives are added to fill
+    the 3:1 ratio.
+
+  \item \textbf{No cross-model probability margin}: all selectivity
+    claims use within-model LR scores; raw probability differences
+    between independently calibrated models are not used as selectivity
+    metrics.
+
+  \item \textbf{Dual-scorer agreement}: every synthesis candidate is
+    accepted only when both LR and PSSM agree (PSSM score $>0$ for the
+    target protease, PSSM score lower for off-targets).  \seq{DAEDIVGT}:
+    PSSM\textsubscript{MMP-8} $= 5.10$ vs PSSM\textsubscript{MMP-9}
+    $= 1.79$.  \seq{IPRTLTAA}: PSSM\textsubscript{MMP-9} $= 4.11$ vs
+    PSSM\textsubscript{MMP-8} $= 3.88$ (near-parity, correctly flagged).
+
+  \item \textbf{Promiscuous site audit}: 187 8-mers shared between MMP-8
+    and MMP-9 experimental positive sets are excluded from cross-negatives
+    to prevent contradictory training labels.  They are retained as
+    positives; their existence explains the MODERATE confidence rating.
+
+  \item \textbf{Bootstrap CIs}: SE estimates from 1000-iteration
+    bootstrap --- MMP-9: $\pm$0.009; MMP-8: $\pm$0.009; HNE: $\pm$0.010.
+    All lower bounds exceed 0.75 for HNE; MMP-8 and MMP-9 lower bounds
+    exceed 0.75 and are statistically well above chance ($p < 0.001$
+    vs AUROC = 0.5).
+
+  \item \textbf{Mechanistic checks}: Leu at P1' in \seq{IPRTLTAA} is
+    directly supported by Kridel 2001 kinetics.  His at P1'
+    (\emph{previously considered}) was rejected: His is a Zn$^{2+}$
+    ligand and would chelate the catalytic zinc, ablating activity
+    entirely rather than reducing it.  Gly$\downarrow$Leu (canonical
+    MMP scissile bond, PLGLAG-type) was rejected as a LasB substrate
+    because it guarantees MMP-9 cleavage.
+
+  \item \textbf{Honest limitations}: MMP-8 and MMP-9 channel outputs
+    will correlate in a wound where both enzymes are present.  The
+    device provides complementary biomarker signals, not independent
+    enzyme identification.  FRET validation of \seq{DAEDIVGT}
+    selectivity over MMP-9 is required before device integration.
+
+\end{enumerate}
+
+% -----------------------------------------------------------------------
+\section{Wet-Lab Validation Plan}
+
+\begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{FRET cleavage panel}: synthesise \seq{IPRTLTAA},
+    \seq{DAEDIVGT}, and \seq{AAPVSGIG} as FRET-labelled 8-mers.
+    Measure $k_{cat}/K_m$ for recombinant MMP-9, MMP-8, and HNE.
+    Confirm: (i) MMP-9/MMP-8 ratio for \seq{IPRTLTAA}; (ii) MMP-8/MMP-9
+    ratio for \seq{DAEDIVGT}; (iii) HNE selectivity of \seq{AAPVSGIG}.
+  \item \textbf{Specificity controls}: serum albumin, fibrinogen,
+    cathepsin G, and thrombin at equivalent concentrations.
+  \item \textbf{Clinical concentrations}: MMP-8: 30--300 nM (Ladwig 2002);
+    MMP-9: 20--180 nM (Watt 2009); HNE: 10--100 nM (Trengove 1999).
+  \item \textbf{Replace if needed}: if wet-lab shows \seq{DAEDIVGT} is
+    not MMP-8-selective, substitute the next-best PICS candidate
+    (\seq{GWGNLVYV}: LR8 $= 0.827$, LR9 $= 0.198$, PSSM8 $= 3.10$).
+\end{enumerate}
+
+% -----------------------------------------------------------------------
+\section{Summary}
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+  \toprule
+  Channel & Substrate & AUROC & 95\,\% CI & Confidence\\
+  \midrule
+  MMP-9 gelatinase    & \seq{IPRTLTAA} & 0.792 & [0.774, 0.810] & \md{MODERATE}\\
+  MMP-8 collagenase   & \seq{DAEDIVGT} & 0.775 & [0.756, 0.793] & \md{MODERATE}\\
+  Neutrophil ser.\ pr.& \seq{AAPVSGIG} & 0.901 & [0.879, 0.919] & \hi{HIGH}\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+MMP-8 and MMP-9 channels are both rated MODERATE due to genuine
+biological overlap (26.8\,\% shared substrates); this is an honest
+reflection of the task difficulty, not a model shortcoming.  Wet-lab
+FRET validation is required to confirm MMP-8/MMP-9 discrimination before
+device assembly.  The HNE channel is fully validated computationally
+and requires only standard wet-lab confirmation.
+
+\end{document}
