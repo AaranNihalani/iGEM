@@ -1,0 +1,331 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2cm,top=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{1.4ex plus .2ex}{0.5ex}
+\titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
+
+\definecolor{highgreen}{rgb}{0.14,0.46,0.18}
+\definecolor{modamber}{rgb}{0.62,0.38,0.04}
+\definecolor{boxblue}{rgb}{0.90,0.94,1.00}
+\definecolor{boxgreen}{rgb}{0.88,0.97,0.88}
+\definecolor{boxyellow}{rgb}{1.00,0.97,0.88}
+\definecolor{flagred}{rgb}{0.72,0.10,0.10}
+
+\newcommand{\seq}[1]{\texttt{#1}}
+\newcommand{\hi}[1]{\textcolor{highgreen}{\textbf{#1}}}
+\newcommand{\warn}[1]{\textcolor{modamber}{\textbf{#1}}}
+\newcommand{\pillar}[1]{\textcolor[rgb]{0.12,0.30,0.58}{\textbf{#1}}}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries iGEM 2026: Concrete Modelling Project Proposal}\\[4pt]
+  {\large Two-Pillar Framework for the MMP-9 / HNE Wound Biosensor}\\[3pt]
+  {\small\color{gray} Eton / Dry Lab}\\[1pt]
+  {\small\color{gray}
+    ESM-2 substrate design $\cdot$ Latent Bayesian optimisation $\cdot$
+    Multi-scale biosensor physics}
+\end{center}
+
+\vspace{0.5em}\hrule\vspace{0.8em}
+
+% -----------------------------------------------------------------------
+\section{Project Overview}
+
+The modelling project consists of two interlocking pillars that together
+address both ends of the biosensor design problem.
+
+\pillar{Pillar 1 (ML/DL)} answers: \emph{which peptide sequence should we use?}
+A protein language model (ESM-2) is fine-tuned on experimental cleavage data
+and used as the backbone for a Bayesian optimisation loop that generates novel,
+selectivity-optimised substrate candidates outside the training distribution.
+
+\pillar{Pillar 2 (Physics)} answers: \emph{how will that peptide perform on the
+device?}
+A multi-scale model of the wound biosensor translates protease concentrations in
+wound fluid into a predicted electrochemical signal, via an ODE model of the wound
+fluid protease network and a diffusion-reaction model of the electrode surface.
+
+The two pillars connect at a single point: the substrate sequence output by Pillar 1
+is passed into Pillar 2 as the peptide whose surface kinetics are modelled.
+Together they produce a fully computational design rationale for the biosensor,
+grounded in experimental MEROPS data, that wet lab then validates.
+
+\medskip
+\begin{tcolorbox}[colback=boxblue,colframe=blue!40,boxrule=0.5pt]
+\textbf{Target panel (subject to wet lab confirmation): MMP-9 and HNE (Panel B)}\\[4pt]
+\small
+Panel B is the recommended panel (see Panel B report): both models rated HIGH,
+both substrates fully supported by primary literature, no MMP-8/MMP-9
+cross-reactivity issue to manage.  If wet lab moves to Panel A (three-plex),
+both pillars extend trivially by adding a third protease head / ODE species.
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------
+\section{iGEM Judging Criteria Alignment}
+
+The 2026 handbook lists four criteria for the Best Model award:
+
+\begin{enumerate}[topsep=2pt,itemsep=3pt,leftmargin=*]
+  \item \textbf{How impressive is the modelling?} Both pillars use
+    advanced methods uncommon in iGEM: protein language model fine-tuning,
+    multi-objective Bayesian optimisation, ODE systems with parameter fitting,
+    and Michaelis-Menten surface kinetics.  The combination is novel.
+  \item \textbf{Did it help the team understand a part, device, or system?}
+    Pillar 1 determines what to synthesise; Pillar 2 predicts how it
+    will behave on the electrode.  Neither is decorative.
+  \item \textbf{Were real measurements used?}
+    Pillar 1 trains on MEROPS experimental cleavage data.
+    Pillar 2 is parameterised from published wound fluid protease concentrations
+    and literature kinetic constants.  Both are validated against wet lab output.
+  \item \textbf{Good example for others?}
+    Full pipeline (fine-tuned weights, BO configuration, ODE parameters) is
+    documented and re-runnable on any protease pair.
+\end{enumerate}
+
+The Heidelberg 2025 gold standard: model predicts optimal experimental condition,
+wet lab confirms it.  Our equivalent: Pillar 1 outputs a novel substrate sequence;
+Pillar 2 predicts its LOD on the biosensor; wet lab measures both cleavage
+efficiency and device signal.  The model made both predictions before the
+experiment ran.
+
+% -----------------------------------------------------------------------
+\section{Pillar 1: ESM-2 Fine-tuning and Latent Bayesian Optimisation}
+
+\subsection{Stage 1a: Fine-tuning ESM-2 as a Selectivity Encoder}
+
+ESM-2 (\seq{esm2\_t33\_650M\_UR50D}, Lin et al.\ 2022) is pre-trained on
+250 million protein sequences and provides rich evolutionary context as
+per-residue representations.  The 650M variant is fine-tuned on the MEROPS
+MMP-9 and HNE training sets using two parallel classification heads:
+
+\begin{equation}
+  h_k = \sigma\!\left(W_k \cdot \overline{\mathrm{ESM2}}(x) + b_k\right),
+  \quad k \in \{\text{MMP-9},\;\text{HNE}\}
+\end{equation}
+
+where $\overline{\mathrm{ESM2}}(x) \in \mathbb{R}^{1280}$ is the mean-pooled
+final-layer representation of the 8-mer $x$.  Fine-tuning proceeds in two
+phases: head-only for 10 epochs (trunk frozen), then full fine-tuning at a
+low trunk learning rate ($\eta = 10^{-5}$, discriminative per layer) to
+prevent catastrophic forgetting.
+
+The fine-tuned embedding space is semantically structured by selectivity:
+sequences that share protease recognition properties cluster together.
+This is the latent space in which Stage 1b operates.
+
+\textbf{Interpretability output:} integrated gradients applied to the
+fine-tuned model produce per-position attribution scores
+$\alpha_{k,p}$ for protease $k$ at position $p$ (P4 through P4').
+If $\alpha_{\text{MMP-9},\,\text{P1}'}$ is highest among all positions,
+this independently confirms the Kridel 2001 S1' pocket result.
+Positions where model attribution and biochemical literature disagree
+are flagged for point-mutant synthesis.
+
+\subsection{Stage 1b: Latent Bayesian Optimisation}
+
+A Gaussian process with Mat\'{e}rn-5/2 kernel is trained on the MEROPS
+training set to map ESM-2 embeddings $z \in \mathbb{R}^{1280}$ to the
+two-dimensional selectivity vector
+$[s_{\text{MMP-9}},\, s_{\text{HNE}}]$.
+The GP posterior $p(s \mid z)$ provides both a prediction and a
+calibrated uncertainty, which the acquisition function exploits.
+
+Multi-objective Bayesian optimisation using Expected Hypervolume
+Improvement (EHVI, implemented in BoTorch) searches the fine-tuned
+latent space for Pareto-optimal sequences: maximise $s_{\text{MMP-9}}$,
+minimise $s_{\text{HNE}}$ (for the MMP-9 channel) and vice versa.
+The search runs for 50 BO iterations over a background pool of 500k
+8-mer candidates embedded by ESM-2.
+
+\textbf{PSSM filter:} before any candidate is passed to Pillar 2 or wet
+lab, it must satisfy PSSM\textsubscript{target} $>0$ and
+PSSM\textsubscript{off-target} $<2$.  This applies the existing
+mechanistic scorer as a biochemical gate, bridging the new generative
+pipeline and the original substrate predictor.
+
+\textbf{Positive control:} if BO rediscovers \seq{IPRTLTAA} or
+\seq{AAPVSGIG} from the training set, end-to-end pipeline consistency
+is confirmed before novel sequences are committed to synthesis.
+
+\subsection{Stage 1c: Deliverables}
+
+\begin{itemize}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item Fine-tuned ESM-2 weights and AUROC benchmark vs.\ VHSE8 + LR baseline.
+  \item Per-position attribution maps per protease (comparison to literature).
+  \item Pareto front in selectivity space; top 3--5 novel candidate sequences.
+  \item Positive control validation (rediscovery of known substrates).
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{Pillar 2: Multi-scale Biosensor Physics Model}
+
+\subsection{Layer 2a: Wound Fluid Protease Network (ODE)}
+
+The wound fluid is not a simple solution of a single protease at a known
+concentration.  MMP-9 exists primarily as a pro-enzyme (pro-MMP-9) and
+requires activation; HNE is inhibited by $\alpha_1$-antitrypsin (A1AT)
+present in wound exudate.  The effective (active, uninhibited) enzyme
+concentration is what the biosensor actually measures.
+
+A system of ODEs models the wound fluid compartment:
+
+\begin{align}
+  \frac{d[\text{pro-MMP-9}]}{dt} &= k_\text{prod} - k_\text{act}[\text{plasmin}][\text{pro-MMP-9}] - k_\text{deg}[\text{pro-MMP-9}]\\[4pt]
+  \frac{d[\text{MMP-9}]}{dt}     &= k_\text{act}[\text{plasmin}][\text{pro-MMP-9}] - k_\text{inh}[\text{TIMP-1}][\text{MMP-9}] - k_\text{deg}[\text{MMP-9}]\\[4pt]
+  \frac{d[\text{HNE}]}{dt}       &= k_\text{rel} - k_\text{A1AT}[\text{A1AT}][\text{HNE}] - k_\text{deg}[\text{HNE}]
+\end{align}
+
+Parameters are taken from published kinetic studies (Lijnen 2001 for
+plasmin-MMP-9 activation; Werb 1997 for TIMP-1 inhibition;
+Travis \& Salvesen 1983 for A1AT-HNE).  The ODE system is solved at
+steady state for three wound conditions (healing, chronic non-healing,
+infected) using published wound fluid protein concentration ranges
+(Trengove 1999, Ladwig 2002, Watt 2009).
+
+\textbf{Output:} the predicted range of active [MMP-9] and [HNE] that
+the electrode surface actually encounters, for each wound state.
+This is the realistic input to Layer 2b, replacing the naive assumption
+that total and active enzyme concentrations are equal.
+
+\subsection{Layer 2b: Electrode Surface Kinetics}
+
+The peptide substrate from Pillar 1 is immobilised at the electrode
+surface at surface density $\Gamma$ (mol/cm$^2$).  When protease
+arrives by diffusion, cleavage follows Michaelis-Menten kinetics
+at the surface:
+
+\begin{equation}
+  \frac{d\Gamma_\text{cleaved}}{dt}
+  = \frac{k_{cat}\,[E]\,\Gamma}
+         {K_m + \Gamma / \delta}
+\end{equation}
+
+where $[E]$ is the free enzyme concentration from Layer 2a, $\delta$
+is the effective diffusion layer thickness (estimated from Cottrell
+equation for the electrode geometry), and $k_{cat}$, $K_m$ are
+taken from literature for the chosen substrate.
+
+A 1D diffusion-reaction PDE for the enzyme concentration profile
+near the electrode surface is solved numerically (finite difference,
+50-node spatial grid):
+
+\begin{equation}
+  \frac{\partial [E]}{\partial t}
+  = D_E \frac{\partial^2 [E]}{\partial x^2}
+  - \frac{k_{cat}\,[E]\,\Gamma}{K_m + [E]}
+\end{equation}
+
+\textbf{Sensitivity analysis:} $\Gamma$ and the linker length (which
+affects the pre-exponential electron transfer factor) are swept over
+physically realistic ranges to identify the surface density and linker
+length that maximise signal-to-noise at the clinically relevant
+protease concentrations identified in Layer 2a.  This directly
+informs electrode fabrication.
+
+\textbf{Predicted LOD:} the model outputs a predicted limit of detection
+for each wound state, expressed in nM of active enzyme.  This is a
+concrete, falsifiable prediction for wet lab to test.
+
+\subsection{Layer 2c: Deliverables}
+
+\begin{itemize}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item Steady-state active enzyme concentrations for three wound states
+    (healing, chronic, infected) with uncertainty ranges from parameter variation.
+  \item Optimal electrode surface density $\Gamma^*$ and linker length recommendation.
+  \item Predicted LOD (nM active enzyme) for MMP-9 and HNE channels.
+  \item Sensitivity analysis figures showing how LOD depends on $\Gamma$ and $k_{cat}$.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{How the Two Pillars Connect}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+  \toprule
+  Pillar 1 output & Pillar 2 input\\
+  \midrule
+  Novel substrate sequence (e.g.\ \seq{IPRTLTAA} or BO-generated) &
+    $k_{cat}$, $K_m$ for chosen sequence used in Layer 2b\\
+  Selectivity score (MMP-9 vs.\ HNE) &
+    Confirms the sequence is not a confound in the LOD model\\
+  PSSM score &
+    Biochemical plausibility check before LOD prediction\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+The narrative is linear and checkable: Pillar 1 picks the peptide;
+Pillar 2 predicts what signal that peptide will produce on the device
+at wound fluid protease concentrations.  Wet lab then measures both
+the cleavage efficiency of the peptide and the device signal.
+Two predictions, one experiment.
+
+% -----------------------------------------------------------------------
+\section{Open Question: Wet Lab Validation Form}
+
+\warn{This section requires confirmation from the wet lab team before
+the modelling plan is finalised.}
+
+The specific form of wet lab validation determines which model
+predictions are directly testable within the 3-week experimental
+window.  Two scenarios:
+
+\begin{enumerate}[topsep=2pt,itemsep=4pt,leftmargin=*]
+  \item \textbf{FRET cleavage assay on peptides}: measures
+    $k_{cat}/K_m$ for each candidate sequence.  Validates Pillar 1
+    directly (is the BO-generated sequence actually cleaved?).
+    Can be done on synthesised FRET peptides without a full device.
+  \item \textbf{Electrochemical measurements on functionalised
+    electrode}: measures device signal at known protease concentrations.
+    Validates Pillar 2 directly (does the LOD prediction match?).
+    Requires a working electrode and immobilised peptide.
+\end{enumerate}
+
+Ideally both are done; given 3 weeks, the FRET assay (scenario 1)
+is lower barrier and directly validates the highest-value output of
+the project (the novel substrate candidate).  The recommendation is to
+prioritise FRET validation of the top BO-generated sequence and one
+known positive control (\seq{IPRTLTAA}).
+
+% -----------------------------------------------------------------------
+\section{Summary}
+
+\begin{center}
+\small
+\begin{tabular}{llll}
+  \toprule
+  Component & Methods & Key output & Judging criterion\\
+  \midrule
+  ESM-2 fine-tuning      & Transfer learning, multi-task & Selectivity encoder & 01, 03\\
+  Attention analysis     & Integrated gradients          & Position importance maps & 02, 04\\
+  Latent BO              & GP + EHVI, BoTorch            & Novel substrate candidates & 01, 02\\
+  PSSM filter            & Log-odds (existing)           & Biochemical gate & 02, 03\\
+  Wound fluid ODE        & Nonlinear ODE system          & Active enzyme concentrations & 01, 02, 03\\
+  Electrode kinetics PDE & 1D diffusion-reaction         & Predicted LOD, optimal $\Gamma$ & 01, 02\\
+  Wet lab validation     & FRET / electrochemical (TBD)  & Experimental confirmation & 03\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+The project satisfies the Heidelberg 2025 gold standard: two concrete,
+falsifiable predictions (novel substrate from Pillar 1; LOD from Pillar 2)
+that wet lab tests before the wiki freeze.  The two-pillar structure
+gives judges a complete model story from molecular sequence design
+through to clinical signal output.
+
+\end{document}

@@ -1,0 +1,370 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2cm,top=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{1.4ex plus .2ex}{0.5ex}
+\titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
+
+\definecolor{accentblue}{rgb}{0.12,0.30,0.58}
+\definecolor{accentgold}{rgb}{0.72,0.42,0.06}
+\definecolor{boxblue}{rgb}{0.90,0.94,1.00}
+\definecolor{boxgold}{rgb}{1.00,0.96,0.86}
+\definecolor{highgreen}{rgb}{0.14,0.46,0.18}
+\definecolor{modamber}{rgb}{0.62,0.38,0.04}
+\definecolor{pipeblue}{rgb}{0.88,0.93,1.00}
+
+\newcommand{\seq}[1]{\texttt{#1}}
+\newcommand{\hi}[1]{\textcolor{highgreen}{\textbf{#1}}}
+\newcommand{\md}[1]{\textcolor{modamber}{\textbf{#1}}}
+\newcommand{\stage}[1]{\textcolor{accentblue}{\textbf{Stage #1}}}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries iGEM 2026: Modelling Directions Report}\\[4pt]
+  {\large ML/DL Strategy: ESM-2 Fine-tuning + Latent Bayesian Optimisation}\\[3pt]
+  {\small\color{gray} Eton / Dry Lab / Substrate Predictor}\\[1pt]
+  {\small\color{gray} Generative substrate design $\cdot$ Protein language models $\cdot$ Multi-objective optimisation}
+\end{center}
+
+\vspace{0.5em}\hrule\vspace{0.8em}
+
+% -----------------------------------------------------------------------
+\section{Executive Summary}
+
+This report proposes a two-stage machine learning pipeline for the iGEM 2026
+Best Model award.
+\textbf{Stage 1} fine-tunes the ESM-2 protein language model on MEROPS cleavage
+data as a supervised multi-task classifier, producing a selectivity-aware
+embedding space for MMP-9, MMP-8, and HNE.
+\textbf{Stage 2} uses that fine-tuned embedding space as the search space for
+multi-objective Bayesian optimisation, generating \emph{novel} 8-mer substrate
+candidates conditioned on a target selectivity profile.
+The top candidates are synthesised and validated experimentally by FRET cleavage
+assay, providing the model-driven experimental confirmation that iGEM judges
+reward above all other modelling criteria.
+
+A secondary application (a Bayesian wound state classifier mapping biosensor
+output to clinical wound state probability distributions) is described as an
+auxiliary contribution that completes the clinical narrative of the project.
+
+\medskip
+\begin{tcolorbox}[colback=boxblue,colframe=blue!40,boxrule=0.5pt]
+\textbf{Core pipeline}\\[4pt]
+\small
+\begin{tabular}{clll}
+  \toprule
+  Stage & Component & Method & Output\\
+  \midrule
+  1a & ESM-2 encoder   & Transfer learning from 650M-param PLM & Selectivity-tuned embeddings\\
+  1b & Attention analysis & Layer-wise relevance propagation & Position importance per protease\\
+  2a & GP surrogate    & Gaussian process in tuned latent space & Selectivity landscape\\
+  2b & BO loop         & EHVI multi-objective acquisition & Pareto-optimal novel sequences\\
+  2c & PSSM filter     & Existing biochemical scorer & Defensibility gate\\
+  3  & Wet lab         & FRET cleavage assay & Experimental confirmation\\
+  \bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------
+\section{Motivation and iGEM Judging Alignment}
+
+The 2026 judge handbook identifies four criteria for the Model special award:
+\begin{enumerate}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item How impressive is the modelling?
+  \item Did the model help the team understand a part, device, or system?
+  \item Were real measurements used to build or develop the model?
+  \item Does the approach provide a good example for others?
+\end{enumerate}
+
+The Heidelberg 2025 exemplar (newly added to the 2026 handbook) establishes the
+current gold standard: a multi-layer computational framework where each layer is
+presented with full mathematical derivations, explicit parameter tables, and
+stated assumptions; and crucially, \emph{the model predicted the optimal
+experimental condition, which wet lab then confirmed}.
+
+The pipeline proposed here satisfies all four criteria:
+
+\begin{itemize}[topsep=2pt,itemsep=2pt,leftmargin=*]
+  \item \textbf{Impressive}: protein language model fine-tuning + Bayesian
+    optimisation in learned latent space is active academic research
+    (BoTorch, ESM-2, EvoDiff lineage).
+  \item \textbf{Informs design}: the BO output is a concrete, testable sequence,
+    not a post-hoc rationalisation.  The model decides what to synthesise.
+  \item \textbf{Uses real measurements}: trained on MEROPS experimental cleavage
+    data; validated against FRET-measured $k_{cat}/K_m$.
+  \item \textbf{Reproducible}: full pipeline (fine-tuned weights, BO configuration,
+    PSSM filter) can be re-run on any protease panel.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{Stage 1: ESM-2 Fine-tuning as Selectivity-Aware Encoder}
+
+\subsection{Motivation}
+
+The current substrate predictor uses VHSE8 encoding: eight hand-crafted
+physicochemical descriptors per amino acid position, producing a 64-dimensional
+feature vector.  This is biologically motivated but limited; it encodes
+individual residue chemistry, not sequence context or evolutionary co-variation.
+
+ESM-2 (Lin et al.\ 2022; Meta AI) is a transformer protein language model
+pre-trained on $\sim$250 million UniRef sequences.  Its internal representations
+capture long-range residue interactions, conservation patterns, and functional
+site signatures learned from evolutionary data.  For 8-mer cleavage windows,
+ESM-2 provides a far richer feature space than hand-crafted descriptors.
+
+\subsection{Architecture}
+
+A frozen or partially unfrozen ESM-2 trunk (we use the 650M parameter variant,
+\seq{esm2\_t33\_650M\_UR50D}) serves as a shared encoder.  Three parallel linear
+classification heads sit on top, one per protease:
+
+\begin{equation}
+  h_k = \sigma\!\left(W_k \cdot \mathrm{ESM2}(x) + b_k\right),
+  \quad k \in \{\text{MMP-9},\;\text{MMP-8},\;\text{HNE}\}
+\end{equation}
+
+where $x$ is the 8-mer sequence, $\mathrm{ESM2}(x) \in \mathbb{R}^{1280}$ is the
+mean-pooled per-residue representation from the final transformer layer, $W_k$ and
+$b_k$ are task-specific weights, and $\sigma$ is the sigmoid function.
+
+Training objective: multi-task binary cross-entropy with class-balanced sampling,
+identical to the existing LR pipeline.  Fine-tuning proceeds in two phases:
+(i) head-only training with the ESM-2 trunk frozen (10 epochs); followed by
+(ii) full fine-tuning with a low learning rate applied to the trunk
+($10^{-5}$, discriminative learning rates per layer).  This prevents
+catastrophic forgetting while allowing the trunk to specialise.
+
+\subsection{Interpretability: Attention Analysis}
+
+Transformer attention maps from the fine-tuned model reveal which P-positions
+(P4--P1, P1'--P4') contribute most to each protease's classification.
+Layer-wise relevance propagation (LRP) or integrated gradients are applied
+to produce a per-position importance score $\alpha_{k,p}$ for protease $k$
+and position $p$.
+
+This analysis produces a directly testable prediction: if the model assigns
+high $\alpha_{\text{MMP-9},\,\text{P1}'}$ (position 5 in the 8-mer window),
+this independently confirms the known S1' pocket preference established by
+Kridel 2001.  Positions where model attention and biochemical literature
+disagree are prioritised for point-mutant synthesis and experimental follow-up.
+
+\subsection{Outputs of Stage 1}
+
+\begin{itemize}[topsep=2pt,itemsep=1pt,leftmargin=*]
+  \item \textbf{Fine-tuned ESM-2 weights}: a selectivity-tuned encoder where
+    the embedding space is explicitly shaped by protease cleavage data, not
+    just evolutionary statistics.
+  \item \textbf{Improved classification}: benchmarked against VHSE8 + LR
+    baseline with the same train/test split and bootstrap CI protocol.
+  \item \textbf{Attention importance maps}: per-position attribution per
+    protease, with comparison to literature biochemistry.
+  \item \textbf{Known-sequence validation}: \seq{IPRTLTAA} and \seq{AAPVSGIG}
+    should score high on the correct head and near-zero on the others; serves
+    as a sanity check on the fine-tuned model.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{Stage 2: Latent Bayesian Optimisation for Generative Design}
+
+\subsection{Why Bayesian Optimisation in the Fine-tuned Latent Space?}
+
+The fine-tuned ESM-2 embedding space is semantically structured: sequences with
+similar selectivity profiles cluster together, and the distance between embeddings
+correlates with differences in protease recognition.  Running BO in this space
+is more efficient than searching raw sequence space ($20^8 \approx 25$ billion
+possible 8-mers) because the surrogate model can leverage the continuous,
+differentiable geometry of the embedding manifold.
+
+\subsection{Surrogate Model}
+
+A Gaussian process (GP) with Mat\'{e}rn-5/2 kernel is trained on the MEROPS
+training set to map ESM-2 embeddings $z \in \mathbb{R}^{1280}$ to the
+three-dimensional selectivity vector $[s_{\text{MMP-9}},\; s_{\text{MMP-8}},\; s_{\text{HNE}}]$.
+The GP provides not just a point estimate but a posterior predictive distribution
+$p(s \mid z)$, which is the uncertainty signal the acquisition function exploits.
+
+For datasets of this size ($n \approx 1500$ total sequences), an exact GP is
+computationally tractable.  For larger runs, a sparse variational GP
+(SVGP with $m = 200$ inducing points) scales linearly.
+
+\subsection{Acquisition Function and Multi-objective Search}
+
+The optimisation objective is Pareto-front discovery over three conflicting
+objectives: maximise $s_{\text{MMP-9}}$, minimise $s_{\text{MMP-8}}$,
+minimise $s_{\text{HNE}}$.  The Expected Hypervolume Improvement (EHVI)
+acquisition function is used (as implemented in BoTorch):
+
+\begin{equation}
+  \alpha_{\mathrm{EHVI}}(z) =
+  \mathbb{E}\!\left[\mathrm{HVI}\!\left(
+    \{s_{\text{MMP-9}}(z),\, -s_{\text{MMP-8}}(z),\, -s_{\text{HNE}}(z)\}
+    \;\cup\; \mathcal{P}
+  \right)\right]
+\end{equation}
+
+where $\mathcal{P}$ is the current Pareto front.  The negative signs on
+MMP-8 and HNE convert the minimisation objectives to maximisation.
+The BO loop runs for 50 iterations; at each iteration the top 5 candidates
+by EHVI are decoded and scored with the PSSM filter.
+
+\subsection{Decoding Latent Candidates to Sequences}
+
+Candidates are proposed in continuous latent space and decoded to discrete
+sequences via nearest-neighbour lookup in the embedding space of a large
+(2M) background pool of random 8-mers scored by ESM-2.  Alternatively,
+a lightweight sequence decoder (3-layer MLP trained to invert the encoder)
+can be used for finer-grained sequence recovery.
+
+\subsection{PSSM Filter}
+
+Before any candidate proceeds to wet lab consideration, it must satisfy:
+\begin{itemize}[topsep=2pt,itemsep=0pt,leftmargin=*]
+  \item PSSM\textsubscript{target} $> 0$ (positive log-odds for the intended protease)
+  \item PSSM\textsubscript{off-target} $< 2$ for both non-target proteases
+\end{itemize}
+This gate applies the existing mechanistic scorer as a biochemical prior,
+making the combined pipeline more defensible than the DL model alone.
+It is also the bridge between the existing substrate predictor work and the
+new generative pipeline.
+
+\subsection{Positive Control and Validation Strategy}
+
+The positive control is built into the design: if BO rediscovers
+\seq{IPRTLTAA} or \seq{AAPVSGIG} (sequences already in the training set),
+the pipeline's end-to-end consistency is confirmed.  If it finds something
+better on the Pareto front, that is a genuine finding.
+
+Wet lab validation: synthesise the top 2--3 novel candidates as
+FRET-labelled peptides (Dabcyl/EDANS or TAMRA/QSY-7) and measure
+$k_{cat}/K_m$ for recombinant MMP-9 and HNE.  A generated sequence
+with higher $k_{cat}/K_m$ than the literature-derived \seq{IPRTLTAA}
+would constitute strong validation of the generative model.
+
+% -----------------------------------------------------------------------
+\section{Auxiliary: Bayesian Wound State Classifier}
+
+\subsection{Concept}
+
+The biosensor outputs a three-channel activity vector
+$[\text{MMP-9},\; \text{MMP-8},\; \text{HNE}]$.  A downstream
+Bayesian classifier maps this to a probability distribution over wound states:
+
+\begin{equation}
+  p(\text{state} \mid [\text{MMP-9},\text{MMP-8},\text{HNE}])
+  \quad\in\quad
+  \{\text{healing},\;\text{chronic},\;\text{infected},\;\text{acute}\}
+\end{equation}
+
+\subsection{Data}
+
+Published wound fluid protease measurements (Trengove 1999, Ladwig 2002,
+Muller 2008, Watt 2009) are curated and harmonised via z-score
+normalisation within study.  Total $n \approx 200$ patient samples
+across wound states.  A MC-Dropout ensemble trained on this dataset
+provides both the point prediction and an epistemic uncertainty estimate;
+for example: ``74\,\% probability chronic non-healing, high
+confidence'' vs ``53\,\% probability, low confidence: seek clinical review.''
+
+\subsection{Role in the Project}
+
+This classifier is framed as the clinical application layer rather than
+the centrepiece model: \emph{given} the biosensor works, here is how the
+output maps to actionable wound management decisions.  ROC curves and
+optimal decision thresholds per wound state constitute a clear deliverable
+that judges can evaluate.
+
+% -----------------------------------------------------------------------
+\section{Integration with Existing Substrate Predictor}
+
+The VHSE8 + logistic regression + PSSM pipeline selects from \emph{known}
+sequences in MEROPS.  The new pipeline \emph{designs} sequences outside the
+training distribution.  They are complementary, not redundant:
+
+\medskip
+\begin{center}
+\small
+\begin{tabular}{lll}
+  \toprule
+  Component & Role & Method\\
+  \midrule
+  VHSE8 + LR + PSSM (existing) & Selects from known substrates & Feature engineering + LR\\
+  ESM-2 fine-tuned (Stage 1)   & Richer selectivity encoder     & Transfer learning\\
+  GP surrogate (Stage 2)        & Selectivity landscape model    & Gaussian process\\
+  EHVI BO (Stage 2)             & Designs novel sequences        & Multi-objective BO\\
+  PSSM filter (bridge)          & Biochemical gate on BO output  & Log-odds filter (existing)\\
+  Wound classifier (auxiliary)  & Clinical decision support      & MC-Dropout ensemble\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+The PSSM filter is the explicit bridge: the existing mechanistic model
+acts as a biochemical sanity check on DL outputs, making the combined
+pipeline more defensible than either component alone.  The overall
+narrative is coherent: \emph{we built a selectivity predictor, upgraded
+it to a language model, then used it to design sequences we couldn't
+have found by hand.}
+
+% -----------------------------------------------------------------------
+\section{Mentor Requirements}
+
+This project requires a mentor with experience in at least one of:
+
+\begin{itemize}[topsep=2pt,itemsep=2pt,leftmargin=*]
+  \item \textbf{Protein sequence ML}: ESM-2 / protein language model fine-tuning,
+    ProteinMPNN, EvoDiff, or equivalent.  A lab working on de novo protein
+    or peptide design would be ideal.
+  \item \textbf{Bayesian optimisation for molecular design}: BoTorch, Dragonfly,
+    or GP-based molecular property optimisation.  Common in drug discovery
+    computational groups.
+  \item \textbf{Computational biology with ML focus}: any group applying deep
+    learning to genomics, proteomics, or synthetic biology.
+\end{itemize}
+
+The software stack (PyTorch, HuggingFace \texttt{esm}, BoTorch, GPyTorch)
+is well-documented and widely used; a mentor does not need to be an ESM-2
+specialist, but should be able to evaluate the modelling decisions critically.
+
+% -----------------------------------------------------------------------
+\section{Summary and Feasibility}
+
+\begin{center}
+\small
+\begin{tabular}{lccl}
+  \toprule
+  Milestone & Complexity & Timeline & Deliverable\\
+  \midrule
+  ESM-2 fine-tuning (Stage 1) & Medium & 3--4 weeks & Fine-tuned weights; AUROC vs LR baseline\\
+  Attention analysis          & Low    & 1 week     & Position importance maps per protease\\
+  GP surrogate training       & Medium & 1--2 weeks & Surrogate model; predictive uncertainty\\
+  BO loop + PSSM filter       & Medium & 2--3 weeks & Pareto front; top 5 novel candidates\\
+  Wet lab FRET validation     & High   & 4--6 weeks & $k_{cat}/K_m$ for generated sequences\\
+  Wound classifier (aux.)     & Low    & 1--2 weeks & ROC curves; decision thresholds\\
+  \midrule
+  \textbf{Total}              &        & \textbf{12--18 weeks} & Full Best Model submission\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+The single highest-risk component is wet lab FRET validation of the novel
+generated sequences.  This risk is managed by (i) the PSSM gate ensuring
+biochemical plausibility before synthesis, and (ii) the positive control
+(rediscovery of \seq{IPRTLTAA}) confirming end-to-end pipeline consistency
+before novel sequences are committed.  The computational components
+(Stages 1 and 2) are independently valuable and reportable even if wet
+lab validation is limited.
+
+\end{document}
