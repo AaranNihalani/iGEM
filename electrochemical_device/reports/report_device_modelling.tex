@@ -1,0 +1,590 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2cm,top=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.4ex plus .2ex}{0.5ex}
+\titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
+\titlespacing{\subsubsection}{0pt}{0.6ex}{0.2ex}
+
+\definecolor{highgreen}{rgb}{0.18,0.49,0.20}
+\definecolor{modamber}{rgb}{0.70,0.45,0.05}
+\definecolor{boxblue}{rgb}{0.91,0.95,1.00}
+\definecolor{boxgreen}{rgb}{0.88,0.97,0.88}
+\definecolor{boxgray}{rgb}{0.94,0.94,0.94}
+
+\newcommand{\seq}[1]{\texttt{#1}}
+\newcommand{\hi}[1]{\textcolor{highgreen}{\textbf{#1}}}
+\newcommand{\layer}[1]{\textbf{Layer~#1}}
+
+\setlength{\fboxsep}{7pt}
+\newsavebox{\infoboxcontent}
+\newenvironment{infobox}{%
+  \begin{lrbox}{\infoboxcontent}%
+  \begin{minipage}{0.965\textwidth}\vspace{0.25em}%
+}{%
+  \vspace{0.25em}\end{minipage}\end{lrbox}%
+  \par\vspace{0.45em}\noindent\colorbox{boxblue}{\usebox{\infoboxcontent}}\par\vspace{0.45em}%
+}
+\newsavebox{\eqboxcontent}
+\newenvironment{eqbox}{%
+  \begin{lrbox}{\eqboxcontent}%
+  \begin{minipage}{0.965\textwidth}\vspace{0.2em}%
+}{%
+  \vspace{0.2em}\end{minipage}\end{lrbox}%
+  \par\vspace{0.3em}\noindent\colorbox{boxgray}{\usebox{\eqboxcontent}}\par\vspace{0.3em}%
+}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries Electrochemical Device Modelling}\\[0.5em]
+{\large End-to-End Computational Model of the Multiplexed Wound Protease Cartridge}\\[0.3em]
+{\small\color{gray}Eton iGEM 2026 --- Dry Lab\\
+MMP-9 / HNE Ratiometric SWV Sensor}
+\end{center}
+\vspace{0.5em}\hrule\vspace{0.8em}
+
+\begin{infobox}
+\textbf{Scope and motivation.} There is no physical prototype of the electrochemical cartridge. Every physical process from wound-fluid biology through to the clinical readout number must be modelled mathematically and computationally. The chain is fully coupled: outputs of each layer feed as inputs to the next. The model must produce falsifiable, quantitative predictions (predicted signal $F_k$ vs known protease concentration) that can be validated against wet-lab calibration data, satisfying the iGEM gold criterion that models predict specific experimental outcomes that wet lab then confirms.
+
+This document enumerates every sub-component that requires explicit mathematical treatment across 16 modelling layers, with the governing equations, key parameters, and inter-layer coupling for each.
+\end{infobox}
+
+\section{Layer 0: Wound biology --- system input}
+
+The model input is the active concentration of MMP-9 and HNE in wound fluid at the time of sampling. These are not directly observable; they must be derived from the wound biochemical ODE system (Pillar 2, \texttt{report\_project\_proposal.tex}).
+
+\subsection{ODE system for protease activation}
+
+\begin{align}
+\frac{d[\text{proMMP-9}]}{dt} &= -k_{\text{act}} [\text{plasmin}][\text{proMMP-9}] + k_{\text{syn}} \\
+\frac{d[\text{MMP-9}]}{dt} &= k_{\text{act}} [\text{plasmin}][\text{proMMP-9}] - k_{\text{TIMP}} [\text{TIMP-1}][\text{MMP-9}] \\
+\frac{d[\text{HNE}]}{dt} &= k_{\text{rel}} - k_{\text{A1AT}} [\text{A1AT}][\text{HNE}]
+\end{align}
+
+Outputs: $[\text{MMP-9}]_\text{active}$ and $[\text{HNE}]_\text{active}$ as functions of wound state and time since debridement.
+
+\subsection{Environmental parameters}
+
+\begin{itemize}[noitemsep]
+\item \textbf{pH}: range 6.5--8.2 (chronic to acute). Affects enzyme $k_\text{cat}$ via pH-activity profile, formal potential $E^\circ_\text{MB}$ (shifts $-59\,\text{mV}/\text{pH}$ for the $2e^-/2H^+$ MB couple), and Debye screening.
+\item \textbf{Ionic strength} $I$: physiological $\approx 150\,\text{mM}$. Debye length $\lambda_D = \sqrt{\varepsilon\varepsilon_0 RT / (2F^2 I)} \approx 0.8\,\text{nm}$.
+\item \textbf{Temperature}: operating range $20$--$37^\circ$C. Every rate constant downstream is temperature-dependent.
+\item \textbf{Oxidative species}: $\text{H}_2\text{O}_2$, hypochlorite can oxidise the Cys--Au thiol bond. Model as first-order SAM degradation: $d\Gamma/dt|_\text{ox} = -k_\text{ox}[\text{ROS}]\Gamma$.
+\item \textbf{Matrix proteins}: albumin, fibrinogen contribute to non-specific adsorption (NSA) on gold. NSA fraction $\theta_\text{NSA}$ blocks probe-electrode area and increases baseline capacitance.
+\item \textbf{Interfering proteases}: cathepsins B/D/G, plasmin, urokinase. Each contributes off-target cleavage of the probe substrates with its own $k_\text{cat,j}$ and $K_{m,j}$ (from MEROPS). Must be included as additive cleavage terms.
+\end{itemize}
+
+\section{Layer 1: Sample collection and pre-analytical}
+
+\subsection{Swab absorption and elution}
+
+Let $V_\text{abs}$ = volume absorbed by swab ($20$--$200\,\mu\text{L}$), $\eta_\text{elut}$ = elution efficiency ($0.4$--$0.8$ for proteins, size-dependent).
+
+Concentration in eluate: $[E]_\text{eluate} = [E]_\text{wound} \times \eta_\text{elut}$.
+
+\subsection{Analyte stability during transit}
+
+First-order degradation from collection to assay (time $t_\text{transit}$):
+\begin{equation}
+[E]_\text{eluate}(t_\text{transit}) = [E]_\text{eluate}(0) \times \exp(-k_\text{deg} \, t_\text{transit})
+\end{equation}
+$k_\text{deg}$ from literature self-digestion rates or measured stability assay.
+
+\subsection{Net dilution into cartridge}
+
+\begin{equation}
+[E]_\text{chamber} = [E]_\text{wound} \times \eta_\text{elut} \times \exp(-k_\text{deg} t_\text{transit}) \times D_f
+\end{equation}
+where $D_f = V_\text{eluate} / V_\text{chamber}$ is the dilution factor.
+
+\section{Layer 2: Cartridge inlet and capillary fill}
+
+\subsection{Chamber geometry}
+
+Chamber dimensions: $20 \times 5\,\text{mm}$ footprint, height $h \in [0.25, 0.50]\,\text{mm}$. Volume $V = 100\,\text{mm}^2 \times h \approx 25$--$50\,\mu\text{L}$.
+
+\subsection{Capillary pressure and Lucas-Washburn fill}
+
+Capillary driving pressure across a rectangular channel ($h \ll w$):
+\begin{equation}
+\Delta P_\text{cap} = \gamma \cos\theta \left(\frac{1}{h} + \frac{1}{w}\right)
+\end{equation}
+where $\gamma$ is the sample surface tension ($\approx 72\,\text{mN/m}$ for aqueous, reduced by surfactants) and $\theta$ is the advancing contact angle (different for each surface: PDMS lid, gold floor, PETG walls).
+
+Fill front position $L(t)$ by the Lucas-Washburn equation:
+\begin{equation}
+\frac{dL}{dt} = \frac{h^2 \Delta P_\text{cap}}{3\eta L} \quad \Rightarrow \quad L(t) = \sqrt{\frac{h^2 \Delta P_\text{cap}}{3\eta} \cdot 2t}
+\end{equation}
+Fill fails if $\theta > 90^\circ$ on any surface (reverses $\Delta P_\text{cap}$).
+
+\subsection{Air venting}
+
+Without a vent, trapped air pressure rises as $L$ increases:
+\begin{equation}
+P_\text{air}(L) = P_\text{atm} \cdot \frac{L_\text{chamber}}{L_\text{chamber} - L}
+\end{equation}
+Fill stalls when $\Delta P_\text{cap} = P_\text{air}(L) - P_\text{atm}$. Maximum fill fraction without vent:
+\begin{equation}
+f_\text{max} = 1 - \frac{P_\text{atm}}{\Delta P_\text{cap} + P_\text{atm}}
+\end{equation}
+A vent membrane with gas permeability $P_\text{vent}$ must allow air escape at the same rate as sample advances.
+
+\subsection{Electrode exposure timing}
+
+Electrode at position $x_i$ from inlet is wetted at time $t_i$ when $L(t_i) = x_i$. For 30-min incubation: if $t_\text{fill}(x_8) - t_\text{fill}(x_1) \ll T_\text{incubation}$, all electrodes see effectively equal exposure. Quantify for chosen geometry.
+
+\section{Layer 3: Mass transport inside the chamber (incubation)}
+
+\subsection{Post-fill transport regime}
+
+After filling, the device is static. Transport is purely diffusive. Péclet number during incubation: $\text{Pe} = 0$ (no flow).
+
+Diffusion coefficients (Stokes-Einstein, $r$ = hydrodynamic radius):
+\begin{align}
+D_\text{MMP-9} &\approx \frac{k_B T}{6\pi\eta r_\text{MMP-9}} \approx 5\times10^{-11}\,\text{m}^2\text{s}^{-1} \quad (M_W = 92\,\text{kDa},\; r \approx 3.5\,\text{nm}) \\
+D_\text{HNE} &\approx 9\times10^{-11}\,\text{m}^2\text{s}^{-1} \quad (M_W = 30\,\text{kDa},\; r \approx 2.0\,\text{nm}) \\
+D_\text{frag} &\approx 3\times10^{-10}\,\text{m}^2\text{s}^{-1} \quad (\text{released MB peptide fragment, } M_W \approx 1\,\text{kDa})
+\end{align}
+
+\subsection{Vertical mixing time}
+
+$t_\text{mix} \approx h^2/(2D)$. For $h = 0.375\,\text{mm}$, MMP-9: $t_\text{mix} \approx 1400\,\text{s}$. The channel is \emph{not} well-mixed vertically during a 30-min incubation. A 1D diffusion PDE in the $z$-direction (perpendicular to the electrode) is required.
+
+\subsection{Coupled PDE-ODE system}
+
+Let $z \in [0, h]$ with $z=0$ at the electrode surface.
+
+\begin{align}
+\frac{\partial [E]}{\partial t} &= D_E \frac{\partial^2 [E]}{\partial z^2}, \quad z \in (0, h), \; t > 0 \label{eq:pde}\\
+[E](z, 0) &= [E]_\text{chamber} \quad \text{(initial condition)} \\
+\left. D_E \frac{\partial [E]}{\partial z}\right|_{z=0} &= \frac{k_\text{cat} [E](0,t) \,\Gamma}{K_{m,\text{surf}} + \Gamma} \quad \text{(Robin BC, flux to surface)} \label{eq:robin}\\
+\left. \frac{\partial [E]}{\partial z}\right|_{z=h} &= 0 \quad \text{(no-flux at lid)}
+\end{align}
+
+Equation~\eqref{eq:robin} couples the bulk PDE to the surface kinetics ODE (Layer~9).
+
+\subsection{Damk\"{o}hler number}
+
+\begin{equation}
+\text{Da} = \frac{k_\text{cat} \Gamma_0 / K_{m,\text{surf}}}{D_E [E]_0 / h^2}
+\end{equation}
+
+$\text{Da} \ll 1$: reaction-limited (desired). $\text{Da} \gg 1$: transport-limited (signal reports diffusion rate, not $k_\text{cat}/K_m$). Must verify Da $< 0.1$ at expected $\Gamma_0$ and $[E]_0$.
+
+\subsection{MB fragment clearance}
+
+Released fragment ($D_\text{frag} \approx 3\times10^{-10}\,\text{m}^2\text{s}^{-1}$) must diffuse away from the electrode before SWV measurement to prevent a bulk diffusion peak contaminating the surface-confined peak. Clearance time: $t_\text{clear} \approx \delta^2 / D_\text{frag}$ where $\delta$ is the Nernst diffusion layer thickness ($10$--$100\,\mu\text{m}$ for quiescent solution). For $\delta = 50\,\mu\text{m}$: $t_\text{clear} \approx 8\,\text{s}$.
+
+\subsection{Electrode cross-talk}
+
+Lateral diffusion of released MB fragment between adjacent electrodes (separation $d_\text{elec} \sim 2\,\text{mm}$): $t_\text{cross} \approx d_\text{elec}^2 / (2 D_\text{frag}) \approx 7000\,\text{s}$. Cross-talk negligible for $T_\text{incubation} < 30\,\text{min}$ provided $d_\text{elec} > 1\,\text{mm}$.
+
+\section{Layer 4: Gold electrode surface}
+
+\subsection{Electrochemical roughness factor}
+
+True electrode area $A_\text{true} = R_f \times A_\text{geo}$ where $R_f \approx 1.1$--$1.5$ for smooth evaporated gold. Measured by integrating the gold oxide stripping charge: $R_f = Q_\text{stripping} / (Q_\text{ref} \times A_\text{geo})$ where $Q_\text{ref} = 390\,\mu\text{C\,cm}^{-2}$.
+
+All surface densities $\Gamma$ are in units of $\text{mol}\,\text{cm}_\text{true}^{-2}$.
+
+\subsection{Thin-film and contact resistance}
+
+Gold trace resistance: $R_\text{Au} = \rho_\text{Au} L / (wt)$ where $\rho_\text{Au} = 2.4\times10^{-8}\,\Omega\,\text{m}$. For $L = 5\,\text{mm}$, $w = 0.5\,\text{mm}$, $t = 100\,\text{nm}$: $R_\text{Au} \approx 2.4\,\Omega$. Uncompensated resistance $R_u = R_\text{Au} + R_\text{contact} + R_s$.
+
+\section{Layer 5: Reference and counter electrodes}
+
+\subsection{On-chip Ag/AgCl reference}
+
+\begin{equation}
+E_\text{ref} = E^\circ_\text{AgCl/Ag} - \frac{RT}{F}\ln(a_{\text{Cl}^-})
+\end{equation}
+At $[\text{Cl}^-] = 110\,\text{mM}$ (wound fluid): $E_\text{ref} \approx +0.198\,\text{V}$ vs NHE $\approx -0.005\,\text{V}$ vs standard Ag/AgCl.
+
+Reference drift arises from Cl$^-$ depletion at the reference junction. Acceptable drift: $<5\,\text{mV}$ over 30-min assay to avoid measurable peak position shift. Model as: $\delta E_\text{ref}(t) = (RT/F) \times \delta \ln(a_\text{Cl}(t))$.
+
+\subsection{Counter electrode}
+
+CE must supply current to all WEs. Max SWV peak current per WE $\approx 100\,\text{nA}$; for 8 WEs: $I_\text{CE,max} \approx 800\,\text{nA}$. Require $A_\text{CE} > 10 \times A_\text{WE}$ (rule of thumb for non-limiting CE). Verify CE potential does not exceed $O_2$ evolution limit ($E > +0.97\,\text{V}$ vs Ag/AgCl) during anodic SWV half-cycles.
+
+\section{Layer 6: Electrical double layer and solution resistance}
+
+\subsection{Solution resistance}
+
+\begin{equation}
+R_s = \frac{\rho_\text{sol} \, d_\text{WE-RE}}{A_\text{cell}}, \quad \sigma_\text{wound} \approx 15\,\text{mS\,cm}^{-1}
+\end{equation}
+Uncompensated $iR$ drop during peak SWV current (100~nA): $\Delta E_{iR} = I_\text{peak} R_s \approx 3\,\mu\text{V}$ --- negligible. Verify for maximum expected current.
+
+\subsection{Double-layer capacitance}
+
+For SAM-modified gold: $C_\text{dl} \approx 1$--$5\,\mu\text{F\,cm}^{-2}$ (SAM acts as thin dielectric: $C_\text{dl} = \varepsilon_0 \varepsilon_\text{SAM}/d_\text{SAM}$). Capacitive background in SWV:
+\begin{equation}
+I_\text{cap} = 2 C_\text{dl} A \,\Delta E_\text{SW} f_\text{SWV}
+\end{equation}
+For $C_\text{dl} = 2\,\mu\text{F\,cm}^{-2}$, $A = 1\,\text{mm}^2$, $\Delta E_\text{SW} = 25\,\text{mV}$, $f = 60\,\text{Hz}$: $I_\text{cap} \approx 60\,\text{nA}$. Faradaic MB peak must be $> I_\text{cap}$ to be detectable; this sets the minimum useful $\Gamma$.
+
+\subsection{Debye screening and charged residues}
+
+$\lambda_D \approx 0.8\,\text{nm}$ at $I = 150\,\text{mM}$. Probe tether length ($\sim 5\,\text{nm}$) extends far beyond $\lambda_D$. For IPRTLTAA, the Arg residue (R, pKa 12.5) carries $+1$ charge at pH~7.4 and is exposed in the diffuse layer. Electrostatic repulsion from the negatively polarised electrode (at cathodic SWV potentials) may alter effective $d_\text{eff}$ and hence $k_{ET}$. AAPVSGIG has no charged residues; IPRTLTAA must account for electrostatic correction to $d_\text{eff}$.
+
+\section{Layer 7: SAM formation and composition}
+
+\subsection{Competitive thiol adsorption}
+
+Mixed SAM from probe-thiol (concentration $c_p$) and diluent-thiol (MCH or PEG-SH, concentration $c_d$). Equilibrium surface composition from competitive Langmuir:
+\begin{equation}
+\frac{\Gamma_p}{\Gamma_d} = \frac{c_p}{c_d} \cdot \frac{K_{a,p}}{K_{a,d}}
+\end{equation}
+Short diluents adsorb preferentially ($K_{a,d} > K_{a,p}$): surface is diluent-enriched relative to solution. Solution composition must be tuned to achieve target $\Gamma_p = 1$--$10\,\text{pmol\,cm}^{-2}$.
+
+\subsection{Phase separation}
+
+In mixed SAMs, thiols can phase-separate into nanoscale domains (5--20~nm diameter). Probe-rich domains create local steric crowding even at low mean $\Gamma_p$. Domain formation is kinetically controlled; slow deposition or annealing promotes mixing. Must assume homogeneous SAM or account for effective local crowding.
+
+\subsection{Edinburgh calcium artefact}
+
+PEG spacer chelates Ca$^{2+}$ with association constant $K_d \approx 1$--$10\,\text{mM}$ (literature for PEG-divalent cation complexes). At $[\text{Ca}^{2+}] = 1\,\text{mM}$ in wound fluid, occupied fraction $\theta_\text{Ca} = [\text{Ca}^{2+}] / (K_d + [\text{Ca}^{2+}])$. Complexed PEG contracts: effective change in MB-to-Au distance:
+\begin{equation}
+\Delta d_\text{Ca} = \Delta d_\text{max} \cdot \frac{[\text{Ca}^{2+}]}{K_d + [\text{Ca}^{2+}]}
+\end{equation}
+This modifies $k_{ET}$ (Layer~10). Since the scrambled control electrode uses identical PEG architecture, the Ca$^{2+}$ artefact is the same on active and control probes and cancels in $F_k = 1 - \rho_\text{active}/\rho_\text{control}$, \emph{provided} $\Gamma_p$ is the same on both electrodes.
+
+\subsection{Fc reference SAM}
+
+$C_6$-Fc-SH with diluent. Keep $\Gamma_\text{Fc} < 3\,\text{pmol\,cm}^{-2}$ to avoid Fc-Fc through-space electron hopping (which distorts the SWV peak to an asymmetric shape). Diagnostic: symmetric SWV Fc peak confirms isolated molecules.
+
+\section{Layer 8: Probe architecture and conformational dynamics}
+
+\subsection{Probe structure}
+
+HNE channel: Ac-Cys-[PEG$_{4/6}$]-\seq{AAPV$\downarrow$SGIG}-[PEG$_2$]-Lys(MB)-NH$_2$
+
+Contour lengths: PEG$_4 = 4 \times 0.36 = 1.44\,\text{nm}$; PEG$_6 = 2.16\,\text{nm}$; peptide (extended) $= 8 \times 0.35 = 2.8\,\text{nm}$; PEG$_2 = 0.72\,\text{nm}$. Total contour $L_c \approx 5.0$--$6.0\,\text{nm}$.
+
+\subsection{End-to-end distance distribution}
+
+Worm-like chain model (Kratky-Porod) with persistence length $l_p$:
+\begin{equation}
+\langle r^2 \rangle = 2 l_p L_c \left[1 - \frac{l_p}{L_c}\left(1 - e^{-L_c/l_p}\right)\right]
+\end{equation}
+For PEG: $l_p \approx 0.38\,\text{nm}$; for unstructured peptide: $l_p \approx 0.4$--$1.0\,\text{nm}$. The distribution of MB-to-Au distance $P(d)$ is broad. Because $k_{ET} \propto e^{-\beta d}$, the average ET rate:
+\begin{equation}
+\langle k_{ET}^0 \rangle = \int_0^\infty k_{ET}^{\max} e^{-\beta d} P(d)\, dd
+\end{equation}
+is dominated by the short-$d$ tail of $P(d)$. Must compute numerically using the WLC distance distribution.
+
+\subsection{Steric accessibility}
+
+Maximum surface coverage allowing enzyme access: $\Gamma_\text{steric,max} \approx 1/(\pi r_E^2)$ where $r_E$ is the enzyme radius. For MMP-9 ($r_E \approx 2.5\,\text{nm}$): $\Gamma_\text{steric,max} \approx 5\,\text{pmol\,cm}^{-2}$. Keep $\Gamma_p < \Gamma_\text{steric,max}$.
+
+\subsection{Post-cleavage state}
+
+Cleavage at \seq{AAPV$\downarrow$SGIG}: remaining stub on surface is Ac-Cys-PEG$_{4/6}$-\seq{AAPV} (no MB). Released fragment \seq{SGIG}-PEG$_2$-Lys(MB)-NH$_2$ diffuses away. Only intact probes ($\Gamma_\text{intact} = \Gamma_0 - \Gamma_\text{cleaved}$) contribute to the MB SWV peak.
+
+\section{Layer 9: Enzyme kinetics on the surface}
+
+\subsection{Surface Michaelis-Menten}
+
+\begin{equation}
+\frac{d\Gamma}{dt} = -\frac{k_\text{cat} [E]_\text{surface} \, \Gamma}{K_{m,\text{surf}} + \Gamma}
+\end{equation}
+where $[E]_\text{surface} = [E](z=0,t)$ from the Layer~3 PDE, and $K_{m,\text{surf}} = K_{m,\text{sol}} / f_\text{steric}$ with steric correction factor $f_\text{steric} = \Gamma_\text{steric,max} / (\Gamma_\text{steric,max} + \Gamma_p)$ (effectively $K_{m,\text{surf}} > K_{m,\text{sol}}$ due to reduced accessibility).
+
+\subsection{First-order limit}
+
+When $\Gamma \ll K_{m,\text{surf}}$:
+\begin{equation}
+\frac{d\Gamma}{dt} \approx -\frac{k_\text{cat}}{K_{m,\text{surf}}} [E]_\text{surface} \Gamma
+\end{equation}
+Solution (if $[E]_\text{surface} \approx \text{const}$): $\Gamma(t) = \Gamma_0 \exp(-k_\text{obs} t)$ where $k_\text{obs} = (k_\text{cat}/K_{m,\text{surf}}) [E]$. This is the regime where the assay measures $k_\text{cat}/K_m$.
+
+\subsection{Multi-protease competition}
+
+\begin{equation}
+\frac{d\Gamma}{dt} = -\sum_j \frac{k_{\text{cat},j} [E_j]_\text{surface} \,\Gamma}{K_{m,\text{surf},j} + \Gamma}
+\end{equation}
+Each interfering protease $j$ (cathepsins, plasmin, etc.) contributes additional cleavage. Off-target contribution to $F_k$ from protease $j$: $\delta F_k \approx (k_{\text{cat},j}/K_{m,\text{surf},j}) [E_j] T$ at early times.
+
+\section{Layer 10: Marcus-theory electron transfer}
+
+\subsection{Standard ET rate}
+
+\begin{equation}
+k_{ET}^0(d) = A \exp(-\beta d) \exp\!\left(-\frac{\lambda}{4RT}\right)
+\end{equation}
+where $\beta \approx 1.0\,\text{\AA}^{-1}$ (flexible organic tether), $\lambda \approx 0.3$--$0.5\,\text{eV}$ (MB reorganisation energy), $A \approx 10^{12}$--$10^{13}\,\text{s}^{-1}$.
+
+For $d = 3\,\text{nm}$: $k_{ET}^0 \approx 10^{13} \times e^{-30} \approx 10\,\text{s}^{-1}$. Measurable in SWV at $f \sim k_{ET}^0/(2\pi) \approx 2\,\text{Hz}$; increase $f$ to 60~Hz to operate in quasi-reversible regime for a shorter effective tether.
+
+\subsection{Butler-Volmer potential dependence}
+
+\begin{align}
+k_f(\eta) &= k_{ET}^0 \exp\!\left(-\frac{\alpha F \eta}{RT}\right) \quad \text{(cathodic, reduces MB)} \\
+k_b(\eta) &= k_{ET}^0 \exp\!\left(\frac{(1-\alpha) F \eta}{RT}\right) \quad \text{(anodic, oxidises MB)}
+\end{align}
+where $\eta = E_\text{applied} - E^\circ_\text{MB}$ and $\alpha \approx 0.5$.
+
+\subsection{Formal potential pH correction}
+
+$E^\circ_\text{MB} \approx -0.25\,\text{V}$ vs Ag/AgCl at pH~7.0. pH dependence:
+\begin{equation}
+E^\circ_\text{MB}(\text{pH}) = E^\circ_\text{MB}(7.0) - 0.059(\text{pH} - 7.0)\,\text{V}
+\end{equation}
+At wound pH 6.5: $E^\circ_\text{MB} \approx -0.22\,\text{V}$; at pH 8.0: $E^\circ_\text{MB} \approx -0.34\,\text{V}$. A 120~mV shift across the operating range; must include pH correction in peak fitting.
+
+\subsection{Calcium artefact correction to $d_\text{eff}$}
+
+From Layer~7: $\Delta d_\text{Ca} = \Delta d_\text{max} \times [\text{Ca}^{2+}]/(K_d + [\text{Ca}^{2+}])$. Modified ET rate:
+\begin{equation}
+k_{ET}^{0,\text{Ca}} = k_{ET}^0(d_0) \times \exp(\beta \Delta d_\text{Ca})
+\end{equation}
+Cancels in ratiometric $F_k$ provided both electrodes have identical PEG architecture and $\Gamma_p$.
+
+\subsection{Temperature correction}
+
+Through Marcus theory: $k_{ET}^0 \propto T^{1/2} \exp(-\lambda/(4k_BT))$. For a $15^\circ$C temperature range: $k_{ET}^0$ can vary by a factor of 2--3. Include temperature as explicit parameter; ratiometric design partially corrects if temperature is uniform across the chip.
+
+\section{Layer 11: SWV forward model}
+
+\subsection{SWV waveform}
+
+Square-wave voltammetry superimposes a symmetric square-wave (amplitude $\Delta E_\text{SW}$, frequency $f_\text{SWV}$) on a staircase ramp (step $\Delta E_\text{step}$). Net current: $\Delta I_n = I_\text{forward,n} - I_\text{backward,n}$ at each step.
+
+\subsection{Dimensionless kinetic parameter}
+
+\begin{equation}
+\kappa_\text{SW} = \frac{k_{ET}^0}{f_\text{SWV}} \cdot \frac{RT}{nF}
+\end{equation}
+Regimes: $\kappa_\text{SW} \gg 1$ (reversible, peak height $\propto \Gamma$, independent of $k_{ET}^0$); $\kappa_\text{SW} \approx 1$ (quasi-reversible, optimal); $\kappa_\text{SW} \ll 1$ (totally irreversible, peak flattens). Set $f_\text{SWV}$ to achieve $\kappa_\text{SW} \approx 1$ for the MB probe.
+
+\subsection{Numerical forward model}
+
+At each potential step $n$ with overpotential $\eta_n$, solve Butler-Volmer for surface coverage over one half-cycle ($\Delta t = 1/(2f_\text{SWV})$):
+
+\begin{align}
+\frac{d\Gamma_\text{ox}}{dt} &= k_b(\eta_n) \Gamma_\text{red} - k_f(\eta_n) \Gamma_\text{ox} \\
+\Gamma_\text{red} &= \Gamma_\text{intact} - \Gamma_\text{ox}
+\end{align}
+
+Net current per step: $\Delta I_n = nF A_\text{true} (d\Gamma_\text{ox}/dt|_\text{forward} - d\Gamma_\text{ox}/dt|_\text{backward})$.
+
+\subsection{Approximate peak current}
+
+For the quasi-reversible surface case:
+\begin{equation}
+I_\text{peak,MB} \approx \frac{n^2 F^2 A_\text{true} \Gamma_\text{intact} k_{ET}^0 \Delta E_\text{SW}}{4RT}
+\end{equation}
+
+\subsection{MB and Fc peak separation}
+
+$\Delta E^\circ = E^\circ_\text{Fc} - E^\circ_\text{MB} = +0.45 - (-0.25) = 0.70\,\text{V}$. Peak FWHM for reversible surface wave: $\text{FWHM} = 5.56 RT/(nF) \approx 65\,\text{mV}$ ($n=2$, MB) and $131\,\text{mV}$ ($n=1$, Fc). Sum of half-widths $\ll 0.7\,\text{V}$: peaks are well-resolved. Verify numerically for quasi-reversible case.
+
+\subsection{Parameter optimisation}
+
+Sweep $(f_\text{SWV}, \Delta E_\text{SW}, \Delta E_\text{step})$ to maximise the ratio $I_\text{peak,MB} / I_\text{cap}$. Recommended starting point: $f = 60\,\text{Hz}$, $\Delta E_\text{SW} = 25\,\text{mV}$, $\Delta E_\text{step} = 2\,\text{mV}$. Scan window: $-0.65$ to $+0.65\,\text{V}$ vs Ag/AgCl.
+
+\subsection{Frequency diagnostic}
+
+If measured $I_\text{peak} \propto f^{0.5}$: diffusion-controlled (non-tethered MB in solution is dominating --- wrong regime). If $I_\text{peak} \propto f^1$ (at low $f$) or plateaus (at high $f$): surface-confined, correct. Must verify.
+
+\section{Layer 12: SWV peak extraction and signal processing}
+
+\subsection{Raw data processing}
+
+Typical scan: $(\Delta E_\text{total}/\Delta E_\text{step}) \approx 650$ points. Steps:
+\begin{enumerate}[noitemsep]
+\item Savitzky-Golay smoothing (window = 11 pts, 3rd-order polynomial) to reduce high-frequency noise while preserving peak shape.
+\item Cubic spline baseline through non-peak windows (e.g., $-0.65$ to $-0.45\,\text{V}$ and $-0.05$ to $+0.25\,\text{V}$ for MB channel).
+\item Gaussian peak fit: $\Delta I(E) = A_\text{peak} \exp[-(E - E_p)^2/(2\sigma_E^2)]$ with parameters $(A_\text{peak}, E_p, \sigma_E)$ fitted by nonlinear least squares.
+\item Peak area: $\mathcal{A} = A_\text{peak} \sigma_E \sqrt{2\pi}$ (integrated area is more robust to $k_{ET}$-frequency mismatch than peak height).
+\end{enumerate}
+
+\subsection{Quality diagnostics per scan}
+
+\begin{itemize}[noitemsep]
+\item Peak width $\sigma_E > 2\times$ expected ($> 65\,\text{mV}$ for MB): SAM heterogeneous or measurement error; flag.
+\item Peak position shift $|\delta E_p| > 5\,\text{mV}$ from scan to scan: reference drift or SAM degradation; flag.
+\item Fit residuals $> 3\sigma$: two-population MB (heterogeneous tether lengths) or non-Gaussian artifact; fit with two-Gaussian model.
+\end{itemize}
+
+\section{Layer 13: Ratiometric signal and error propagation}
+
+\subsection{Signal definitions}
+
+For electrode $i$ at time $T$, using peak areas $\mathcal{A}_\text{MB}$ and $\mathcal{A}_\text{Fc}$:
+\begin{equation}
+R_i(T) = \frac{\mathcal{A}_{\text{MB},i}(T)}{\mathcal{A}_{\text{Fc},i}(T)}, \qquad
+\rho_i = \frac{R_i(T)}{R_i(0)}, \qquad
+F_k = 1 - \frac{\rho_\text{active,k}}{\rho_\text{control,k}}
+\end{equation}
+\begin{equation}
+\kappa_k = -\frac{\ln(1-F_k)}{T}
+\end{equation}
+
+\subsection{Error propagation}
+
+\begin{align}
+\frac{\sigma_{R}}{R} &= \sqrt{\left(\frac{\sigma_\text{MB}}{\mathcal{A}_\text{MB}}\right)^2 + \left(\frac{\sigma_\text{Fc}}{\mathcal{A}_\text{Fc}}\right)^2} \\[4pt]
+\frac{\sigma_{\rho}}{\rho} &= \sqrt{2} \cdot \frac{\sigma_R}{R} \quad \text{(equal variance for $R(0)$ and $R(T)$)} \\[4pt]
+\sigma_F &= \frac{\rho_a}{\rho_c} \sqrt{\left(\frac{\sigma_{\rho_a}}{\rho_a}\right)^2 + \left(\frac{\sigma_{\rho_c}}{\rho_c}\right)^2} \\[4pt]
+\sigma_{\kappa} &= \frac{\sigma_F}{(1-F_k) T}
+\end{align}
+
+Note: $\sigma_\kappa$ diverges as $F_k \to 1$, setting the upper dynamic range ceiling.
+
+\subsection{Dynamic range}
+
+Useful range: $F_k \in [3\sigma_F, \; 0.90]$, corresponding to:
+\begin{equation}
+\kappa_k \in \left[\frac{3\sigma_F}{T},\; \frac{2.3}{T}\right]
+\end{equation}
+
+\subsection{Fouling cancellation and its limits}
+
+The double-ratio $F_k$ cancels fouling that affects $\mathcal{A}_\text{MB}$ equally on active and control probes. This holds if: (a) fouling is a bulk matrix effect (protein adsorption); (b) both electrodes have identical SAM diluent composition. If fouling is sequence-specific (albumin preferentially adsorbs to one peptide sequence), cancellation is incomplete. This assumption must be tested in the calibration experiment.
+
+\section{Layer 14: Electronics and potentiostat noise budget}
+
+\subsection{TIA gain selection}
+
+Max expected current (all WEs, including capacitive): $I_\text{max} \approx 200\,\text{nA}$ per WE. For output voltage $<1\,\text{V}$: $R_f < 5\,\text{M}\Omega$. Choose $R_f = 100\,\text{k}\Omega$ (safety factor 10; noise scales as $1/\sqrt{R_f}$).
+
+\subsection{Noise sources}
+
+\begin{align}
+i_\text{Johnson} &= \sqrt{\frac{4k_BT \cdot \text{BW}}{R_f}} \approx 4\,\text{pA} \quad (R_f = 100\,\text{k}\Omega,\; \text{BW}=100\,\text{Hz}) \\
+i_\text{shot} &= \sqrt{2eI_\text{DC}\,\text{BW}} \approx 44\,\text{fA} \quad (I_\text{DC} = 60\,\text{nA}) \\
+i_\text{ADC} &= \frac{I_\text{range}}{2^N \sqrt{12}} \approx 2\,\text{fA} \quad (N=24\,\text{bit},\; I_\text{range} = 100\,\text{nA})
+\end{align}
+
+Total: $i_\text{total} \approx i_\text{Johnson} \approx 4\,\text{pA/Hz}^{1/2}$. Dominant noise source is Johnson noise in $R_f$.
+
+\subsection{Multiplexer settling}
+
+After switching WE: settling time $\tau = (R_\text{mux} + R_s) C_\text{dl} A \approx 33\,\Omega \times 2\,\text{nF} = 66\,\text{ns}$. Negligible vs SWV half-period of $8\,\text{ms}$.
+
+\subsection{Mains interference}
+
+50~Hz (EU mains) is close to SWV frequency $f = 60\,\text{Hz}$. Beating frequency $|60-50| = 10\,\text{Hz}$ creates slow modulation of the SWV baseline. Mitigation: shielded enclosure; or set $f_\text{SWV} = 50\,\text{Hz}$ synchronised to mains; or $f_\text{SWV} \gg 100\,\text{Hz}$ with appropriate $\kappa_\text{SW}$ adjustment.
+
+\subsection{Required SNR}
+
+To resolve $F_\text{LOD} = 5\%$: require $\sigma_F < 1.7\%$. With $\mathcal{A}_\text{MB} \approx 1\,\text{pA}\cdot\text{V}$ and $\sigma_\mathcal{A} \approx 0.4\,\text{fA}\cdot\text{V}$ (from $i_\text{Johnson}$ integrated over $\sim 50$ SWV points): $\sigma_\mathcal{A}/\mathcal{A} \approx 0.04\%$. Full propagation through $R \to \rho \to F$ gives $\sigma_F \approx 0.06\%$ --- well below the 1.7\% target.
+
+\section{Layer 15: Calibration curve and limit of detection}
+
+\subsection{Calibration model}
+
+In the first-order regime ($F_k \ll 1$):
+\begin{equation}
+F_k \approx \frac{k_\text{cat}}{K_{m,\text{surf}}} [E]_\text{chamber} \, T
+\end{equation}
+Linear in $[E]$; slope $= (k_\text{cat}/K_{m,\text{surf}}) \times T$ (from pES-01 to pES-08 wet lab + steric correction).
+
+\subsection{LOD and LLOQ}
+
+\begin{equation}
+\text{LOD} = \frac{3\sigma_\text{blank}}{dF_k/d[E]}, \qquad \text{LLOQ} = \frac{10\sigma_\text{blank}}{dF_k/d[E]}
+\end{equation}
+
+Expected: with $\sigma_F \approx 1\%$ and slope $\approx (10^4\,\text{M}^{-1}\text{s}^{-1}) \times 1800\,\text{s} = 1.8\times10^7\,\text{M}^{-1}$:
+\begin{equation}
+\text{LOD} \approx \frac{0.03}{1.8\times10^7} \approx 1.7\,\text{nM}
+\end{equation}
+Clinical MMP-9 range in wound fluid: 1--100~nM. Target LOD $< 1\,\text{nM}$ after optimisation.
+
+\subsection{Two-channel deconvolution}
+
+Observed signal vector: $\mathbf{F} = [F_\text{MMP9}, F_\text{HNE}]^\top$. Sensitivity matrix:
+\begin{equation}
+\mathbf{F} = \mathbf{S} \cdot \mathbf{c}, \qquad \mathbf{S} = \begin{pmatrix} S_{11} & S_{12} \\ S_{21} & S_{22} \end{pmatrix}
+\end{equation}
+where $S_{ij} = dF_{\text{ch},i}/d[E_j]$ (on-diagonal: specific; off-diagonal: cross-sensitivity). Estimated concentrations:
+\begin{equation}
+\hat{\mathbf{c}} = \mathbf{S}^{-1} \mathbf{F}, \qquad \sigma_{\hat{c}} = \mathbf{S}^{-1} \sigma_\mathbf{F}
+\end{equation}
+
+Condition number $\kappa(\mathbf{S}) = \|\mathbf{S}\| \cdot \|\mathbf{S}^{-1}\|$ quantifies deconvolution noise amplification. Target: $\kappa(\mathbf{S}) < 30$ (same criterion as Panel A/B substrate selectivity). This directly links the substrate design dry-lab work to the device model: IPRTLTAA and AAPVSGIG were selected to minimise off-diagonal elements of $\mathbf{S}$, keeping $\kappa(\mathbf{S})$ low.
+
+\section{Layer 16: Full chain integration and falsifiable predictions}
+
+\subsection{Forward simulation chain}
+
+Given inputs $([E]_\text{MMP-9,wound},\; [E]_\text{HNE,wound},\; T,\; \text{pH},\; [\text{Ca}^{2+}],\; T_\text{amb})$:
+\begin{enumerate}[noitemsep]
+\item Layer 0: ODE $\to$ active fractions at time of sampling
+\item Layers 1--2: dilution chain $\to [E]_\text{chamber}$
+\item Layer 3: PDE (discretised, $N_z = 50$ grid points) $\to [E](z=0, t)$
+\item Layer 7: competitive Langmuir $\to \Gamma_p,\; \Gamma_d$
+\item Layer 8: WLC model $\to P(d) \to \langle k_{ET}^0\rangle$; steric factor
+\item Layer 9: surface MM ODE (coupled to PDE) $\to \Gamma_\text{intact}(t)$
+\item Layer 10: Marcus, pH, Ca$^{2+}$, temperature corrections $\to k_{ET,\text{eff}}^0$
+\item Layer 11: SWV numerical model $\to \mathcal{A}_\text{MB}(T),\; \mathcal{A}_\text{Fc}(T)$
+\item Layers 12--13: peak extraction, $R, \rho, F_k, \kappa_k$
+\item Layer 14: add instrument noise
+\item Layer 15: calibration lookup $\to \hat{[E]}_\text{MMP-9}, \hat{[E]}_\text{HNE}$
+\end{enumerate}
+
+\subsection{Falsifiable outputs}
+
+\begin{itemize}[noitemsep]
+\item Predicted $F_k(T)$ vs measured $F_k(T)$ from calibration experiment in wound-fluid matrix.
+\item Predicted LOD vs measured LOD.
+\item Predicted $\kappa(\mathbf{S})$ vs measured cross-sensitivity (iGEM gold criterion: model predicts, wet lab confirms).
+\item Predicted Damk\"{o}hler number regime vs observed $F_k$ frequency dependence on $[E]$.
+\end{itemize}
+
+\subsection{Global sensitivity analysis}
+
+Sobol variance decomposition (SALib) over all uncertain parameters to identify which layer contributes most variance to $\sigma_{F_k}$. Expected dominant parameters: $\Gamma_p$ (SAM), $k_\text{cat}/K_{m,\text{surf}}$ (wet lab), $d_\text{eff}$ (conformational model). Results will direct where to invest experimental effort to tighten the model.
+
+\section{Literature parameters required}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\linewidth}{lllX}
+\toprule
+Parameter & Symbol & Value & Source \\
+\midrule
+MMP-9 diffusion coefficient & $D_\text{MMP-9}$ & $\sim5\times10^{-11}\,\text{m}^2\text{s}^{-1}$ & Stokes-Einstein / experimental \\
+HNE diffusion coefficient & $D_\text{HNE}$ & $\sim9\times10^{-11}\,\text{m}^2\text{s}^{-1}$ & Stokes-Einstein / experimental \\
+Tunnelling decay constant & $\beta$ & $\sim1.0\,\text{\AA}^{-1}$ & Smalley et al. 2003 \\
+MB reorganisation energy & $\lambda$ & $0.3$--$0.5\,\text{eV}$ & Pheeney and Barton 2012 \\
+MB formal potential & $E^\circ_\text{MB}$ & $-0.25\,\text{V}$ (pH 7) & Kelley et al. 1997 \\
+Fc formal potential & $E^\circ_\text{Fc}$ & $+0.45\,\text{V}$ & Nowicka et al. \\
+SAM double-layer capacitance & $C_\text{dl}$ & $1$--$5\,\mu\text{F\,cm}^{-2}$ & Campuzano et al. \\
+Optimal probe surface coverage & $\Gamma_p$ & $1$--$10\,\text{pmol\,cm}^{-2}$ & Lubin and Plaxco 2010 \\
+PEG persistence length & $l_p$ & $\sim0.38\,\text{nm}$ & Oesterhelt et al. 1999 \\
+Gold roughness factor & $R_f$ & $1.1$--$1.5$ & Electrochemical literature \\
+Wound fluid $[\text{Ca}^{2+}]$ & --- & $1$--$2\,\text{mM}$ & Gethin et al. \\
+Wound fluid pH range & --- & $6.5$--$8.2$ & Gethin et al. \\
+$k_\text{cat}/K_m$ MMP-9 on IPRTLTAA & --- & from pES & pES-01 to pES-08 wet lab \\
+$k_\text{cat}/K_m$ HNE on AAPVSGIG & --- & from pES & pES-01 to pES-08 wet lab \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Implementation plan}
+
+\begin{enumerate}[noitemsep]
+\item \textbf{Layer 3 + 9}: implement coupled PDE-ODE in \texttt{models/03\_fluidics/} and \texttt{models/05\_surface\_kinetics/} (Python, \texttt{scipy.integrate}). These are the critical kinetic layers.
+\item \textbf{Layer 11}: implement SWV numerical forward model in \texttt{models/07\_swv\_forward/}. This is the single most important modelling component.
+\item \textbf{Layer 8}: implement WLC distance distribution and compute $\langle k_{ET}^0\rangle$ in \texttt{models/06\_electron\_transfer/}.
+\item \textbf{Layers 7, 14, 15}: SAM composition model, noise budget, calibration in their respective folders.
+\item \textbf{Layer 16}: chain all layers into a single forward simulation in \texttt{models/16\_forward\_chain/forward\_chain.py}.
+\item \textbf{Sensitivity analysis}: SALib Sobol in \texttt{models/16\_forward\_chain/sensitivity.py}.
+\item Populate \texttt{data/literature\_parameters/} with structured CSV of all numeric parameters and DOI sources before implementing any layer.
+\end{enumerate}
+
+\end{document}

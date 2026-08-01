@@ -275,31 +275,72 @@ the cleavage efficiency of the peptide and the device signal.
 Two predictions, one experiment.
 
 % -----------------------------------------------------------------------
-\section{Open Question: Wet Lab Validation Form}
+\section{Model--Wet Lab Integration}
 
-\warn{This section requires confirmation from the wet lab team before
-the modelling plan is finalised.}
+The wet lab experimental plan (constructs pES-01 through pES-08) produces
+three categories of data that feed directly into the model.  This section
+describes each integration point explicitly, because model-driven experimental
+design is the primary criterion that separates award-winning iGEM models from
+decorative ones.
 
-The specific form of wet lab validation determines which model
-predictions are directly testable within the 3-week experimental
-window.  Two scenarios:
+\subsection{Integration Point 1: Cross-reactivity Matrix and Condition Number $\kappa$}
 
-\begin{enumerate}[topsep=2pt,itemsep=4pt,leftmargin=*]
-  \item \textbf{FRET cleavage assay on peptides}: measures
-    $k_{cat}/K_m$ for each candidate sequence.  Validates Pillar 1
-    directly (is the BO-generated sequence actually cleaved?).
-    Can be done on synthesised FRET peptides without a full device.
-  \item \textbf{Electrochemical measurements on functionalised
-    electrode}: measures device signal at known protease concentrations.
-    Validates Pillar 2 directly (does the LOD prediction match?).
-    Requires a working electrode and immobilised peptide.
-\end{enumerate}
+The wet lab runs every construct against every protease (MMP-9, HNE, LasB / thermolysin,
+TEV) and assembles a normalised cross-reactivity matrix.
+\textbf{The dry lab set $\kappa < 30$ as the separability threshold for this matrix.}
+This is a model-derived criterion: the model analysed the predicted selectivity
+profiles of the substrates and determined that a condition number below 30
+indicates the two channels are sufficiently independent to be resolved in a
+multi-protease wound environment.
 
-Ideally both are done; given 3 weeks, the FRET assay (scenario 1)
-is lower barrier and directly validates the highest-value output of
-the project (the novel substrate candidate).  The recommendation is to
-prioritise FRET validation of the top BO-generated sequence and one
-known positive control (\seq{IPRTLTAA}).
+The wet lab experiment then measures the actual $\kappa$.  If $\kappa < 30$,
+the model-driven substrate selection is confirmed.  If $\kappa \geq 30$, the
+model re-runs with the empirical cross-reactivity values as hard constraints
+and proposes a revised substrate pair.  This is a direct Heidelberg-style
+prediction-confirmation loop, using a named, quantitative criterion.
+
+\subsection{Integration Point 2: $k_{cat}/K_m$ Feeds into Pillar 2}
+
+The enzyme titration protocol (substrate held below $K_M$, five enzyme
+concentrations spanning two log units, three replicates, initial rates below
+20\% conversion) produces apparent $k_{cat}/K_m$ in M$^{-1}$s$^{-1}$ for
+each construct-protease pair.  This is the primary kinetic parameter in the
+Pillar 2 electrode surface PDE.
+
+The integration runs in two steps.  First, the Pillar 2 model predicts LOD
+using literature $k_{cat}/K_m$ values before wet lab runs.  Second, once
+the enzyme titration data are in, the model re-runs with the measured values
+and produces an updated LOD prediction.  The difference between the two runs
+quantifies how far literature values diverge from the actual constructs, which
+is itself a reportable finding.  The final LOD prediction is therefore
+grounded in the team's own experimental kinetics, not literature alone.
+
+\subsection{Integration Point 3: Substrate Ranking Across pES-01 to pES-08}
+
+Pillar 1 ranks the substrate sequences in pES-01 through pES-08 by predicted
+MMP-9 selectivity and HNE selectivity before wet lab runs.
+The Ni-NTA depletion assay (load cleavage reaction onto nickel spin column,
+measure sfGFP fluorescence in flow-through vs.\ total) produces a quantitative
+cleavage percentage for each construct at each protease concentration.
+The rank order from the depletion assay is compared to the Pillar 1 predicted
+rank order.  Spearman correlation between predicted and measured selectivity
+is reported as a model performance metric.
+
+This is the most direct test of whether the ML model generalises beyond its
+training set: the pES constructs are actual synthesised sequences, not sequences
+drawn from MEROPS.
+
+\subsection{Sensor Architecture Note}
+
+The sensor constructs are FLAG-sfGFP-substrate-His$_6$ fusion proteins.
+Protease cleavage separates the FLAG and His$_6$ tags; the Ni-NTA depletion
+assay quantifies cleavage by measuring sfGFP fluorescence in the column
+flow-through.  This is a fluorescence depletion assay, not a FRET assay.
+The distinction matters for Pillar 2: the observable is not an energy transfer
+efficiency but a retention fraction on the nickel column, which is a binary
+(cleaved / uncleaved) readout made quantitative by fluorescence intensity.
+The sandwich ELISA (anti-FLAG capture, anti-His and anti-GFP detection) provides
+orthogonal quantification on the best three or four constructs.
 
 % -----------------------------------------------------------------------
 \section{Summary}
@@ -316,16 +357,21 @@ known positive control (\seq{IPRTLTAA}).
   PSSM filter            & Log-odds (existing)           & Biochemical gate & 02, 03\\
   Wound fluid ODE        & Nonlinear ODE system          & Active enzyme concentrations & 01, 02, 03\\
   Electrode kinetics PDE & 1D diffusion-reaction         & Predicted LOD, optimal $\Gamma$ & 01, 02\\
-  Wet lab validation     & FRET / electrochemical (TBD)  & Experimental confirmation & 03\\
+  Cross-reactivity matrix  & Ni-NTA depletion, all vs.\ all  & $\kappa < 30$ confirmation & 02, 03\\
+  Enzyme titration         & Initial rate kinetics           & Measured $k_{cat}/K_m$ for Pillar 2 & 03\\
+  Substrate ranking        & sfGFP depletion assay           & Spearman corr.\ vs.\ Pillar 1 prediction & 03\\
   \bottomrule
 \end{tabular}
 \end{center}
 
 \medskip
-The project satisfies the Heidelberg 2025 gold standard: two concrete,
-falsifiable predictions (novel substrate from Pillar 1; LOD from Pillar 2)
-that wet lab tests before the wiki freeze.  The two-pillar structure
-gives judges a complete model story from molecular sequence design
-through to clinical signal output.
+The project satisfies the Heidelberg 2025 gold standard across three named,
+quantitative model-experiment loops: the $\kappa < 30$ separability threshold
+(model criterion, wet lab measures it), the LOD prediction updated with
+measured $k_{cat}/K_m$ (model predicts, wet lab parameterises it), and the
+substrate selectivity ranking (model ranks, depletion assay confirms it).
+The two-pillar structure gives judges a complete model story from molecular
+sequence design through to clinical signal output, with wet lab data at
+every integration point.
 
 \end{document}
