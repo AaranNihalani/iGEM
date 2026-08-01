@@ -49,7 +49,7 @@
 \begin{center}
 {\LARGE\bfseries Electrochemical Device Modelling}\\[0.5em]
 {\large End-to-End Computational Model of the Multiplexed Wound Protease Cartridge}\\[0.3em]
-{\small\color{gray}Eton iGEM 2026 --- Dry Lab\\
+{\small\color{gray}Eton iGEM 2026, Dry Lab\\
 MMP-9 / HNE Ratiometric SWV Sensor}
 \end{center}
 \vspace{0.5em}\hrule\vspace{0.8em}
@@ -60,7 +60,7 @@ MMP-9 / HNE Ratiometric SWV Sensor}
 This document enumerates every sub-component that requires explicit mathematical treatment across 16 modelling layers, with the governing equations, key parameters, and inter-layer coupling for each.
 \end{infobox}
 
-\section{Layer 0: Wound biology --- system input}
+\section{Layer 0: Wound biology (system input)}
 
 The model input is the active concentration of MMP-9 and HNE in wound fluid at the time of sampling. These are not directly observable; they must be derived from the wound biochemical ODE system (Pillar 2, \texttt{report\_project\_proposal.tex}).
 
@@ -224,7 +224,7 @@ CE must supply current to all WEs. Max SWV peak current per WE $\approx 100\,\te
 \begin{equation}
 R_s = \frac{\rho_\text{sol} \, d_\text{WE-RE}}{A_\text{cell}}, \quad \sigma_\text{wound} \approx 15\,\text{mS\,cm}^{-1}
 \end{equation}
-Uncompensated $iR$ drop during peak SWV current (100~nA): $\Delta E_{iR} = I_\text{peak} R_s \approx 3\,\mu\text{V}$ --- negligible. Verify for maximum expected current.
+Uncompensated $iR$ drop during peak SWV current (100~nA): $\Delta E_{iR} = I_\text{peak} R_s \approx 3\,\mu\text{V}$, negligible. Verify for maximum expected current.
 
 \subsection{Double-layer capacitance}
 
@@ -396,7 +396,7 @@ Sweep $(f_\text{SWV}, \Delta E_\text{SW}, \Delta E_\text{step})$ to maximise the
 
 \subsection{Frequency diagnostic}
 
-If measured $I_\text{peak} \propto f^{0.5}$: diffusion-controlled (non-tethered MB in solution is dominating --- wrong regime). If $I_\text{peak} \propto f^1$ (at low $f$) or plateaus (at high $f$): surface-confined, correct. Must verify.
+If measured $I_\text{peak} \propto f^{0.5}$: diffusion-controlled (non-tethered MB in solution is dominating (wrong regime)). If $I_\text{peak} \propto f^1$ (at low $f$) or plateaus (at high $f$): surface-confined, correct. Must verify.
 
 \section{Layer 12: SWV peak extraction and signal processing}
 
@@ -480,7 +480,7 @@ After switching WE: settling time $\tau = (R_\text{mux} + R_s) C_\text{dl} A \ap
 
 \subsection{Required SNR}
 
-To resolve $F_\text{LOD} = 5\%$: require $\sigma_F < 1.7\%$. With $\mathcal{A}_\text{MB} \approx 1\,\text{pA}\cdot\text{V}$ and $\sigma_\mathcal{A} \approx 0.4\,\text{fA}\cdot\text{V}$ (from $i_\text{Johnson}$ integrated over $\sim 50$ SWV points): $\sigma_\mathcal{A}/\mathcal{A} \approx 0.04\%$. Full propagation through $R \to \rho \to F$ gives $\sigma_F \approx 0.06\%$ --- well below the 1.7\% target.
+To resolve $F_\text{LOD} = 5\%$: require $\sigma_F < 1.7\%$. With $\mathcal{A}_\text{MB} \approx 1\,\text{pA}\cdot\text{V}$ and $\sigma_\mathcal{A} \approx 0.4\,\text{fA}\cdot\text{V}$ (from $i_\text{Johnson}$ integrated over $\sim 50$ SWV points): $\sigma_\mathcal{A}/\mathcal{A} \approx 0.04\%$. Full propagation through $R \to \rho \to F$ gives $\sigma_F \approx 0.06\%$, well below the 1.7\% target.
 
 \section{Layer 15: Calibration curve and limit of detection}
 
@@ -567,10 +567,10 @@ SAM double-layer capacitance & $C_\text{dl}$ & $1$--$5\,\mu\text{F\,cm}^{-2}$ & 
 Optimal probe surface coverage & $\Gamma_p$ & $1$--$10\,\text{pmol\,cm}^{-2}$ & Lubin and Plaxco 2010 \\
 PEG persistence length & $l_p$ & $\sim0.38\,\text{nm}$ & Oesterhelt et al. 1999 \\
 Gold roughness factor & $R_f$ & $1.1$--$1.5$ & Electrochemical literature \\
-Wound fluid $[\text{Ca}^{2+}]$ & --- & $1$--$2\,\text{mM}$ & Gethin et al. \\
-Wound fluid pH range & --- & $6.5$--$8.2$ & Gethin et al. \\
-$k_\text{cat}/K_m$ MMP-9 on IPRTLTAA & --- & from pES & pES-01 to pES-08 wet lab \\
-$k_\text{cat}/K_m$ HNE on AAPVSGIG & --- & from pES & pES-01 to pES-08 wet lab \\
+Wound fluid $[\text{Ca}^{2+}]$ & & $1$--$2\,\text{mM}$ & Gethin et al. \\
+Wound fluid pH range & & $6.5$--$8.2$ & Gethin et al. \\
+$k_\text{cat}/K_m$ MMP-9 on IPRTLTAA & & from pES & pES-01 to pES-08 wet lab \\
+$k_\text{cat}/K_m$ HNE on AAPVSGIG & & from pES & pES-01 to pES-08 wet lab \\
 \bottomrule
 \end{tabularx}
 \end{table}
