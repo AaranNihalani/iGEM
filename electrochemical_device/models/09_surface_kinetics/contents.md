@@ -89,7 +89,35 @@ The fractional contribution of interfering protease j to F_k:
 
 Must compute this for each interferent. Requires: (a) cross-reactivity scores from the substrate predictor for AAPVSGIG and IPRTLTAA vs each interferent, (b) interferent concentrations from Layer 0.
 
-### 9.5 Zeroth-order regime (saturation)
+### 9.5 Cathepsin and plasmin cross-reactivity (MEROPS-based check)
+
+The substrate predictor panel covers HNE, MMP-2, MMP-8, MMP-9, MMP-14, and FAP. However, wound fluid also contains cathepsin G, cathepsin B, and plasmin, for which no trained ML model is available. These must be assessed using MEROPS cleavage data and sequence specificity rules.
+
+**Cathepsin G** (serine protease, neutrophil degranulation product, MW 28 kDa):
+- Cleaves after aromatic residues (F, Y) and also after A, V (similar to HNE but slightly broader).
+- AAPVSGIG: the A-P-V motif — cathepsin G has been reported to cleave Val-Ser bonds in some substrates. Must check MEROPS S1 family specificity matrix for Ala, Pro, Val at P4-P1.
+- Expected risk: moderate. Cathepsin G shares the chymotrypsin fold with HNE; P1 = Val in AAPV↓SGIG is acceptable to cathepsin G.
+- Literature: Olsen et al. cleavage data for cathepsin G suggests Val at P1 is cleaved ~20-50% efficiency vs Phe. This is non-negligible.
+
+**Cathepsin B** (cysteine protease):
+- Primarily an endopeptidase (cleaves at K, R) and exopeptidase (carboxydipeptidase).
+- AAPVSGIG: no K or R → cathepsin B endopeptidase activity unlikely. Low risk.
+- IPRTLTAA: R at position 3 (P6 in P10-P1 notation if cleavage at I-P-R↓T) — cathepsin B could cleave at Arg. Moderate risk.
+
+**Plasmin** (serine protease, fibrinolytic):
+- Highly specific for Arg and Lys at P1.
+- IPRTLTAA: R at position 3. If plasmin cleaves I-P-R↓T-L-T-A-A, this would release the T-L-T-A-A-MB fragment and leave only I-P-R on the electrode (short stub → MB is GONE → false positive for MMP-9 channel). This is a significant risk.
+- AAPVSGIG: no R or K → plasmin will not cleave. Low risk.
+
+**Action items for this model:**
+1. Query MEROPS (merops.sanger.ac.uk) for cathepsin G and plasmin cleavage data on sequences containing AAPV and IPRT motifs.
+2. Estimate [cathepsin G]_wound and [plasmin]_wound from literature (Yager et al., Trengove et al.).
+3. Compute delta_F_k for each interferent using the same multi-protease competition formula in 9.4.
+4. If delta_F_k > 0.05 (5% false positive from interferent at expected wound concentrations): flag as a selectivity risk requiring probe sequence modification.
+
+This check must be completed before the substrate sequences are finalised. Plasmin/IPRTLTAA cross-reactivity is the highest-priority concern.
+
+### 9.6 Zeroth-order regime (saturation)
 
 When Gamma >> K_m,surf: dGamma/dt = -kcat * [E]_surface. The rate is constant (zeroth order in Gamma) and proportional to [E]. In this regime:
     Gamma(t) = Gamma_0 - kcat * [E] * t

@@ -109,6 +109,30 @@ During the fill phase (capillary flow, velocity u ≈ L/t_fill), the Péclet num
 
 For L = 20 mm, t_fill = 60 s: u = 0.33 mm/s. Pe = 0.33×10^-3 × 20×10^-3 / 5×10^-11 ≈ 1.3×10^5. Highly convective during fill → enzyme is uniformly distributed along the channel length by the time fill completes. This justifies the uniform IC [E](z,0) = [E]_chamber.
 
+### 3.9 In-device inhibitor binding kinetics
+
+This sub-component is the most important addition to this layer identified in lifecycle analysis. After the sample fills the chamber, co-eluted TIMP-1 and A1AT/SLPI continue to bind and inactivate free MMP-9 and HNE in the bulk solution. This depletes [E_free] over time independently of surface cleavage, and is NOT captured by the pure diffusion PDE in 3.3.
+
+The governing system becomes a reaction-diffusion PDE for each enzyme/inhibitor pair. For MMP-9 and TIMP-1:
+
+    ∂[MMP9_free]/∂t = D_MMP9 * ∂²[MMP9_free]/∂z² - k_on,TIMP * [MMP9_free] * [TIMP1_free]
+    ∂[TIMP1_free]/∂t = D_TIMP1 * ∂²[TIMP1_free]/∂z² - k_on,TIMP * [MMP9_free] * [TIMP1_free]
+    ∂[complex]/∂t   = D_complex * ∂²[complex]/∂z² + k_on,TIMP * [MMP9_free] * [TIMP1_free]
+
+Initial conditions: [MMP9_free](z,0) = [E]_chamber from Layer 1; [TIMP1_free](z,0) = [TIMP-1]_chamber from Layer 1; [complex](z,0) = 0.
+
+Note: TIMP-1 is a tight-binding inhibitor of MMP-9 (K_i ~ 0.01 nM). The association rate k_on,TIMP ≈ 2×10^5 M^-1 s^-1 (literature). At [TIMP-1] = 10 nM, the pseudo-first-order inhibition rate constant is k_obs = k_on × [TIMP-1] = 2×10^5 × 10^-8 = 2×10^-3 s^-1 → half-life ~350 s (~6 min). Over 30 min incubation, substantial fraction of MMP-9 is inhibited by residual TIMP-1.
+
+For HNE and A1AT (K_i ~ 1 nM, k_on,A1AT ≈ 2×10^7 M^-1 s^-1): at [A1AT] = 1 µM, k_obs = 20 s^-1 → half-life 35 ms — essentially instant. HNE is essentially fully inhibited by A1AT within seconds if [A1AT] >> [HNE]. The clinically relevant signal is the free HNE that escapes A1AT inhibition (i.e., [HNE] - [A1AT]).
+
+For SLPI (K_i ~ 0.5 nM for HNE, k_on ≈ 3×10^7 M^-1 s^-1): similar timescale to A1AT.
+
+Consequence for signal:
+    [E_free](z,0,t) used in Layer 9 Robin BC must be the FREE enzyme, not total enzyme.
+    F_k measured by the device reflects free enzyme activity, which is what has clinical meaning.
+
+Implementation: extend the 1D PDE solver in `diffusion_pde.py` to track [E_free], [I_free], [EI_complex] as three coupled species. This is the critical correction to the naive single-species diffusion model.
+
 ## Key outputs to pass downstream
 
 | Output | Layer |

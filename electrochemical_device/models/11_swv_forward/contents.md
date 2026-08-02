@@ -150,7 +150,54 @@ This needs to be resolved by consulting the specific SWV implementation. For the
 
 This needs careful thought. Include in the modelling as a required analysis.
 
-### 11.8 Frequency diagnostic for surface confinement
+### 11.8 Dissolved oxygen interference
+
+This is a critical unmodelled interference identified in lifecycle analysis. Wound fluid and elution buffer are equilibrated with atmospheric oxygen: [O2]_dissolved ≈ 0.25 mM at 25°C (Henry's law, atmospheric O2 partial pressure).
+
+Oxygen is electrochemically reduced at gold in neutral aqueous solution:
+    O2 + 2H2O + 4e- → 4OH-    E° ≈ +0.40 V vs NHE → E ≈ +0.16 V vs Ag/AgCl (pH 7.4)
+
+However, on gold in neutral solution, the O2 reduction onset is kinetically shifted cathodically to approximately:
+    E_onset ≈ -0.3 to -0.5 V vs Ag/AgCl (slow kinetics on gold vs Pt)
+
+The SWV scan to -0.65 V reaches this region. The resulting O2 reduction produces a broad, sloping cathodic wave that:
+1. Directly overlaps the MB reduction peak at E°_MB ≈ -0.25 V (at pH 7.4).
+2. Increases the local baseline in the MB peak region, distorting the peak area extraction in Layer 12.
+3. Is NOT cancelled by SWV forward-backward subtraction (it is a true electrochemical process, contributing a net cathodic current in the forward half-cycle like any reduction).
+
+Magnitude: for [O2] = 0.25 mM, on a 1 mm² electrode, the O2 reduction current at E = -0.5 V can be:
+    i_O2 ≈ 4 * F * D_O2 * [O2] / delta = 4 * 96485 * 2e-9 * 2.5e-4 / 1e-4 ≈ 2 nA (steady state)
+
+For SWV (pulsed), the transient O2 current is larger. This is comparable to the MB faradaic peak (~10-50 nA) and cannot be ignored.
+
+Mitigation strategies to model:
+1. **N2 purge of elution buffer**: dissolve O2 out of the buffer before loading. Reduces [O2] to < 0.01 mM. Model as [O2]_chamber = 0 (ideal) or residual after purge.
+2. **Adjust scan window**: limit the cathodic scan to E_min = -0.45 V (just past MB peak, before main O2 wave). Verify MB peak is fully captured (peak at -0.25 V, FWHM 65 mV → extends to -0.58 V). This may not be feasible.
+3. **Electrochemical O2 removal**: pre-scan the electrode cathodically at a potential where O2 is reduced, depleting the local O2 before the measurement scan. Must model the O2 depletion time.
+4. **O2 scavenger in buffer**: e.g., sodium sulfite (Na2SO3) or glucose oxidase enzyme. Must not interfere with enzyme activity or MB signal.
+
+The model must include an O2 reduction current component in the simulated SWV trace and assess its impact on peak extraction quality in Layer 12. If mitigation (1) is implemented, verify residual O2 current is < 5% of MB peak amplitude.
+
+### 11.9 Multiple-scan kinetic protocol perturbation
+
+If the device uses a kinetic protocol (multiple SWV scans during the 30-min incubation, e.g., scans at T = 0, 5, 10, 15, 20, 25, 30 min), each scan drives MB through a complete redox cycle. This introduces two issues:
+
+**1. Scan perturbation of MB oxidation state:**
+At rest potential (open circuit, V_OCP ≈ 0 V vs Ag/AgCl), MB exists in a resting equilibrium. The SWV scan then drives MB fully oxidised (at +0.1 V, still below E°_Fc = +0.45 V) and then partially reduced (at -0.65 V cathodic limit). After the scan ends, MB re-equilibrates to V_OCP. The re-equilibration time:
+    tau_eq = 1 / (k_f(V_OCP) + k_b(V_OCP))
+
+At V_OCP ~ 0 V, eta = V_OCP - E°_MB = +0.25 V, and k_f(eta), k_b(eta) from Butler-Volmer at k_ET^0 = 50 s^-1:
+    tau_eq ≈ 1 / (50 × exp(-0.5×0.25×38.9) + ...) — of order 0.01-1 s.
+
+If the inter-scan interval is > 10× tau_eq (i.e., > 10 s), re-equilibration is complete before the next scan. For 5 min intervals, this is satisfied.
+
+**2. O2 depletion during successive scans:**
+Each scan depletes O2 near the electrode via cathodic reduction. After N scans, the local [O2] decreases. This means the O2 interference in Layer 11.8 decreases over successive scans — the 5th scan looks cleaner than the 1st. Must model: [O2](z, t) with cathodic O2 depletion source term at z = 0 during each scan.
+
+**3. MB photodegradation:**
+If the device is exposed to ambient light during the 30-min incubation, MB (a photosensitiser) can undergo photobleaching. Rate of photodegradation is proportional to light intensity and O2. In low-light environments (clinical bedside): negligible. In direct sunlight or fluorescent lighting: could be significant. Must include in device packaging specification: opaque cartridge required. Model as: if opaque → no effect; if transparent → add first-order MB loss k_photo * I_light term.
+
+### 11.10 Frequency diagnostic for surface confinement
 
 To confirm that MB signal is surface-confined (not from diffusing MB fragments in solution):
 - Surface-confined: ΔI_peak ∝ f_SWV (at fixed kappa_SW >> 1: proportional to f)

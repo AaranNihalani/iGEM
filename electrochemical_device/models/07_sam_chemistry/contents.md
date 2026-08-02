@@ -95,7 +95,53 @@ BUT: this cancellation only holds if:
 
 If the SAM deposition gives different Gamma_p on active vs control electrodes, the Ca2+ artefact does not perfectly cancel. Model: residual Ca2+ error in F_k as a function of delta_Gamma_p (inter-electrode Gamma variation).
 
-### 7.6 SAM stability during assay
+### 7.6 SAM and probe hydration on first sample contact
+
+The device is manufactured and stored dry (desiccated, typically in a foil pouch). When sample first contacts the SAM and probe, a hydration step occurs:
+
+1. Water ingress into the SAM: within ~1-5 s, water molecules penetrate the outer SAM surface and solvate the PEG spacer and peptide headgroup.
+2. PEG hydration: PEG adopts a helical H-bonded structure in water, taking ~0.1-1 s to reach hydrated equilibrium (fast).
+3. Peptide conformational equilibration: the 8-residue peptide transitions from a dry (possibly collapsed or adsorbed) state to its solution ensemble. Time ~1-10 s (depends on sequence — disordered peptides are fast).
+4. MB solvation: methylene blue hydrates essentially instantaneously.
+
+If the T=0 SWV scan is taken within 30 s of fill completion, the probe may still be partially in the dry-contact (non-equilibrium) conformation. This would give an anomalously high k_ET^0 (shorter d_eff while dry) and an anomalously high R(0).
+
+Model: delay T=0 scan by at least 60 s after fill completion. Alternatively, take T=0 scan and a T=2 min scan; if R(T=0) and R(T=2 min) agree within 5%, the probe is fully hydrated at T=0.
+
+This constraint should be included in the firmware timing specification for the device.
+
+### 7.7 Wound redox agents and MB chemical oxidation/reduction
+
+Wound fluid contains endogenous redox-active species that co-elute into the device and can alter MB oxidation state at the electrode surface without an applied electrochemical potential. This is a critical gap in the current model.
+
+**Reducing agents:**
+- Glutathione (GSH): ~0.1-1 mM in wound fluid (intracellular, released by lysed cells). In the chamber at [GSH]_chamber ≈ 0.05-0.5 mM after dilution.
+- Ascorbate (vitamin C): ~0.05-0.2 mM.
+
+GSH can chemically reduce oxidised MB (MB²⁺, the form detected by SWV reduction peak) to leuco-MB or MB•+ radical:
+    MB²⁺ + 2 GSH → MB + GSSG + 2H⁺
+Rate constant k_red ≈ 10-1000 M^-1 s^-1 (literature for MB reduction by thiols; strongly pH-dependent).
+
+At [GSH] = 0.5 mM: pseudo-first-order rate = 500 × k_red s^-1. For k_red = 100 M^-1 s^-1: rate = 0.05 s^-1 → half-life 14 s. MB at the electrode surface could be significantly reduced to electroinactive leuco-MB within minutes of sample contact.
+
+This reduces the MB SWV peak area independently of enzyme cleavage, causing a false-positive F_k signal.
+
+**Oxidising agents:**
+- H2O2: 10-100 µM in inflamed wound fluid.
+- Hypochlorite (HOCl): 1-100 µM from myeloperoxidase.
+
+H2O2 and HOCl oxidise MB to MB-N-oxide (thionine N-oxide), which has a shifted formal potential and reduced electroactivity. This also reduces peak area but in a different direction.
+
+**Model:**
+    d[MB_intact]/dt = -k_red * [GSH] * [MB_intact] - k_ox * [H2O2] * [MB_intact]
+
+where [MB_intact] is the surface concentration of electroactive MB.
+
+The ratiometric design DOES NOT cancel this effect if it preferentially affects the active probe electrode (e.g., if the scrambled control probe has a different local chemical environment that slows redox access). Must verify: is the MB on the intact probe (d_eff ≈ 5 nm from surface) equally accessible to solution GSH as MB on the cleaved stub (not present) or the scrambled control?
+
+Mitigation: design elution buffer to include an MB-protecting agent (e.g., buffer with ascorbate scavenging pre-oxidised, or nitrogen purge to remove O2 and reduce oxidative stress). Or include a GSH-correction term in the calibration model.
+
+### 7.8 SAM stability during assay
 
 Au-S bond is thermally stable (k_des at 25°C is extremely slow, half-life >> years). During the 30-min assay, spontaneous SAM desorption is negligible.
 

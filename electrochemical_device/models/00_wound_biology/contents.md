@@ -87,12 +87,26 @@ Wound fluid contains many proteases beyond MMP-9 and HNE:
 
 Must use MEROPS cleavage data and the existing substrate predictor to score AAPVSGIG and IPRTLTAA against each of these interfering proteases. Any protease with predicted LR > 0.3 is a potential interferent and must be included as an additive cleavage term in Layer 9.
 
+### 0.8 Inhibitor concentrations as explicit outputs
+
+The ODE system (0.1) uses [TIMP-1] and [A1AT] internally to derive [MMP-9]_active and [HNE]_active. But these inhibitor concentrations must also be output explicitly, because when wound fluid is swabbed and eluted into the device, the inhibitors co-elute alongside the enzymes and continue to act inside the cartridge during incubation.
+
+Required explicit outputs:
+- [TIMP-1]_wound: free TIMP-1 at time of collection. Literature: chronic wounds typically 10-100 nM; acute wounds lower. From the ODE steady-state or literature.
+- [A1AT]_wound: free alpha-1 antitrypsin at time of collection. Literature: wound fluid A1AT ~ 1-5 µM (spills from plasma).
+- [SLPI]_wound: secretory leukocyte protease inhibitor (second HNE inhibitor, 11 kDa). Literature: wound fluid SLPI 0.1-1 µM. SLPI has a much smaller MW than A1AT (11 kDa vs 52 kDa) and elutes more efficiently — may dominate in-device HNE inhibition.
+
+These are passed to Layer 1 for co-elution modelling and to Layer 3 for in-device inhibition kinetics.
+
 ## Outputs to pass downstream
 
 | Output | Receives | Layer |
 |---|---|---|
 | [MMP-9]_active | Wound biology ODE | Layer 1 |
 | [HNE]_active | Wound biology ODE | Layer 1 |
+| [TIMP-1]_wound | ODE / literature | Layer 1 → Layer 3 |
+| [A1AT]_wound | Literature | Layer 1 → Layer 3 |
+| [SLPI]_wound | Literature | Layer 1 → Layer 3 |
 | pH | Literature / measured | Layer 6, 10, 12 |
 | I (ionic strength) | Literature | Layer 6 |
 | T (temperature) | Measured or assumed | All layers |

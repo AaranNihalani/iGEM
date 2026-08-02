@@ -108,6 +108,24 @@ $k_\text{deg}$ from literature self-digestion rates or measured stability assay.
 \end{equation}
 where $D_f = V_\text{eluate} / V_\text{chamber}$ is the dilution factor.
 
+\subsection{Inhibitor co-elution}
+
+TIMP-1 (28\,kDa), A1AT (52\,kDa), and SLPI (11\,kDa) co-elute alongside the target enzymes with size-dependent efficiencies $\eta_\text{elut,I}$. Inside the device they continue to suppress free enzyme during the 30-min incubation. The inhibitor concentrations entering the chamber are:
+\begin{equation}
+[I]_\text{chamber} = [I]_\text{wound} \times \eta_\text{elut,I} \times D_f
+\end{equation}
+SLPI (11\,kDa) elutes more efficiently than HNE (30\,kDa), so the $[\text{SLPI}]/[\text{HNE}]$ ratio in the chamber is higher than in wound fluid. These concentrations are passed to Layer~3 for in-device inhibition kinetics.
+
+\subsection{Sample pH after elution buffer mixing}
+
+The sample pH in the chamber is not simply the elution buffer pH. If wound pH deviates significantly from buffer pH:
+\begin{equation}
+\text{pH}_\text{chamber} \approx -\log_{10}\!\left(\frac{V_\text{wound} \times 10^{-\text{pH}_\text{wound}} + V_\text{buffer} \times 10^{-\text{pH}_\text{buffer}}}{V_\text{wound} + V_\text{buffer}}\right)
+\end{equation}
+For an infected wound (pH~6.5) and PBS elution buffer: $\text{pH}_\text{chamber}$ can be as low as 6.9--7.1. This shifts $E^\circ_\text{MB}$ by up to 30\,mV and reduces enzyme $k_\text{cat}$ via its pH-activity profile. pH$_\text{chamber}$ (not 7.4) must propagate to Layers~6, 10, and~12.
+
+Co-eluted redox-active species: glutathione ($[\text{GSH}]_\text{wound} \sim 0.1$--$1\,\text{mM}$), ascorbate ($\sim 0.1\,\text{mM}$), H$_2$O$_2$ ($10$--$100\,\mu\text{M}$). These are tracked as $[\text{GSH}]_\text{chamber}$ for downstream MB oxidation state modelling (Layer~7).
+
 \section{Layer 2: Cartridge inlet and capillary fill}
 
 \subsection{Chamber geometry}
@@ -190,6 +208,18 @@ Released fragment ($D_\text{frag} \approx 3\times10^{-10}\,\text{m}^2\text{s}^{-
 
 Lateral diffusion of released MB fragment between adjacent electrodes (separation $d_\text{elec} \sim 2\,\text{mm}$): $t_\text{cross} \approx d_\text{elec}^2 / (2 D_\text{frag}) \approx 7000\,\text{s}$. Cross-talk negligible for $T_\text{incubation} < 30\,\text{min}$ provided $d_\text{elec} > 1\,\text{mm}$.
 
+\subsection{In-device inhibitor binding kinetics}
+
+After fill, co-eluted TIMP-1 and A1AT/SLPI react with free enzyme in the bulk solution. This depletes $[E_\text{free}]$ over time independently of surface cleavage. The diffusion PDE must include reaction terms:
+\begin{align}
+\frac{\partial [E_\text{free}]}{\partial t} &= D_E \frac{\partial^2 [E_\text{free}]}{\partial z^2} - k_{\text{on},I}[E_\text{free}][I_\text{free}] \label{eq:inhibkin}\\
+\frac{\partial [I_\text{free}]}{\partial t} &= D_I \frac{\partial^2 [I_\text{free}]}{\partial z^2} - k_{\text{on},I}[E_\text{free}][I_\text{free}]
+\end{align}
+
+For TIMP-1/MMP-9: $k_\text{on} \approx 2\times10^5\,\text{M}^{-1}\text{s}^{-1}$, $K_i \approx 0.01\,\text{nM}$ (essentially irreversible). At $[\text{TIMP-1}]_\text{chamber} = 10\,\text{nM}$: pseudo-first-order inhibition half-life $\approx 350\,\text{s}$ ($\sim 6\,\text{min}$) — significant over a 30-min incubation.
+
+For A1AT/HNE: $k_\text{on} \approx 2\times10^7\,\text{M}^{-1}\text{s}^{-1}$; at $[\text{A1AT}]_\text{chamber} = 1\,\mu\text{M}$, half-life $\approx 35\,\text{ms}$ — essentially instantaneous. The device measures the free HNE that escapes inhibition, which is the clinically relevant quantity. The Layer~9 Robin BC must use $[E_\text{free}](z=0, t)$, not total $[E]$.
+
 \section{Layer 4: Gold electrode surface}
 
 \subsection{Electrochemical roughness factor}
@@ -264,6 +294,26 @@ This modifies $k_{ET}$ (Layer~10). Since the scrambled control electrode uses id
 
 $C_6$-Fc-SH with diluent. Keep $\Gamma_\text{Fc} < 3\,\text{pmol\,cm}^{-2}$ to avoid Fc-Fc through-space electron hopping (which distorts the SWV peak to an asymmetric shape). Diagnostic: symmetric SWV Fc peak confirms isolated molecules.
 
+\subsection{SAM hydration on first sample contact}
+
+The cartridge is stored dry (desiccated). When sample first contacts the SAM, the PEG spacer and peptide must hydrate before reaching their solution-state conformational equilibrium. PEG hydration occurs within $\sim$1--5\,s; peptide equilibration within $\sim$1--10\,s. If the $T=0$ SWV scan is taken immediately after fill, probes may still be in a partially collapsed dry conformation, giving an anomalously high $k_{ET}^0$ (shorter $d_\text{eff}$ while dry) and elevated $R(0)$. Firmware specification: delay the $T=0$ scan by $\geq 60\,\text{s}$ after fill completion.
+
+\subsection{Wound redox agents and MB chemical reduction/oxidation}
+
+Co-eluted redox species from wound fluid alter the MB oxidation state at the electrode surface without applied potential — a signal artefact unrelated to enzyme cleavage.
+
+\textbf{Reducing agents} (GSH $\sim$0.1--0.5\,mM in chamber, ascorbate $\sim$0.05--0.2\,mM):
+\begin{equation}
+\text{MB}^{2+} + 2\,\text{GSH} \rightarrow \text{MB} + \text{GSSG} + 2\text{H}^+, \quad k_\text{red} \approx 10\text{--}1000\,\text{M}^{-1}\text{s}^{-1}
+\end{equation}
+At $[\text{GSH}] = 0.5\,\text{mM}$ and $k_\text{red} = 100\,\text{M}^{-1}\text{s}^{-1}$: pseudo-first-order half-life $\approx 14\,\text{s}$. MB converted to electroinactive leuco-MB within minutes of sample contact, reducing $R(0)$ independently of enzyme activity.
+
+\textbf{Oxidising agents} (H$_2$O$_2$ 10--100\,$\mu$M, HOCl 1--100\,$\mu$M): oxidise MB to its N-oxide (thionine oxide), also electroinactive. Net kinetics:
+\begin{equation}
+\frac{d[\text{MB}_\text{active}]}{dt} = -k_\text{red}[\text{GSH}][\text{MB}] - k_\text{ox}[\text{H}_2\text{O}_2][\text{MB}]
+\end{equation}
+The ratiometric design does not automatically cancel this if the effect magnitude differs between active and control electrodes (probe sequence may influence local GSH access). Mitigation: include a redox-scavenging component in the elution buffer (e.g., catalase for H$_2$O$_2$), and model the residual error in $F_k$ as a function of $[\text{GSH}]_\text{chamber}$.
+
 \section{Layer 8: Probe architecture and conformational dynamics}
 
 \subsection{Probe structure}
@@ -315,6 +365,16 @@ Solution (if $[E]_\text{surface} \approx \text{const}$): $\Gamma(t) = \Gamma_0 \
 \frac{d\Gamma}{dt} = -\sum_j \frac{k_{\text{cat},j} [E_j]_\text{surface} \,\Gamma}{K_{m,\text{surf},j} + \Gamma}
 \end{equation}
 Each interfering protease $j$ (cathepsins, plasmin, etc.) contributes additional cleavage. Off-target contribution to $F_k$ from protease $j$: $\delta F_k \approx (k_{\text{cat},j}/K_{m,\text{surf},j}) [E_j] T$ at early times.
+
+\subsection{Cathepsin and plasmin cross-reactivity (MEROPS check)}
+
+The substrate predictor panel does not cover cathepsin~G, cathepsin~B, or plasmin. These must be assessed from MEROPS specificity data:
+\begin{itemize}[noitemsep]
+\item \textbf{Cathepsin~G} (serine protease): shares chymotrypsin fold with HNE; reports of Val at P1 being cleaved at $\sim$20--50\% efficiency vs Phe. AAPV{\textbf{$\downarrow$}}SGIG — P1 = Val is a moderate cathepsin~G substrate. Risk: moderate.
+\item \textbf{Plasmin}: highly specific for Arg, Lys at P1. IPRT{\textbf{$\downarrow$}}LTAA contains Arg at P3 in the sequence; if the scissile bond is I-P-R$\downarrow$T, plasmin cleaves, releasing T-L-T-A-A-MB and leaving I-P-R on the electrode (no MB $\rightarrow$ false positive). Risk: high — requires MEROPS verification.
+\item \textbf{Cathepsin~B}: endopeptidase specificity for Arg, Lys. AAPVSGIG has neither; IPRTLTAA has Arg at position~3. Moderate risk for the MMP-9 channel.
+\end{itemize}
+Wound fluid plasmin concentrations: $\sim$1--50~nM active form. Must compute $\delta F_k^\text{plasmin}$ for IPRTLTAA at $[\text{plasmin}] = 10\,\text{nM}$ and confirm $\delta F_k < 0.05$.
 
 \section{Layer 10: Marcus-theory electron transfer}
 
@@ -397,6 +457,28 @@ Sweep $(f_\text{SWV}, \Delta E_\text{SW}, \Delta E_\text{step})$ to maximise the
 \subsection{Frequency diagnostic}
 
 If measured $I_\text{peak} \propto f^{0.5}$: diffusion-controlled (non-tethered MB in solution is dominating (wrong regime)). If $I_\text{peak} \propto f^1$ (at low $f$) or plateaus (at high $f$): surface-confined, correct. Must verify.
+
+\subsection{Dissolved oxygen interference}
+
+Air-equilibrated wound fluid and elution buffer carry $[\mathrm{O_2}]_\text{dissolved} \approx 0.25\,\text{mM}$ at 25$^\circ$C. On gold in neutral solution, O$_2$ reduction onset is kinetically shifted to $E \approx -0.3$ to $-0.5\,\text{V}$ vs Ag/AgCl --- directly overlapping the MB peak at $E^\circ_\text{MB} \approx -0.25\,\text{V}$. The SWV scan to $-0.65\,\text{V}$ sits squarely in this window.
+
+Estimated O$_2$ current at the MB peak potential:
+\begin{equation}
+i_{\mathrm{O_2}} \approx \frac{4 F D_{\mathrm{O_2}} [\mathrm{O_2}]}{\delta} \sim 2\,\text{nA}
+\end{equation}
+for $A = 1\,\text{mm}^2$, $D_{\mathrm{O_2}} = 2\times10^{-9}\,\text{m}^2\text{s}^{-1}$, $\delta = 100\,\mu\text{m}$. This is 5--20\% of the MB faradaic peak ($\sim$10--50\,nA) and distorts the polynomial baseline assumed in Layer~12 peak extraction. The SWV net current partially suppresses the O$_2$ wave (diffusion-controlled processes contribute differently to forward and backward half-cycles), but does not eliminate it.
+
+Mitigation options to model: (1)~N$_2$ purge of elution buffer ($[\mathrm{O_2}] \to{} < 0.01\,\text{mM}$, eliminates interference); (2)~limit cathodic scan to $-0.45\,\text{V}$ (clips MB peak tail, may be acceptable); (3)~electrochemical pre-depletion of O$_2$ before measurement scan. Option~(1) is preferred and should be validated by comparing scans on purged vs unpurged buffer.
+
+\subsection{Multiple-scan kinetic protocol}
+
+If the protocol takes multiple SWV scans during incubation (e.g., $T = 0, 5, 10, 20, 30\,\text{min}$):
+
+\begin{itemize}[noitemsep]
+\item \textbf{MB re-equilibration}: each scan drives MB through a complete redox cycle. Re-equilibration time $\tau_\text{eq} = 1/(k_f + k_b)$ at open-circuit potential is $\lesssim 1\,\text{s}$ for $k_{ET}^0 \geq 10\,\text{s}^{-1}$. For inter-scan intervals $\geq 5\,\text{min}$, equilibration is complete; no scan-to-scan artefact.
+\item \textbf{O$_2$ depletion}: successive scans deplete local O$_2$ near the electrode, so later scans in a kinetic series show progressively less O$_2$ interference --- must account for this trend in baseline fitting.
+\item \textbf{MB photodegradation}: MB is a photosensitiser; exposure to ambient light during incubation causes photobleaching at a rate $\propto$ light intensity. Device packaging must be opaque. If translucent, add first-order loss term $-k_\text{photo} I_\text{light} [\text{MB}_\text{active}]$ to the Layer~7.7 kinetic model.
+\end{itemize}
 
 \section{Layer 12: SWV peak extraction and signal processing}
 

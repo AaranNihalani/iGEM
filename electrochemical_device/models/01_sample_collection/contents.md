@@ -32,7 +32,20 @@ For proteins of molecular weight M_W:
 
 Elution efficiency is size-dependent and may also depend on swab material (hydrophobic materials retain hydrophobic proteins more strongly). Must source from literature or measure directly.
 
-### 1.3 Elution buffer effect on matrix
+### 1.3 Inhibitor co-elution
+
+TIMP-1 (28 kDa), A1AT (52 kDa), and SLPI (11 kDa) are co-present in wound fluid alongside the target enzymes. They co-elute with similar or higher efficiency than MMP-9 and HNE and continue to inhibit those enzymes inside the cartridge during the 30-min incubation.
+
+Co-eluted inhibitor concentrations:
+    [I]_chamber = [I]_wound * eta_elut,I * D_f
+
+where eta_elut,I is the size-dependent elution efficiency for each inhibitor (SLPI at 11 kDa: ~0.8; TIMP-1 at 28 kDa: ~0.6; A1AT at 52 kDa: ~0.5).
+
+This produces an effective free enzyme concentration in the chamber that is lower than [E]_chamber calculated from 1.6 alone. The inhibitor binding kinetics are modelled in Layer 3 (in-device inhibition), but the initial inhibitor concentrations entering the chamber are determined here.
+
+Critically, the inhibitor/enzyme ratio in the eluate differs from the wound fluid ratio if eta_elut,I ≠ eta_elut,E. For example, SLPI (small, high elution efficiency) may be proportionally enriched relative to HNE (medium elution efficiency) in the eluate → greater in-device HNE inhibition than wound biology ODE predicts. This ratio shift must be modelled.
+
+### 1.4 Elution buffer effect on matrix
 
 Elution buffer (PBS, pH 7.4, 150 mM NaCl) mixes with wound fluid retained in the swab. Net effect:
 - pH of eluate: buffered to ~7.4 even if wound pH ≠ 7.4 (only relevant if the device measures in undiluted wound fluid; if eluted into PBS buffer, pH is controlled)
@@ -41,7 +54,21 @@ Elution buffer (PBS, pH 7.4, 150 mM NaCl) mixes with wound fluid retained in the
 
 This simplifies the Edinburgh Ca2+ artefact model (Layer 7): [Ca2+] in the cartridge is approximately known if PBS is the elution buffer.
 
-### 1.4 Analyte stability during transit
+However, this assumes complete pH buffering by the elution buffer. If the wound fluid volume is a significant fraction of the total (V_wound > 0.2 × V_buffer), the resulting pH must be calculated explicitly:
+
+    pH_chamber = -log10( (V_wound × 10^(-pH_wound) + V_buffer × 10^(-pH_buffer)) / (V_wound + V_buffer) )
+
+For a severely acidic wound (pH 6.5) with V_wound = 50 µL absorbed and V_buffer = 200 µL PBS:
+    pH_chamber ≈ -log10((50 × 3.2×10^-7 + 200 × 4×10^-8)/250) ≈ 7.0
+
+A 0.4 pH unit shift from buffer pH affects E°_MB by 24 mV — comparable to the SWV peak width — and shifts enzyme kcat meaningfully. Must propagate pH_chamber (not assumed 7.4) to Layer 6, 10, and 12.
+
+Additionally: wound fluid redox components (glutathione ~1 mM, ascorbate ~0.1 mM, H2O2 ~10-100 µM) co-elute with the sample. These are tracked here as concentrations entering the chamber:
+    [GSH]_chamber, [ascorbate]_chamber, [H2O2]_chamber
+
+These are consumed downstream in Layer 7 (SAM oxidation) and Layer 11 (MB redox interference).
+
+### 1.5 Analyte stability during transit
 
 Between sample collection and cartridge loading, the eluate is held at ambient temperature for time t_transit (typically 0-15 min, but could be up to 2 hours in a field setting).
 
