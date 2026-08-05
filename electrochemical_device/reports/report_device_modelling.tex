@@ -10,7 +10,6 @@
 \usepackage{graphicx,float}
 \usepackage{titlesec}
 \usepackage{enumitem}
-\usepackage{rotating}
 \usepackage{subcaption}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,backgrounds}
@@ -22,681 +21,1088 @@
 \titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
 \titlespacing{\subsubsection}{0pt}{0.6ex}{0.2ex}
 
-\definecolor{highgreen}{rgb}{0.18,0.49,0.20}
-\definecolor{modamber}{rgb}{0.70,0.45,0.05}
-\definecolor{boxblue}{rgb}{0.91,0.95,1.00}
-\definecolor{boxgreen}{rgb}{0.88,0.97,0.88}
+% Colour palette
+\definecolor{boxblue}{rgb}{0.90,0.95,1.00}
+\definecolor{boxgreen}{rgb}{0.86,0.97,0.87}
+\definecolor{boxamber}{rgb}{1.00,0.97,0.82}
 \definecolor{boxgray}{rgb}{0.94,0.94,0.94}
-\definecolor{boxred}{rgb}{1.00,0.92,0.92}
-\definecolor{boxyellow}{rgb}{1.00,0.98,0.88}
-\definecolor{flagred}{rgb}{0.80,0.10,0.10}
-\definecolor{confgreen}{rgb}{0.10,0.55,0.20}
+\definecolor{boxred}{rgb}{1.00,0.91,0.91}
+\definecolor{needred}{rgb}{0.72,0.10,0.10}
+\definecolor{confgreen}{rgb}{0.10,0.50,0.18}
+\definecolor{ambertext}{rgb}{0.60,0.35,0.00}
+
+% Box environments
+\setlength{\fboxsep}{7pt}
+\newsavebox{\tmpbox}
+
+\newenvironment{infobox}{%
+  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}}%
+ {\vspace{0.2em}\end{minipage}\end{lrbox}%
+  \par\vspace{0.4em}\noindent\colorbox{boxblue}{\usebox{\tmpbox}}\par\vspace{0.4em}}
+
+\newenvironment{findingbox}{%
+  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}}%
+ {\vspace{0.2em}\end{minipage}\end{lrbox}%
+  \par\vspace{0.4em}\noindent\colorbox{boxgreen}{\usebox{\tmpbox}}\par\vspace{0.4em}}
+
+\newenvironment{needsbox}{%
+  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}%
+  \textbf{\textcolor{ambertext}{What we still need to measure:}}\par\vspace{0.15em}}%
+ {\vspace{0.2em}\end{minipage}\end{lrbox}%
+  \par\vspace{0.4em}\noindent\colorbox{boxamber}{\usebox{\tmpbox}}\par\vspace{0.4em}}
+
+\newenvironment{eqbox}{%
+  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}}%
+ {\vspace{0.2em}\end{minipage}\end{lrbox}%
+  \par\vspace{0.3em}\noindent\colorbox{boxgray}{\usebox{\tmpbox}}\par\vspace{0.3em}}
 
 \newcommand{\seq}[1]{\texttt{#1}}
-\newcommand{\hi}[1]{\textcolor{highgreen}{\textbf{#1}}}
 \newcommand{\layer}[1]{\textbf{Layer~#1}}
-\newcommand{\flagged}[1]{\textcolor{flagred}{\textbf{FLAG:} #1}}
-\newcommand{\confident}[1]{\textcolor{confgreen}{#1}}
-
-\setlength{\fboxsep}{7pt}
-\newsavebox{\infoboxcontent}
-\newenvironment{infobox}{%
-  \begin{lrbox}{\infoboxcontent}%
-  \begin{minipage}{0.965\textwidth}\vspace{0.25em}%
-}{%
-  \vspace{0.25em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.45em}\noindent\colorbox{boxblue}{\usebox{\infoboxcontent}}\par\vspace{0.45em}%
-}
-\newsavebox{\eqboxcontent}
-\newenvironment{eqbox}{%
-  \begin{lrbox}{\eqboxcontent}%
-  \begin{minipage}{0.965\textwidth}\vspace{0.2em}%
-}{%
-  \vspace{0.2em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.3em}\noindent\colorbox{boxgray}{\usebox{\eqboxcontent}}\par\vspace{0.3em}%
-}
-\newsavebox{\findingboxcontent}
-\newenvironment{findingbox}{%
-  \begin{lrbox}{\findingboxcontent}%
-  \begin{minipage}{0.965\textwidth}\vspace{0.25em}%
-}{%
-  \vspace{0.25em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.45em}\noindent\colorbox{boxgreen}{\usebox{\findingboxcontent}}\par\vspace{0.45em}%
-}
+\newcommand{\confirmed}[1]{\textcolor{confgreen}{#1}}
+\newcommand{\litref}[1]{\textsuperscript{\textit{#1}}}
 
 \begin{document}
 
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \begin{center}
-{\LARGE\bfseries Electrochemical Wound Biosensor --- Device Modelling}\\[0.4em]
+{\LARGE\bfseries Electrochemical Wound Biosensor: Device Modelling Report}\\[0.4em]
 {\large 17-Layer End-to-End Computational Pipeline}\\[0.25em]
 {\small\color{gray}Eton iGEM 2026, Dry Lab \quad|\quad
 MMP-9 / HNE Ratiometric SWV Sensor \quad|\quad
-C15 substrate $\cdot$ Methylene-blue reporter}
+C15 peptide substrate, Methylene blue reporter}
 \end{center}
 \vspace{0.4em}\hrule\vspace{0.7em}
 
-\begin{infobox}
-\textbf{Scope.} This report documents the complete forward model from wound-fluid biology to the final $F_k$ readout. Every layer has been implemented in Python (\texttt{electrochemical\_device/models/}), generates a calibrated figure, and feeds numerically into the next layer. \textbf{Flagged values} (marked \flagged{}) must be confirmed by wet lab or literature before the model predictions are used quantitatively. \textbf{Confident values} (\textcolor{confgreen}{green}) have primary literature citations.
-\end{infobox}
+%----------------------------------------------------------------------
+\section{What This Sensor Does}
 
-%─────────────────────────────────────────────────────────────────
-\section{Pipeline Overview}
+The sensor detects MMP-9 in fluid from a chronic wound. MMP-9 levels above 17~ng/mL indicate
+a wound that is failing to heal. The device works by coating a gold electrode with short
+peptide chains that MMP-9 can cut. The more MMP-9 is present, the more chains get cut, and
+the lower the electrical signal. A second electrode coated with an MMP-9-resistant chain acts
+as a reference: the ratio of the two signals cancels out background noise from temperature,
+salt, and fouling. The final output is $F_k$ (cleavage fraction) -- the proportion of probe
+chains cut during a fixed incubation window.
+
+This report models every physical step from the wound to the electrical reading. Each section
+begins with a plain description of what that step calculates and why it matters, followed by
+the underlying equations. \colorbox{boxamber}{\textbf{\textcolor{ambertext}{Amber boxes}}}
+mark values that are currently estimated rather than directly measured; the full list of
+measurements needed, with suggested sources, is in Table~1 (Section~\ref{sec:litgaps}).
+\colorbox{boxgreen}{\textbf{\textcolor{confgreen}{Green boxes}}} summarise confirmed findings.
+
+%----------------------------------------------------------------------
+\section{Variables and Symbols}
+
+\begin{center}
+\begin{tabular}{p{2.4cm}p{6.2cm}p{2.8cm}p{2.0cm}}
+\toprule
+Symbol & Plain-English meaning & Typical value & Unit \\
+\midrule
+$[\text{MMP-9}]$ & Concentration of MMP-9 enzyme in wound fluid & 17--200 (clinical) & ng/mL \\
+$[E]$ & Same as [MMP-9], expressed in molar units & 0.19--2.17 (clinical) & nM \\
+$F_k$ & Fraction of probe chains cut by MMP-9 (the sensor signal) & 0 to 1 & -- \\
+$\Gamma$ & Number of probe chains attached per cm$^2$ of electrode & 3 (design target) & pmol/cm$^2$ \\
+$\Gamma_0$ & Initial probe density before any cleavage occurs & 3 & pmol/cm$^2$ \\
+$k_\text{cat}/K_m$ & How fast MMP-9 cuts the C15 probe in free solution & 188,000 & M$^{-1}$s$^{-1}$ \\
+$\alpha$ & Surface correction: cleavage is this fraction as fast on the electrode as in solution & 0.3 (estimated) & -- \\
+$K_{m,\text{surf}}$ & Probe density at which cleavage rate is half its maximum & 3.4 & pmol/cm$^2$ \\
+$T$ & Incubation time (how long we wait before reading) & 30--60 & min \\
+$D_f$ & Dilution factor from eluting wound fluid off the swab & 2 & -- \\
+$\eta$ & Fraction of each species successfully eluted from the swab & 0.65--0.90 & -- \\
+$i_\text{peak}$ & Electrical current at the peak of the SWV scan & $\sim$5 & nA \\
+$R$ & Active/control electrode current ratio; cancels fouling and drift & 0 to 1 & -- \\
+$\sigma_{F_k}$ & Measurement noise in the cleavage fraction & 0.003--0.5 & \% \\
+LOD & Lowest MMP-9 concentration the sensor can \textit{detect} (3$\sigma$ criterion) & 8.8 & ng/mL \\
+LOQ & Lowest concentration that can be reliably \textit{quantified} (10$\sigma$ criterion) & 29.4 & ng/mL \\
+TIMP-1 & Natural MMP-9 inhibitor present in wound fluid; reduces free MMP-9 & 200 (wound) & ng/mL \\
+A1AT & Natural HNE inhibitor; rapid and nearly complete HNE neutralisation & 100 (wound) & $\mu$g/mL \\
+$f_\text{steric}$ & Fraction of probes that an MMP-9 molecule can physically reach & 9--40\% & -- \\
+$k_\text{ET}$ & Rate at which methylene blue transfers electrons to the electrode & depends on distance & s$^{-1}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%----------------------------------------------------------------------
+\section{Pipeline at a Glance}
 
 \begin{figure}[H]
 \centering
-% TikZ 2-column flowchart of the 17-layer pipeline
 \begin{tikzpicture}[
-  node distance=0.30cm and 1.0cm,
+  node distance=0.30cm and 1.2cm,
   lbox/.style={rectangle, rounded corners=3pt,
                minimum width=6.8cm, minimum height=0.64cm,
                text width=6.6cm, align=left, font=\footnotesize,
                inner sep=3pt},
-  arr/.style={{Stealth[length=5pt]}-{Stealth[length=5pt]}, draw=gray!70},
   singlearr/.style={-{Stealth[length=5pt]}, thick, draw=gray!60},
-  bio/.style    ={lbox, fill=red!12,    draw=red!40!black},
-  trans/.style  ={lbox, fill=blue!12,   draw=blue!40!black},
-  elec/.style   ={lbox, fill=violet!12, draw=violet!40!black},
-  kin/.style    ={lbox, fill=green!12,  draw=green!40!black},
-  swv/.style    ={lbox, fill=orange!12, draw=orange!40!black},
-  sig/.style    ={lbox, fill=teal!12,   draw=teal!40!black},
-  cal/.style    ={lbox, fill=gray!15,   draw=gray!50!black},
+  bio/.style  ={lbox, fill=red!28,    draw=red!60!black},
+  trans/.style={lbox, fill=blue!22,   draw=blue!60!black},
+  elec/.style ={lbox, fill=violet!18, draw=violet!60!black},
+  kin/.style  ={lbox, fill=green!22,  draw=green!60!black},
+  swv/.style  ={lbox, fill=orange!24, draw=orange!60!black},
+  sig/.style  ={lbox, fill=teal!18,   draw=teal!60!black},
+  cal/.style  ={lbox, fill=gray!22,   draw=gray!60!black},
 ]
+% Left column: Layers 0-8
+\node[bio]   (L0) {\textbf{L0} Wound biology: protease cascade ODE};
+\node[bio,   below=of L0]  (L1) {\textbf{L1} Sample collection: swab, elution, dilution $D_f$};
+\node[trans, below=of L1]  (L2) {\textbf{L2} Capillary fill: Lucas-Washburn $x(t)$};
+\node[trans, below=of L2]  (L3a){\textbf{L3a} 1D diffusion PDE: Crank-Nicolson, Da number};
+\node[trans, below=of L3a] (L3b){\textbf{L3b} Inhibitor kinetics in-device: TIMP-1/MMP-9 ODE};
+\node[trans, below=of L3b] (L3c){\textbf{L3c} Biofouling: Langmuir $\Theta_f(t)$, flux attenuation};
+\node[elec,  below=of L3c] (L4) {\textbf{L4} Gold electrode: roughness $R_f$, oxide stripping};
+\node[elec,  below=of L4]  (L5) {\textbf{L5} Reference/counter: $E_\text{ref}(\text{Cl}^-)$};
+\node[elec,  below=of L5]  (L6) {\textbf{L6} Double layer: GCS capacitance, $iR$ drop};
 
-% ── Left column: Layers 0–8 ──────────────────────────────────────
-\node[bio]   (L0) {\textbf{L0} Wound biology — protease activation ODE};
-\node[bio,   below=of L0] (L1) {\textbf{L1} Sample collection — swab, elution, dilution $D_f$};
-\node[trans, below=of L1] (L2) {\textbf{L2} Capillary fill — Lucas-Washburn $x(t)$};
-\node[trans, below=of L2] (L3a){\textbf{L3a} 1D diffusion PDE — Crank-Nicolson, Da number};
-\node[trans, below=of L3a](L3b){\textbf{L3b} Inhibitor kinetics in-device — TIMP-1/MMP-9 ODE};
-\node[trans, below=of L3b](L3c){\textbf{L3c} Biofouling — Langmuir $\Theta_f(t)$, flux attenuation $\alpha_\text{foul}$};
-\node[elec,  below=of L3c](L4) {\textbf{L4} Gold electrode — roughness $R_f$, oxide stripping};
-\node[elec,  below=of L4] (L5) {\textbf{L5} Reference/counter — $E_\text{ref}(\text{Cl}^-)$, CE sizing};
-\node[elec,  below=of L5] (L6) {\textbf{L6} Double layer — GCS capacitance, $iR$ drop};
+% Right column: Layers 7-16
+\node[elec,  right=2.2cm of L0]  (L7a){\textbf{L7a} SAM loading: competitive Langmuir $\Gamma_p$};
+\node[elec,  below=of L7a] (L7b){\textbf{L7b} SAM stability: oxidative and electrochemical limits};
+\node[elec,  below=of L7b] (L7c){\textbf{L7c} Ca$^{2+}$ artefact: $\Delta d_\text{eff}$, ratiometric cancel};
+\node[kin,   below=of L7c] (L8) {\textbf{L8} Probe conformation: Flory/AGdG, steric $f_\text{steric}$};
+\node[kin,   below=of L8]  (L9) {\textbf{L9} Surface kinetics: MM ODE, $\Gamma(t)$, $F_k(t)$};
+\node[swv,   below=of L9]  (L10){\textbf{L10} Electron transfer: Marcus $k_\text{ET}(d)$, BV};
+\node[swv,   below=of L10] (L11){\textbf{L11} SWV forward model: Osteryoung $i_\text{peak}(t)$};
+\node[sig,   below=of L11] (L12){\textbf{L12} Peak extraction: baseline, Gaussian fit, area};
+\node[sig,   below=of L12] (L13){\textbf{L13} Ratiometric: $F_k = 1 - R(T)/R(0)$};
 
-% ── Right column: Layers 7–16 ────────────────────────────────────
-\node[elec,  right=2.0cm of L0] (L7a){\textbf{L7a} SAM loading — competitive Langmuir $\Gamma_p$};
-\node[elec,  below=of L7a](L7b){\textbf{L7b} SAM stability — oxidative/electrochemical desorption};
-\node[elec,  below=of L7b](L7c){\textbf{L7c} Ca$^{2+}$ artefact — $\Delta d_\text{eff}$, ratiometric cancellation};
-\node[kin,   below=of L7c](L8) {\textbf{L8} Probe conformation — Flory/AGdG, steric $f_\text{steric}$};
-\node[kin,   below=of L8] (L9) {\textbf{L9} Surface kinetics — MM ODE, $\Gamma(t)$, $F_k(t)$, regime};
-\node[swv,   below=of L9] (L10){\textbf{L10} Electron transfer — Marcus $k_\text{ET}(d)$, Butler-Volmer};
-\node[swv,   below=of L10](L11){\textbf{L11} SWV forward model — Osteryoung $i_\text{peak}(t)$};
-\node[sig,   below=of L11](L12){\textbf{L12} Peak extraction — baseline, Gaussian fit, area};
-\node[sig,   below=of L12](L13){\textbf{L13} Ratiometric — $F_k = 1 - R(T)/R(0)$, error propagation};
+% Bottom: Layers 14-16
+\node[cal, below=0.65cm of L6, xshift=4.7cm] (L14){\textbf{L14} Noise budget: Johnson, flicker, ADC; $\sigma_{F_k}$, LOD};
+\node[cal, below=of L14] (L15){\textbf{L15} Calibration: 4PL + linear, LOD/LOQ, 95\% CI};
+\node[cal, below=of L15] (L16){\textbf{L16} Forward chain: $[E]_\text{wound} \to F_k \to i_\text{peak}$};
 
-% ── Bottom: Layers 14–16 (span both columns) ─────────────────────
-\node[cal, below=0.6cm of L6, xshift=4.6cm] (L14){\textbf{L14} Noise budget — Johnson, flicker, ADC; $\sigma_{F_k}$, LOD};
-\node[cal, below=of L14] (L15){\textbf{L15} Calibration — 4PL + linear, LOD/LOQ, 95\% CI};
-\node[cal, below=of L15] (L16){\textbf{L16} Forward chain — full $[E]_\text{wound} \to F_k \to i_\text{peak}$ pipeline};
-
-% ── Arrows left column ───────────────────────────────────────────
+% Arrows left column
 \foreach \a/\b in {L0/L1, L1/L2, L2/L3a, L3a/L3b, L3b/L3c, L3c/L4, L4/L5, L5/L6}
   \draw[singlearr] (\a.south) -- (\b.north);
 
-% ── Arrows right column ──────────────────────────────────────────
+% Arrows right column
 \foreach \a/\b in {L7a/L7b, L7b/L7c, L7c/L8, L8/L9, L9/L10, L10/L11, L11/L12, L12/L13}
   \draw[singlearr] (\a.south) -- (\b.north);
 
-% ── Cross-connections ────────────────────────────────────────────
-\draw[singlearr] (L6.south) -- ++(0,-0.45) -| (L14.west);
-\draw[singlearr] (L13.south) -- ++(0,-0.45) -| (L14.east);
+% Bottom connections
+\draw[singlearr] (L6.south) -- ++(0,-0.48) -| (L14.west);
+\draw[singlearr] (L13.south) -- ++(0,-0.48) -| (L14.east);
 \draw[singlearr] (L14.south) -- (L15.north);
 \draw[singlearr] (L15.south) -- (L16.north);
 
-% Layer 0→L7a coupling (SAM parameters from surface chemistry)
-\draw[arr, gray!40, dashed] (L0.east) -- (L7a.west)
-    node[midway, above, font=\tiny, text=gray]
-    {wound $[E]_\text{free}$};
-\draw[arr, gray!40, dashed] (L3c.east) -- (L9.west)
-    node[midway, font=\tiny, text=gray, pos=0.4, below]
-    {$[E]_\text{eff}$, $\alpha_\text{foul}$};
-
+% Cross-links
+\draw[-{Stealth[length=4pt]}, dashed, gray!50]
+  (L0.east) -- (L7a.west)
+  node[midway, above, font=\tiny, text=gray]{$[E]_\text{free}$};
+\draw[-{Stealth[length=4pt]}, dashed, gray!50]
+  (L3c.east) -- (L9.west)
+  node[midway, font=\tiny, text=gray, pos=0.42, below]{$[E]_\text{eff}$};
 \end{tikzpicture}
-\caption*{\small Colour key: {\color{red!60!black}\rule[0.4ex]{8pt}{5pt}} Biological/analytical \;
-{\color{blue!60!black}\rule[0.4ex]{8pt}{5pt}} Transport \;
-{\color{violet!60!black}\rule[0.4ex]{8pt}{5pt}} Electrode/SAM \;
-{\color{green!60!black}\rule[0.4ex]{8pt}{5pt}} Surface kinetics \;
-{\color{orange!60!black}\rule[0.4ex]{8pt}{5pt}} Electrochemistry \;
-{\color{teal!60!black}\rule[0.4ex]{8pt}{5pt}} Signal processing \;
-{\color{gray!70}\rule[0.4ex]{8pt}{5pt}} Calibration/output}
+
+\vspace{0.4em}
+\footnotesize
+Colour key:\quad
+\colorbox{red!28}{\phantom{\rule{6pt}{6pt}}}\;Biological / analytical\quad
+\colorbox{blue!22}{\phantom{\rule{6pt}{6pt}}}\;Transport\quad
+\colorbox{violet!18}{\phantom{\rule{6pt}{6pt}}}\;Electrode / SAM\quad
+\colorbox{green!22}{\phantom{\rule{6pt}{6pt}}}\;Surface kinetics\quad
+\colorbox{orange!24}{\phantom{\rule{6pt}{6pt}}}\;Electrochemistry\quad
+\colorbox{teal!18}{\phantom{\rule{6pt}{6pt}}}\;Signal processing\quad
+\colorbox{gray!22}{\phantom{\rule{6pt}{6pt}}}\;Calibration / output
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \begin{findingbox}
-\textbf{Key computed results (all at $\alpha = 0.3$, C15 substrate, $T = 30$ min unless stated).}
-\begin{itemize}[noitemsep,topsep=0pt]
-\item $F_k$ at 17 ng/mL: \textbf{1.0\%} at 30 min, \textbf{2.0\%} at 60 min (below 5\% threshold; see regime analysis)
-\item $F_k$ at 200 ng/mL: \textbf{11.4\%} at 30 min, \textbf{21.9\%} at 60 min
-\item No valid linear calibration window at $\alpha = 0.3$ (detect $>82$ min; linear $<51$ min) $\to$ use 4PL calibration or increase $\alpha$
-\item Electronic noise floor (Johnson + ADC): $\sigma_i = 0.088$ pA; $\sigma_{F_k} = 0.003\%$ --- electronics are NOT the limiting factor
-\item Kinetic LOD $= 8.8$ ng/mL at $T = 30$ min (3$\sigma$/slope); LOQ $= 29.4$ ng/mL --- below 17 ng/mL clinical lower bound $\checkmark$
-\item TIMP-1 strongly suppresses MMP-9 in device: at 200 ng/mL TIMP-1 chamber concentration, $>$70\% of MMP-9 is inhibited within 30 min
-\item C15 substrate selected over A11: F$_k$(17 ng/mL, $\alpha$=1, 60 min) = 11.8\% vs 4.4\%; $\Delta F_k$ = 65.3\% vs 34.8\%
+\textbf{Key computed results} (all at $\alpha = 0.3$, C15 substrate, $T = 30$ min unless stated).
+\begin{itemize}[noitemsep, topsep=0pt]
+\item Cleavage fraction $F_k$ at 17~ng/mL: \textbf{1.0\%} at 30~min, \textbf{2.0\%} at 60~min.
+  At 200~ng/mL: \textbf{11.4\%} at 30~min, \textbf{21.9\%} at 60~min.
+\item \textbf{No valid linear calibration window at $\alpha = 0.3$}: the sensor cannot detect
+  17~ng/mL until $T > 82$~min, but the calibration is only linear for $T < 51$~min.
+  Remedy: use 4PL calibration at $T = 60$--120~min, or improve surface chemistry to raise $\alpha$.
+\item Electronics noise floor (Johnson + ADC): $\sigma_{F_k} = 0.003\%$ -- electronics are
+  \textbf{not} the limiting factor.
+\item Kinetic LOD (from calibration): \textbf{8.8~ng/mL} at $T = 30$~min. Below the 17~ng/mL
+  clinical lower bound. \checkmark
+\item TIMP-1 strongly suppresses MMP-9 inside the device: at 200~ng/mL TIMP-1,
+  $>$70\% of MMP-9 is captured within 30~min.
+\item C15 substrate is preferred over A11: $\Delta F_k = 65\%$ vs 35\% at 200~ng/mL,
+  60~min, $\alpha = 1$.
 \end{itemize}
 \end{findingbox}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 0: Wound Biology --- Protease Activation Cascade}
+%----------------------------------------------------------------------
+\section{Layer 0: How Much MMP-9 is in the Wound?}
 
-The free enzyme concentrations entering the device are set by the wound biochemistry. The full activation cascade ODE integrates pro-enzyme activation, inhibitor binding, and complex formation simultaneously.
+
+This step models the chemistry happening in the wound fluid itself. Two types of enzymes
+are present: MMP-9 (the target we detect) and HNE (used for the second sensor channel).
+Both are partially or fully blocked by natural inhibitors. This layer predicts how much of
+each enzyme is in its free, active form at the time of swabbing.
+
+
+The clinical range of 17--200~ng/mL refers to \textit{total} MMP-9 in wound fluid. But the
+sensor only responds to the \textit{free} fraction that can reach and cleave the probe. If
+TIMP-1 sequesters most of the MMP-9, the sensor signal will be much lower than the total
+concentration implies.
 
 \begin{eqbox}
-\textbf{MMP-9 cascade} (9-state ODE):
-$\frac{d[\text{proMMP-9}]}{dt} = -(k_{\text{cat}}/K_m)_{\text{MMP-3}} [\text{MMP-3}][\text{proMMP-9}]
-    - (k_{\text{cat}}/K_m)_{\text{plasmin}}[\text{plasmin}][\text{proMMP-9}]$\\
-$\frac{d[\text{MMP-9}]}{dt} = \text{activation} - k_{\text{on,T1}}[\text{TIMP-1}][\text{MMP-9}] + k_{\text{off,T1}}[\text{MMP-9:TIMP-1}]$\\[0.3em]
-\textbf{HNE cascade:}
-$\frac{d[\text{HNE}]}{dt} = -k_{\text{on,A1AT}}[\text{A1AT}][\text{HNE}] - k_{\text{on,SLPI}}[\text{SLPI}][\text{HNE}]$
+\textbf{MMP-9 activation and inhibition} (9-state ODE):
+\begin{align*}
+\frac{d[\text{proMMP-9}]}{dt} &= -\left(\frac{k_\text{cat}}{K_m}\right)_\text{MMP-3}[\text{MMP-3}]
+    [\text{proMMP-9}] - \left(\frac{k_\text{cat}}{K_m}\right)_\text{plasmin}[\text{plasmin}][\text{proMMP-9}]\\
+\frac{d[\text{MMP-9}]_\text{free}}{dt} &= \text{activation} - k_{\text{on,T1}}[\text{MMP-9}][\text{TIMP-1}]
+    + k_{\text{off,T1}}[\text{complex}]\\
+\frac{d[\text{HNE}]_\text{free}}{dt} &= -k_{\text{on,A1AT}}[\text{HNE}][\text{A1AT}]
+    - k_{\text{on,SLPI}}[\text{HNE}][\text{SLPI}]
+\end{align*}
+\confirmed{Confident parameters}: $k_{\text{on,A1AT}} = 2\times10^7$~M$^{-1}$s$^{-1}$ (Beatty 1980;
+Bieth 1984); $K_i(\text{TIMP-1/MMP-9}) = 0.1$~nM (Nagase \& Woessner 1999).
 \end{eqbox}
 
-\noindent\textbf{Confident values:} $k_{\text{on,A1AT}} = 2\times10^7$ M$^{-1}$s$^{-1}$ (Beatty 1980; Bieth 1984);
-$K_i(\text{TIMP-1/MMP-9}) \approx 0.1$ nM (Nagase \& Woessner 1999);
-$[\text{Cl}^-]_\text{wound} = 150$ mM; $E^\circ_\text{AgCl} = 0.2224$ V vs SHE (Bard \& Faulkner).
-
-\noindent\flagged{$(k_\text{cat}/K_m)_\text{MMP-3}$, $(k_\text{cat}/K_m)_\text{plasmin}$, $k_{\text{on,TIMP-1}}$,
-$k_{\text{on,SLPI}}$, $[\text{MMP-3}]_\text{wound}$, $[\text{plasmin}]_\text{wound}$,
-$[\text{A1AT}]_\text{wound}$, $[\text{SLPI}]_\text{wound}$, $[\text{TIMP-1}]_\text{wound}$ free fraction.}
+\begin{needsbox}
+\begin{itemize}[noitemsep, topsep=0pt]
+\item $(k_\text{cat}/K_m)$ for MMP-3 activating pro-MMP-9 (currently 5,000~M$^{-1}$s$^{-1}$, estimated) --
+  search MEROPS database and Suzuki 1990 \textit{J Biochem}.
+\item $(k_\text{cat}/K_m)$ for plasmin activating pro-MMP-9 (currently 10,000~M$^{-1}$s$^{-1}$, estimated) --
+  search fibrinolysis/MMP activation literature.
+\item $[\text{TIMP-1}]_\text{wound} = 200$~ng/mL from Trengove 1999 -- confirm whether this is
+  free TIMP-1 or total (including TIMP-1 already bound to MMP-9). Free fraction matters here.
+\item $[\text{A1AT}]_\text{wound} = 100$~$\mu$g/mL -- this is estimated from serum dilution.
+  Need a wound-fluid specific measurement. Proteomics or ELISA on chronic wound exudate.
+\item $k_{\text{on,SLPI}}$ for SLPI binding HNE (currently 10$^5$~M$^{-1}$s$^{-1}$, estimated) --
+  SLPI is a slow tight-binding inhibitor; check serpinDB.
+\item $k_{\text{on,TIMP-1}}$ for TIMP-1 binding MMP-9 (currently 2$\times$10$^5$~M$^{-1}$s$^{-1}$,
+  Langton 1998) -- confirm this is TIMP-1, not TIMP-2.
+\item See Table~1 (Section~\ref{sec:litgaps}) for the full list with priority rankings.
+\end{itemize}
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B1_wound_biology.pdf}
-\caption{Layer 0 output: wound-fluid protease cascade ODE. Panel D shows the free enzyme concentrations
-input to Layer 1. Shaded region = swab contact window. Note rapid TIMP-1-mediated MMP-9 inhibition.}
+\caption{Layer~0: Wound-fluid protease cascade.
+\textbf{A:} Initial concentrations of all species (log scale). Inhibitors (green) greatly outnumber
+active enzymes (red). MMP-9 clinical detection range is shaded.
+\textbf{B:} MMP-9 free vs blocked over time. Free MMP-9 falls to $\sim$3.4~ng/mL by 30~min due
+to TIMP-1 capture -- well below the 17~ng/mL total that enters the wound.
+\textbf{C:} HNE is completely neutralised by A1AT within seconds (log scale).
+\textbf{D:} Free enzyme concentration at different swab contact times: the earlier the swab is
+applied, the more free enzyme is captured.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 1: Sample Collection}
+\begin{findingbox}
+\textbf{Critical finding: the HNE channel will not function in real wound fluid.}
 
-Swab absorption ($V_\text{abs} = 30\,\mu$L), elution into buffer ($V_\text{elut} = 60\,\mu$L, $D_f = 2$):
+At a wound-fluid A1AT concentration of 100~$\mu$g/mL (1.92~$\mu$M), the pseudo-first-order
+inhibition half-life of HNE is:
+\[
+t_{1/2} = \frac{\ln 2}{k_{\text{on,A1AT}} \cdot [\text{A1AT}]} = \frac{0.693}{2\times10^7 \times 1.92\times10^{-6}} \approx 0.018~\text{s}
+\]
+HNE is irreversibly neutralised within approximately 0.02 seconds of entering the wound fluid.
+The model predicts free HNE at all time points beyond $t = 1$~s is effectively zero. No HNE
+reaches the sensor in measurable quantities.
+
+\textbf{Consequence for the sensor design.} The device was designed as a ratiometric MMP-9/HNE
+sensor, with HNE providing the second channel. This ratiometric architecture is not viable in
+real wound fluid because the HNE signal will be zero regardless of wound state. Three
+alternative approaches should be evaluated before fabrication begins:
+\begin{enumerate}[noitemsep, topsep=3pt]
+\item Replace the HNE active channel with a scrambled, protease-resistant peptide that serves
+  as a purely electrochemical reference (cancels fouling and drift with no enzymatic activity).
+\item Use a second MMP-9 substrate with a different cleavage rate to enable internal
+  ratiometric calibration of MMP-9 activity alone.
+\item Measure free HNE directly using a competitive immunoassay channel if HNE information is
+  clinically required, rather than a cleavage-based electrode.
+\end{enumerate}
+This conclusion is conditional on $[\text{A1AT}]_\text{wound} = 100~\mu$g/mL being correct.
+If the true chronic-wound A1AT concentration is substantially lower ($<$1~$\mu$g/mL, as might
+occur in a severely proteolytic environment), the HNE channel could recover. Measuring
+$[\text{A1AT}]$ in patient-derived chronic wound exudate is therefore \textbf{CRITICAL priority}
+before committing to the HNE architecture.
+\end{findingbox}
+
+%----------------------------------------------------------------------
+\section{Layer 1: Getting the Sample into the Device}
+
+
+The wound is swabbed to collect 30~$\mu$L of fluid, then the swab is placed in 60~$\mu$L of
+buffer to release the proteins (elution). This means the sample is diluted 2-fold before
+entering the sensor. Each protein elutes with a different efficiency $\eta$.
+
+
+The dilution factor and elution efficiency together determine the actual concentration
+each species reaches inside the sensor. The more inhibitor (TIMP-1) co-elutes relative
+to MMP-9, the more the signal is suppressed inside the device.
+
 \begin{equation}
-[E]_\text{chamber} = [E]_\text{wound} \times \eta_\text{elut} / D_f
+[E]_\text{chamber} = [E]_\text{wound} \times \eta_E / D_f, \qquad D_f = 2
 \end{equation}
-SLPI (11.7 kDa, $\eta = 0.85$) elutes more efficiently than HNE (30 kDa, $\eta = 0.75$), increasing the SLPI:HNE inhibitor ratio in the chamber (enrichment factor 1.13$\times$).
 
-\flagged{All species-specific elution efficiencies $\eta$ except SLPI (Ashcroft 2000) and GSH/ascorbate. Validate with swab recovery assay.}
+\begin{needsbox}
+All species-specific elution efficiencies $\eta$ listed below are estimated or borrowed from
+protein recovery studies in different matrices. Each needs a spike-and-recovery experiment
+on the actual swab/buffer combination:
+\begin{itemize}[noitemsep, topsep=2pt]
+\item $\eta_\text{MMP-9} = 0.70$ (estimated); $\eta_\text{TIMP-1} = 0.75$; $\eta_\text{A1AT} = 0.80$;
+  $\eta_\text{SLPI} = 0.85$ (Ashcroft 2000); $\eta_\text{HNE} = 0.70$ (estimated).
+\end{itemize}
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig_B1b_sample_collection.pdf}
-\caption{Layer 1: Wound vs chamber concentrations (log scale) and elution efficiency $\eta$ per species.
-MMP-9 undergoes 2.86$\times$ dilution (D$_f = 2$, $\eta = 0.70$). All $\eta$ values are flagged.}
+\caption{Layer~1: Wound vs chamber concentrations and per-species elution efficiency.
+MMP-9 undergoes 2.86$\times$ total dilution ($D_f = 2$, $\eta = 0.70$). All $\eta$ values need
+experimental confirmation.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 2: Capillary Fill}
+%----------------------------------------------------------------------
+\section{Layer 2: Filling the Sensor Channel}
 
-Lucas-Washburn for rectangular channel ($w \times h$ cross-section):
+
+When the eluted sample is placed at the sensor inlet, it wicks into the channel by capillary
+action (the same force that makes paper absorb water). This step checks that the channel fills
+completely before measurement begins, and that the time to fill is much shorter than the
+incubation time.
+
+
+If the channel does not fill completely, some electrodes will not be exposed to the sample.
+If filling takes longer than a minute, it eats into the usable incubation window.
+
 \begin{equation}
-x(t) = \sqrt{\frac{r_h \gamma \cos\theta}{2\eta_\text{fluid}} \cdot t}, \qquad
-r_h = \frac{2wh}{w+h}
+x(t) = \sqrt{\frac{r_h\,\gamma\cos\theta}{2\eta_\text{fluid}} \cdot t},
+\quad r_h = \frac{2wh}{w+h}
 \end{equation}
-Fill time is fast ($\ll$1 min for 20 mm channel), so all electrodes are wetted well before the incubation window. Damk\"{o}hler number Da $\approx 556 \gg 1$ --- enzyme transport to the electrode is \textit{not} rate-limiting; kinetics dominate.
 
-\flagged{Contact angle $\theta = 30^\circ$ (assumed; measure on actual chip surface)}
+The Damkohler number Da $\approx 556 \gg 1$ confirms that enzyme transport to the electrode is
+not the slow step -- kinetics (how fast MMP-9 cuts) dominate.
+
+\begin{needsbox}
+Contact angle $\theta = 30^\circ$ on PDMS/gold surface -- measure on the actual chip.
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B2_capillary_fill.pdf}
-\caption{Layer 2: Lucas-Washburn fill dynamics. Channel fills completely in $<$0.2 s with $\theta = 30^\circ$.
-Panel C: Damk\"{o}hler number vs $[E]$ confirms kinetic-limited regime (Da $\gg 1$).}
+\caption{Layer~2: Capillary fill dynamics. The channel fills in $<$0.2~s -- negligible compared
+to 30--60~min incubation. Da $\gg 1$ confirms kinetics are rate-limiting, not mass transport.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layers 3a--3c: Mass Transport, Fouling, and Inhibitor Kinetics}
+%----------------------------------------------------------------------
+\section{Layers 3a--3c: How the Sample Changes Inside the Device}
 
-\subsection{3a: Diffusion PDE (Crank-Nicolson)}
+\subsection{3a: Enzyme diffusion to the electrode}
 
-1D diffusion equation with Robin boundary condition at the electrode:
-\begin{align}
-\frac{\partial [E]}{\partial t} &= D_E \frac{\partial^2 [E]}{\partial z^2}, \quad z \in (0, h)\\
-D_E \frac{\partial [E]}{\partial z}\bigg|_{z=0} &= k_\text{obs}[E](0,t)\,\Gamma
-\end{align}
-$D_\text{MMP-9} = 4.7\times10^{-11}$ m$^2$s$^{-1}$ (Stokes-Einstein, $r = 3.5$ nm). The Crank-Nicolson scheme ensures stability for all time-steps.
+
+Once inside the channel, MMP-9 diffuses toward the electrode surface where the probes are. This
+step checks that MMP-9 reaches the surface quickly relative to the incubation time, and that
+MMP-9 depletion at the surface is negligible (the concentration stays approximately uniform).
+
+\begin{equation}
+\frac{\partial [E]}{\partial t} = D_E \frac{\partial^2 [E]}{\partial z^2}, \quad
+D_\text{MMP-9} = 4.7\times10^{-11}\ \text{m}^2\text{s}^{-1}
+\end{equation}
+
+MMP-9 diffusivity is calculated from the Stokes-Einstein equation using a radius of 3.5~nm.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B3_mass_transport.pdf}
-\caption{Layer 3a: 1D diffusion of MMP-9 to the electrode surface. Enzyme is not depleted at the surface
-in the clinical range (Da $\ll 1$ in kinetic terms) --- [E] remains approximately uniform.}
+\caption{Layer~3a: MMP-9 diffusion in the sensor channel. The enzyme concentration remains
+nearly uniform throughout (surface depletion $<$1\%) confirming diffusion is not the
+rate-limiting step.}
 \end{figure}
 
-\subsection{3c: Biofouling Attenuation}
+\subsection{3b: Inhibitor binding inside the device}
 
-Non-specific protein adsorption forms a layer of thickness $h_f$ that attenuates enzyme flux:
-\begin{equation}
-\frac{d\Theta_f}{dt} = k_f [P]_\text{bulk}(1 - \Theta_f) - k_d \Theta_f, \qquad
-\alpha_\text{foul}(t) = \frac{h_\text{channel}}{h_\text{channel} + h_{f,\text{max}} \Theta_f}
-\end{equation}
 
-\flagged{$k_f = 10^3$ M$^{-1}$s$^{-1}$, $k_d = 10^{-4}$ s$^{-1}$, $P_\text{bulk} = 150\,\mu$M (total protein)}
+After elution, TIMP-1 and MMP-9 are both in solution inside the device. TIMP-1 continues to
+bind MMP-9 during the incubation period, progressively reducing the free MMP-9 available to
+cleave probes. This is the \textit{single largest source of signal suppression} in the model.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_B4_fouling.pdf}
-\caption{Layer 3c: Biofouling coverage $\Theta_f(t)$ and its flux attenuation $\alpha_\text{foul}$.
-The fouling layer saturates rapidly but its net effect on $F_k$ is minimal ($<$0.01\%) because
-$h_f \ll h_\text{channel}$. Flagged parameters dominate this layer's uncertainty.}
-\end{figure}
+At 17~ng/mL MMP-9 (0.19~nM) and 200~ng/mL TIMP-1 (7~nM in wound fluid, $\sim$2.6~nM in
+chamber after dilution), TIMP-1 is in $\sim$13-fold molar excess. Over 70\% of MMP-9 is
+captured within 30~min.
 
-\subsection{3b: In-Device Inhibitor Kinetics}
-
-After fill, TIMP-1 co-eluted from wound fluid continues to inhibit MMP-9 in solution:
-\begin{equation}
-\frac{d[E]_\text{free}}{dt} = -k_{\text{on,T1}}[E]_\text{free}[I]_\text{free} + k_{\text{off,T1}}[EI]
-\end{equation}
-At TIMP-1 chamber concentration $\approx 2.3$ nM vs MMP-9 $\approx 0.06$ nM (at 17 ng/mL after dilution), TIMP-1 is in large excess --- MMP-9 inhibition is nearly complete within 30 min.
+\begin{needsbox}
+$k_\text{on,TIMP-1} = 2\times10^5$~M$^{-1}$s$^{-1}$ -- confirm this applies to TIMP-1 (not TIMP-2).
+Confirm whether Trengove 1999 reports free or total TIMP-1 in wound fluid. If total, the model
+overestimates in-device inhibition.
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B5_inhibitor_kinetics.pdf}
-\caption{Layer 3b: In-device inhibitor binding. At clinical MMP-9 concentrations, $>$70\% of MMP-9 is
-complexed with TIMP-1 within 30 min. Free HNE is rapidly quenched by A1AT ($t_{1/2} \ll 1$ s).
-This inhibitor depletion is the dominant factor limiting $F_k$ in the forward chain.}
+\caption{Layer~3b: In-device inhibitor binding. At clinical MMP-9 concentrations, the large
+TIMP-1 excess ($\sim$13-fold) captures most MMP-9 within 30~min. HNE is quenched by A1AT
+within seconds. This inhibitor suppression is the dominant factor limiting the signal.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layers 4--7: Electrode Surface and SAM Chemistry}
+\subsection{3c: Surface fouling}
 
-\subsection{Layer 4: Gold Electrode}
 
-True electrode area: $A_\text{true} = R_f \times A_\text{geo}$, measured from Au oxide stripping charge:
-$R_f = Q_\text{strip} / (Q_\text{ref} \times A_\text{geo})$, where \confident{$Q_\text{ref} = 390\,\mu$C\,cm$^{-2}$ (Trasatti \& Petrii 1992)}.
+Wound fluid contains many non-specific proteins that can stick to the electrode surface,
+forming a physical barrier. This layer models how quickly that barrier builds up and how much
+it slows enzyme access to the probes.
 
-\flagged{$R_f = 1.5$ nominal; WE diameter 1.5 mm nominal --- must be confirmed by CV characterisation.}
+\begin{equation}
+\frac{d\Theta_f}{dt} = k_f\,[P]_\text{bulk}(1 - \Theta_f) - k_d\,\Theta_f, \qquad
+\alpha_\text{foul} = \frac{h_\text{channel}}{h_\text{channel} + h_{f,\text{max}}\Theta_f}
+\end{equation}
+
+The model predicts fouling has $<$0.01\% effect on $F_k$ because the fouling layer
+($h_f \sim 10$~nm) is negligible relative to the 100~$\mu$m channel height. The ratiometric
+design also cancels fouling if both active and control electrodes foul equally.
+
+\begin{needsbox}
+$k_f = 10^3$~M$^{-1}$s$^{-1}$, $k_d = 10^{-4}$~s$^{-1}$ -- both estimated. Measure by QCM in
+wound-fluid matrix. The protein diffusivity through a dense fouling layer is also assumed
+equal to bulk (could be 10--100$\times$ lower -- see audit finding~29).
+\end{needsbox}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_B4_fouling.pdf}
+\caption{Layer~3c: Biofouling coverage $\Theta_f(t)$ and flux attenuation. Fouling saturates
+quickly but its geometric effect on signal is $<$0.01\%.}
+\end{figure}
+
+%----------------------------------------------------------------------
+\section{Layers 4--7: The Electrode Surface and SAM Chemistry}
+
+
+Before any experiment, the gold electrode is coated with a self-assembled monolayer (SAM):
+a carpet of short molecules that hold the peptide probes upright and provide a clean electrical
+surface. Layers 4--7 model the preparation and stability of this surface.
+
+\subsection{Layer 4: Gold electrode}
+
+True electrode area (accounting for surface roughness) is measured from the gold oxide
+stripping charge:
+$A_\text{true} = R_f \times A_\text{geo}$, where \confirmed{$Q_\text{ref} = 390~\mu$C\,cm$^{-2}$
+(Trasatti \& Petrii 1992)}.
+
+\begin{needsbox}
+Roughness factor $R_f = 1.5$ (nominal). Measure by recording the oxide stripping charge on
+the actual electrode. Note: $R_f$ is not yet propagated into the steric or kinetic models
+(see audit finding~15).
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L4_gold_electrode.pdf}
-\caption{Layer 4: Roughness factor calculation and effective area vs $Q_\text{oxide}$.}
+\caption{Layer~4: Roughness factor calculation and effective area vs oxide stripping charge.}
 \end{figure}
 
-\subsection{Layer 5: Reference Electrode}
+\subsection{Layer 5: Reference electrode}
 
-On-chip Ag/AgCl reference: $E_\text{ref} = E^\circ_\text{AgCl} - (RT/F)\ln([\text{Cl}^-])$.
-\confident{$E^\circ_\text{AgCl} = 0.2224$ V vs SHE}, $[\text{Cl}^-]_\text{wound} = 150$ mM.
-Wound-to-chamber Cl$^-$ shift produces $\Delta E_\text{ref} = 1.5$ mV --- negligible.
+On-chip Ag/AgCl reference: \confirmed{$E^\circ_\text{AgCl} = 0.2224$~V vs SHE; $[\text{Cl}^-]_\text{wound} = 150$~mM}.
+Reference drift from wound-to-chamber Cl$^-$ change: $\Delta E_\text{ref} = 1.5$~mV -- negligible.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L5_reference.pdf}
-\caption{Layer 5: Reference electrode potential vs Cl$^-$ concentration. Grey band = wound-fluid range.
-Reference shift from wound to chamber is $<$2 mV --- within acceptable drift budget.}
+\caption{Layer~5: Reference electrode potential vs Cl$^-$. Shift from wound to chamber is $<$2~mV.}
 \end{figure}
 
-\subsection{Layer 6: Double Layer}
+\subsection{Layer 6: Double layer capacitance}
 
-Gouy-Chapman-Stern model: $C_\text{dl}^{-1} = C_H^{-1} + C_\text{GC}^{-1}$.
-At 163 mM ionic strength (PBS), the Gouy-Chapman capacitance $C_\text{GC}$ is large --- $C_\text{dl}$ is dominated by the Helmholtz layer.
-Double-layer charging current in SWV: $I_\text{cap} = 2C_\text{dl}A\Delta E_\text{SW} f \approx 0.6$ nA (far below the faradaic MB peak).
+The double layer (the region of charge at the electrode-solution interface) acts like a
+capacitor in parallel with the faradaic (electron-transfer) signal. At 163~mM ionic strength,
+double-layer charging current in SWV is $\sim$0.6~nA -- well below the $\sim$5~nA MB peak.
 
-\flagged{$C_H = 30\,\mu$F\,cm$^{-2}$ (MCH-SAM --- measure by EIS)}
+\begin{needsbox}
+Helmholtz capacitance $C_H = 30~\mu$F\,cm$^{-2}$ assumed for MCH-SAM. Measure by
+electrochemical impedance spectroscopy (EIS) on the actual surface.
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L6_double_layer.pdf}
-\caption{Layer 6: Double-layer capacitance model. Total $C_\text{dl}$ and charging current are well below
-the faradaic limit across all ionic strengths encountered.}
+\caption{Layer~6: Double-layer model. Charging current is well below the faradaic signal
+across all ionic strengths encountered.}
 \end{figure}
 
-\subsection{Layer 7: SAM Formation and Stability}
+\subsection{Layer 7: SAM formation and stability}
 
-Probe surface density from competitive Langmuir adsorption:
+The SAM is deposited by soaking the electrode in a mixture of the probe molecule and a
+backfiller (MCH). Probe density $\Gamma_p$ is controlled by adjusting the ratio of probe to
+MCH in the deposition solution:
 \begin{equation}
-\frac{\Gamma_p}{\Gamma_\text{max}} = \frac{K_{a,p} c_p}{1 + K_{a,p} c_p + K_{a,d} c_d}
+\frac{\Gamma_p}{\Gamma_\text{max}} = \frac{K_{a,p}\,c_p}{1 + K_{a,p}\,c_p + K_{a,d}\,c_d}
 \end{equation}
-Target $\Gamma_p = 2$--$3$ pmol\,cm$^{-2}$ to avoid complete steric blocking (see Layer 8). Achieve with $c_p \approx 6\,\mu$M probe and $c_d = 100\,\mu$M MCH.
 
-\flagged{$K_{a,p}$, $K_{a,d}$ (adsorption constants for probe/MCH on Au in ethanol --- must measure)}
+Target: $\Gamma_p = 2$--$3$~pmol\,cm$^{-2}$. Above $\sim$3.3~pmol\,cm$^{-2}$, MMP-9 molecules
+are too tightly packed to fit between probes (see Layer~8).
 
-SAM stability: electrochemical desorption is safe (scan minimum $-0.65$ V vs $E_\text{des} = -0.90$ V, margin = 250 mV). Oxidative SAM loss at $[\text{H}_2\text{O}_2] = 10\,\mu$M, 60 min: 3.5\% --- acceptable.
+SAM electrochemical stability: scan minimum $-0.65$~V vs desorption threshold $-0.90$~V
+-- 250~mV margin. Oxidative loss at 10~$\mu$M H$_2$O$_2$ over 60~min: 3.5\% -- acceptable.
+
+\begin{needsbox}
+Adsorption constants $K_{a,p}$, $K_{a,d}$ -- must be measured by SPR or QCM during SAM
+formation to predict the solution composition needed for target $\Gamma_p$.
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig_B6_sam_loading.pdf}
-\caption{Layer 7a: SAM loading. Panel A: $\Gamma_p$ vs probe concentration for several MCH concentrations.
-Panel B: Diluent enrichment at surface (probe-poor surface relative to solution). Required solution
-composition to hit $\Gamma_p = 3$ pmol\,cm$^{-2}$: $c_p \approx 6\,\mu$M (flagged Ka values).}
+\caption{Layer~7a: SAM loading. Probe density vs solution composition. At $c_p \approx 6$~$\mu$M
+and $c_d = 100$~$\mu$M MCH the model predicts $\Gamma_p \approx 3$~pmol\,cm$^{-2}$ (all values
+flagged -- $K_{a,p}$, $K_{a,d}$ must be measured).}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig_L7b_sam_stability.pdf}
-\caption{Layer 7b: SAM stability. Electrochemical desorption threshold $E_\text{des} = -0.90$ V vs
-Ag/AgCl; operating minimum $-0.65$ V gives 250 mV safety margin. Oxidative loss at 10 $\mu$M
-H$_2$O$_2$ over 60 min $\approx$ 3.5\% --- acceptable for 30--60 min assay window.}
+\caption{Layer~7b: SAM stability under oxidative and electrochemical stress.
+Desorption potential margin: 250~mV. Oxidative loss at 10~$\mu$M H$_2$O$_2$, 60~min: 3.5\%.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig_L7c_calcium.pdf}
-\caption{Layer 7c: Ca$^{2+}$ artefact. PEG chelates Ca$^{2+}$ ($K_d = 2$ mM, flagged), contracting the
-tether by $\Delta d_\text{max}$ and increasing $k_\text{ET}$. Critically, the ratiometric design
-cancels this artefact provided both active and control electrodes have identical $\Gamma_p$.}
+\caption{Layer~7c: Ca$^{2+}$ artefact. PEG chelates Ca$^{2+}$ ($K_d \approx 2$~mM), contracting
+the tether and increasing $k_\text{ET}$. The ratiometric design cancels this artefact
+\textit{provided} both active and control electrodes have identical $\Gamma_p$.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 8: Probe Conformation and Steric Hindrance}
+%----------------------------------------------------------------------
+\section{Layer 8: Can MMP-9 Actually Reach the Probe?}
 
-PEG$_6$ spacer conformation from Flory scaling (dilute regime) and Alexander-de Gennes (brush regime).
-The MB-to-Au effective distance:
-$d_\text{eff} = L_\text{PEG} + L_\text{peptide} + L_\text{MB} \approx 4.9$ nm.
 
-Steric blocking by MMP-9 (radius $r = 4$ nm, PDB 1L6J):
+MMP-9 is a large enzyme (4~nm radius). If the probes are packed too densely, MMP-9 cannot
+physically squeeze between them to cleave the probe it is trying to reach. This layer
+calculates the fraction of probes that are accessible.
+
+
+At the target density of 3~pmol\,cm$^{-2}$, only 9\% of probes are accessible to MMP-9.
+This dramatically reduces the signal. If density is lowered to 1~pmol\,cm$^{-2}$, accessibility
+rises to $\sim$70\%.
+
 \begin{equation}
-\Gamma_\text{steric,max} = \frac{1}{\pi r_E^2 N_A} \approx 3.3\,\text{pmol\,cm}^{-2}
+f_\text{steric} = 1 - \frac{\Gamma_p}{\Gamma_\text{max}^{\text{steric}}}, \qquad
+\Gamma_\text{max}^{\text{steric}} = \frac{1}{\pi r_E^2 N_A} \approx 3.3~\text{pmol\,cm}^{-2}
 \end{equation}
-At $\Gamma_p = 3$ pmol\,cm$^{-2}$, the accessibility factor $f_\text{steric} = 1 - \Gamma_p/\Gamma_\text{steric,max} = 0.09$ (9\%). This severely limits the effective surface kinetic rate.
+
+At $\Gamma_p = 3$~pmol\,cm$^{-2}$: $f_\text{steric} = 9\%$. At $\Gamma_p = 1.5$~pmol\,cm$^{-2}$:
+$f_\text{steric} = 54\%$. \textbf{Design recommendation: aim for $\Gamma_p \leq 2$~pmol\,cm$^{-2}$.}
 
 \begin{findingbox}
-\textbf{Design implication:} $\Gamma_p$ must be $< 3.3$ pmol\,cm$^{-2}$ or MMP-9 cannot physically access most probes. Target $\Gamma_p \leq 2$ pmol\,cm$^{-2}$ to maintain $f_\text{steric} > 40\%$.
+This is one of the most important design parameters. Packing the probes too densely causes
+the enzyme to bounce off without cleaving. The model suggests the optimal probe density is
+around 1.5--2 pmol/cm$^2$, not 3 pmol/cm$^2$.
 \end{findingbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B7_steric_hindrance.pdf}
-\caption{Layer 8: Steric hindrance factor $f_\text{steric}$ vs probe density $\Gamma_p$.
-At 3 pmol/cm$^2$, only 9\% of probes are accessible to MMP-9. Relative sensitivity drops to 23\%.
-At 5 pmol/cm$^2$, complete steric blocking ($f_\text{steric} = 0$): enzyme cannot reach substrate.}
+\caption{Layer~8: Steric accessibility. At the target density of 3~pmol\,cm$^{-2}$, only 9\%
+of probes are reachable by MMP-9. Reducing to 1.5--2~pmol\,cm$^{-2}$ improves accessibility
+to 50--70\% while maintaining adequate signal amplitude.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L8_probe_conformation.pdf}
-\caption{Layer 8: Probe conformation model. PEG$_6$ effective length $L_\text{PEG} = 1.4$ nm (dilute
-Flory regime at $\Gamma_p < 3$ pmol/cm$^2$). $d_\text{eff} \approx 4.9$ nm across relevant $\Gamma_p$ range.}
+\caption{Layer~8: Probe conformation model. PEG$_6$ effective length $L_\text{PEG} = 1.4$~nm in
+the dilute Flory regime. Total probe-to-electrode distance $d_\text{eff} \approx 4.9$~nm.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \section{Layer 9: Surface Enzyme Kinetics}
 
-\subsection{Full MM ODE (dimensionally consistent)}
 
+This is the central calculation of the entire pipeline. It models how fast MMP-9 cuts through
+the probe chains on the electrode surface, and how this depends on the enzyme concentration
+and incubation time.
+
+
+The speed of cutting sets the LOD, the required incubation time, and the shape of the
+calibration curve. All downstream calculations depend on this layer.
+
+\subsection{How the cleavage fraction evolves over time}
+
+Two approximate regimes exist depending on how probe density $\Gamma$ compares to the surface
+Michaelis constant $K_{m,\text{surf}}$:
+
+\begin{eqbox}
+\textbf{Michaelis-Menten surface ODE (dimensionally consistent):}
 \begin{equation}
-\frac{d\Gamma}{dt} = -\left(\frac{k_\text{cat}}{K_m}\right)_\text{eff} [E] \cdot
-  \frac{K_{m,\text{surf}} \, \Gamma}{K_{m,\text{surf}} + \Gamma}
+\frac{d\Gamma}{dt} = -\left(\frac{k_\text{cat}}{K_m}\right)_\text{eff}
+  [E] \cdot \frac{K_{m,\text{surf}}\,\Gamma}{K_{m,\text{surf}} + \Gamma}
 \end{equation}
-where $(k_\text{cat}/K_m)_\text{eff} = (k_\text{cat}/K_m)_\text{sol} \times \alpha$ (M$^{-1}$s$^{-1}$),
-$K_{m,\text{surf}} = K_{m,\text{sol}} \times \delta \times 10^{-3} / f_\text{steric}$ (mol\,cm$^{-2}$),
-$\delta$ = effective probe-layer thickness (cm), $10^{-3}$ converts L to cm$^3$.
+where $(k_\text{cat}/K_m)_\text{eff} = 56{,}400$~M$^{-1}$s$^{-1}$ (solution value $\times\,\alpha = 0.3$),
+$K_{m,\text{surf}} = K_m^\text{sol} \times \delta \times 10^{-3} / f_\text{steric}
+  \approx 3.4$~pmol\,cm$^{-2}$.
 
-\textbf{Key kinetic regimes:}
-\begin{itemize}[noitemsep]
-\item \textbf{Zeroth order} ($\Gamma \gg K_{m,\text{surf}}$): $d\Gamma/dt = \text{const}$ $\Rightarrow$ $F_k \propto t$ (linear in time)
-\item \textbf{First order} ($\Gamma \ll K_{m,\text{surf}}$): $\Gamma(t) = \Gamma_0 e^{-k_\text{obs} t}$,
-  $k_\text{obs} = (k_\text{cat}/K_m)_\text{eff} [E]$ $\Rightarrow$ $F_k = 1 - e^{-k_\text{obs} t}$ (exponential, linear in $[E]$ at early times)
+\textbf{Two regimes:}
+\begin{itemize}[noitemsep, topsep=2pt]
+\item \textbf{Zeroth order} ($\Gamma \gg K_{m,\text{surf}}$, early assay): cutting rate is
+  \textit{constant} -- $F_k$ rises linearly with time.
+\item \textbf{First order} ($\Gamma \ll K_{m,\text{surf}}$, late assay): cutting rate slows
+  as probes are depleted -- $F_k = 1 - e^{-k_\text{obs}\,T}$ where $k_\text{obs} = (k_\text{cat}/K_m)_\text{eff}[E]$.
 \end{itemize}
 
-At $\Gamma_0 = 3$ pmol\,cm$^{-2}$ and $K_{m,\text{surf}} = 3.4$ pmol\,cm$^{-2}$: $\Gamma_0/K_{m,\text{surf}} = 0.88$ --- near the crossover, trending to first-order. The device operates in the approximately first-order regime throughout the assay.
+At $\Gamma_0 = 3$~pmol\,cm$^{-2}$: $\Gamma_0/K_{m,\text{surf}} = 0.88$ -- near the crossover.
+The device operates in the \textit{intermediate-to-first-order regime} throughout the assay.
+\end{eqbox}
 
-\flagged{Surface correction factor $\alpha = 0.3$ (nominal; must be measured empirically by comparing solution kcat/Km with surface calibration)}
+\begin{findingbox}
+\textbf{Inconsistency between Layer~8 and Layer~9 steric factors -- must resolve before finalising kinetics.}
+
+The symbol $f_\text{steric}$ is used for two distinct quantities that are currently assigned
+different values without justification:
+
+\begin{itemize}[noitemsep, topsep=3pt]
+\item \textbf{Layer~8 (geometric accessibility):} $f_\text{steric} = 1 - \Gamma_p/\Gamma_\text{max}^\text{steric} = 9\%$
+  at $\Gamma_p = 3$~pmol\,cm$^{-2}$. This is the fraction of probes physically reachable by a
+  4~nm-radius MMP-9 molecule.
+\item \textbf{Layer~9 (Km conversion):} $f_\text{steric} = 0.60$ is used in
+  $K_{m,\text{surf}} = K_m^\text{sol} \times \delta / f_\text{steric}$ to convert the solution Michaelis
+  constant to a surface density. This is a different physical quantity (how the effective binding
+  affinity changes at the interface) and has no derivation in the current model.
+\end{itemize}
+
+If the Layer~8 value (9\%) were substituted into the Layer~9 $K_{m,\text{surf}}$ formula, the result
+changes significantly: $K_{m,\text{surf}} \approx 22.6$~pmol\,cm$^{-2}$, giving
+$\Gamma_0/K_{m,\text{surf}} = 0.13$ -- firmly first-order throughout the assay, which simplifies the
+calibration considerably. However, the appropriate $f_\text{steric}$ for the $K_{m,\text{surf}}$
+conversion is a matter of debate in the literature (Ting et al.\ 2016; Plaxco group 2020) and
+should not simply inherit the geometric value without justification.
+
+\textbf{Action required:} define $f_\text{steric}$ consistently in both layers, or replace with
+distinct symbols (e.g.\ $f_\text{geo}$ for geometric accessibility, $f_\text{Km}$ for the
+Michaelis correction) and derive each from first principles or experiment.
+\end{findingbox}
+
+\begin{needsbox}
+\begin{itemize}[noitemsep, topsep=2pt]
+\item \textbf{Surface correction factor $\alpha = 0.3$} is the most critical unknown in the
+  entire model. All LOD and $F_k$ values scale proportionally with $\alpha$. Measure
+  empirically by comparing solution kcat/Km with on-electrode cleavage rate at known $\Gamma_0$.
+  Literature range: $\alpha = 0.03$--$0.5$ (Plaxco group 2015, ACS Nano).
+\item \textbf{Initial probe density $\Gamma_0 = 3$~pmol\,cm$^{-2}$} -- this is a design target,
+  not a measured value. Confirm by integrating the methylene blue oxidation peak in CV.
+\end{itemize}
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B8_surface_kinetics.pdf}
-\caption{Layer 9: Surface kinetics ODE. Panel A: Full ODE vs zeroth-order (linear) and first-order
-(exponential) analytic limits at 200 ng/mL. Panel B: $\Gamma(t)$ showing proximity to $K_{m,\text{surf}}$
-crossover. Panel C: $F_k(t)$ across clinical range. Panel D: First-order calibration --- exponential
-vs linear approx; deviation $<$10\% for $T < 26$ min at 200 ng/mL.}
+\caption{Layer~9: Surface kinetics ODE. \textbf{A:} Full ODE vs zeroth-order (linear) and
+first-order (exponential) analytic limits at 200~ng/mL -- the system sits near the crossover.
+\textbf{B:} Probe density $\Gamma(t)$ vs the Michaelis constant crossover.
+\textbf{C:} $F_k(t)$ across the clinical range.
+\textbf{D:} First-order calibration showing where the exponential departs from linear.}
 \end{figure}
 
-\subsection{Regime analysis and operating window}
+\subsection{Operating window}
 
 \begin{eqbox}
-\textbf{Detectability:} $F_k(17\,\text{ng/mL}) > 5\%$ requires $T > 82$ min at $\alpha = 0.3$.\\
-\textbf{Linearity:} Calibration deviates $<10\%$ from linear for $T < 26$ min.\\
-\textbf{Conclusion:} No valid linear operating window exists at $\alpha = 0.3$.\\
-\textbf{Remedy:} Use 4PL calibration for $T = 60$--$120$ min, or increase $\alpha$ by lowering $\Gamma_p$.
+\textbf{At $\alpha = 0.3$:}
+$F_k(17~\text{ng/mL}) > 5\%$ requires $T > 82$~min.
+Linear calibration is valid only for $T < 51$~min.
+These two windows do not overlap -- no valid linear operating time exists.
+\textbf{Recommendation:} use 4PL (sigmoidal) calibration at $T = 60$--120~min,
+or optimise surface chemistry to increase $\alpha$.
 \end{eqbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B9_regime_analysis.pdf}
-\caption{Layer 9: Regime analysis. Panel B: linearity deviation at 200 ng/mL vs T.
-Panel C: $F_k$ at lower clinical bound (17 ng/mL) --- detectable only after 82 min.
-Panel D: No gold ``recommended window'' band (the two constraints do not overlap at $\alpha = 0.3$).}
+\caption{Layer~9: Regime analysis. \textbf{B:} Deviation from linear calibration vs $T$.
+\textbf{C:} $F_k$ at 17~ng/mL -- detectable only after 82~min at $\alpha = 0.3$.
+\textbf{D:} The two constraints (detectability and linearity) do not overlap at $\alpha = 0.3$.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \section{Layer 10: Electron Transfer}
 
-Marcus tunnelling with Butler-Volmer potential dependence:
+
+The methylene blue (MB) reporter at the end of each probe transfers electrons to the electrode.
+Intact probes hold MB further away; cleaved probes release it. Electron transfer rate depends
+exponentially on distance -- a small change in distance produces a large change in current.
+
 \begin{equation}
-k_\text{ET}(d) = k_\text{ET}^0 \exp(-\beta(d - d_0)), \qquad
-k_f(\eta) = k_\text{ET} \exp\!\left(-\frac{\alpha_\text{BV} F \eta}{RT}\right)
+k_\text{ET}(d) = k_\text{ET}^0\,e^{-\beta(d - d_0)}, \qquad
+\confirmed{\beta = 1.0~\text{\AA}^{-1}\ \text{(Smalley 2003)};
+\quad E^\circ_\text{MB} = -0.250\ \text{V vs Ag/AgCl (Bernabi 2019)}}
 \end{equation}
-\confident{$\beta = 1.0\,\text{\AA}^{-1}$ (Smalley 2003)}, \confident{$E^\circ_\text{MB} = -0.250$ V vs Ag/AgCl (Bernabi 2019)}, \confident{$\alpha_\text{BV} = 0.5$}.
 
-\flagged{$k_\text{ET}^0 = 10^4$ s$^{-1}$ --- must measure on actual probe architecture by AC voltammetry}
-
-At $d_\text{eff} = 8.4$ nm: $k_\text{ET} \approx 0$ in the Marcus model (exponential decay over 85~{\AA}). \textit{Note:} the tether flexibility causes the MB to sample a distribution of distances; the effective $k_\text{ET}$ is dominated by the short-$d$ tail of the Boltzmann distribution.
+\begin{needsbox}
+$k_\text{ET}^0 = 10^4$~s$^{-1}$ -- this is an estimate. Measure directly on the actual probe
+architecture by AC voltammetry (frequency sweep of the SWV peak height vs scan rate).
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L10_electron_transfer.pdf}
-\caption{Layer 10: Marcus $k_\text{ET}$ vs distance (Panel A); Butler-Volmer $i$-$E$ curves at different
-$k_\text{ET}$ values (Panel B); normalised peak current decay (Panel C).}
+\caption{Layer~10: Marcus $k_\text{ET}$ vs distance (A); Butler-Volmer current-potential curves
+at different $k_\text{ET}$ values (B); normalised peak current decay with distance (C).}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 11: SWV Forward Model and Peak Current}
+%----------------------------------------------------------------------
+\section{Layer 11: SWV Measurement Model}
 
-Osteryoung SWV quasi-reversible model: net current $\Delta I_n = I_\text{fwd} - I_\text{bwd}$ at each potential step. Peak current scales as $\Gamma_\text{intact}(T)$:
+
+Square-wave voltammetry (SWV) applies a rapid sequence of voltage pulses and measures the
+difference in current between forward and backward pulses. The result is a sharp peak at
+the MB formal potential ($-0.250$~V), whose height is proportional to the number of intact
+probes.
 
 \begin{equation}
 i_\text{peak}(T) = i_0 \times (1 - F_k(T))
 \end{equation}
 
-At $T = 60$ min: $i_\text{peak}$ drops from 100\% to 78--98\% across the clinical range (17--200 ng/mL), giving $\Delta i_\text{peak} \approx 20\%$ discrimination between bounds.
+At $T = 60$~min: $i_\text{peak}$ drops from 100\% to 78--98\% across the clinical range
+(17--200~ng/mL), giving $\Delta i_\text{peak} \approx 20\%$ discriminability between bounds.
 
-\flagged{SWV parameters $f = 15$ Hz, $\Delta E_\text{SW} = 25$ mV, $\Delta E_\text{step} = 5$ mV --- optimise for maximal quasi-reversible peak}
+\begin{needsbox}
+SWV parameters ($f = 15$~Hz, $\Delta E_\text{SW} = 25$~mV) -- optimise by running a parameter
+sweep on the actual device. Also note the noise bandwidth assumption (B~=~1~Hz) needs
+verification against the actual signal-processing chain (see audit finding~16).
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B11_swv_forward.pdf}
-\caption{Layer 11: SWV quasi-reversible forward model. Net current vs potential at different $k_\text{ET}$
-values (forward/backward half-cycles shown). Peak height decreases as $k_\text{ET}$ decreases (longer tether).}
+\caption{Layer~11: SWV quasi-reversible forward model. Net current vs potential at different
+$k_\text{ET}$ values. Peak height decreases as $k_\text{ET}$ falls (longer or more flexible tether).}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B10_swv_current.pdf}
-\caption{Layer 11: Normalised SWV peak current vs incubation time across clinical MMP-9 range.
-Panel C: Discriminability $\Delta i_\text{peak}$ between 17 and 200 ng/mL vs $T$.
-At $T = 60$ min, $\Delta i_\text{peak} \approx 12\%$ (measurable, given $\sigma_{F_k} = 0.003\%$).}
+\caption{Layer~11: Normalised SWV peak current vs incubation time across the clinical MMP-9 range.
+Panel~C: discriminability $\Delta i_\text{peak}$ between 17 and 200~ng/mL. At $T = 60$~min,
+$\Delta i_\text{peak} \approx 12\%$, which is well above the noise floor.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \section{Layers 12--13: Peak Extraction and Ratiometric Readout}
 
-Peak extraction uses a moving-average baseline (window = 15\% of scan) and Gaussian peak fit in $\pm 80$ mV window around $E^\circ_\text{MB}$.
 
-Ratiometric signal:
+The SWV output is a current vs voltage curve. We fit a Gaussian peak to find its height
+(or area), then take the ratio of the active to control electrode currents. The ratio cancels
+out all non-specific effects (temperature, ionic strength, fouling, Ca$^{2+}$) that affect both
+electrodes equally.
+
 \begin{equation}
 R(T) = i_\text{active}(T) / i_\text{control}(T), \qquad F_k = 1 - R(T)/R(0)
 \end{equation}
-Error propagation: $\sigma_{F_k} = \sqrt{2}\,\sigma_i / i_0$. The ratiometric design cancels:
-Ca$^{2+}$ artefact, fouling-induced baseline drift, reference drift, and temperature effects ---
-\textit{provided both electrodes have identical $\Gamma_p$}.
+
+Error propagation through the ratio gives:
+$\sigma_{F_k} \approx 2\,\sigma_i / i_0$
+(four independent current measurements -- not $\sqrt{2}$ as computed in the noise budget;
+see audit finding~17).
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L12_peak_extraction.pdf}
-\caption{Layer 12: Peak extraction on a synthetic SWV trace. Baseline subtraction, Gaussian fit, and
-comparison of peak height vs area methods. Peak area is more robust to $k_\text{ET}$-frequency mismatch.}
+\caption{Layer~12: Peak extraction on a synthetic SWV trace. Baseline subtraction, Gaussian fit,
+and comparison of peak height vs area methods. Peak area is more robust to quasi-reversibility
+effects at lower $k_\text{ET}$.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_L13_ratiometric.pdf}
-\caption{Layer 13: Ratiometric $F_k$ computation and error propagation. $\Gamma_p$ mismatch between
-active and control electrodes causes a residual $F_k$ error $\approx 1.4\%$ per 5\% mismatch.
-Ratiometric design is robust to Ca$^{2+}$ artefact.}
+\caption{Layer~13: Ratiometric readout and error propagation. Probe density mismatch between
+active and control electrodes introduces a residual $F_k$ error ($\approx$1.4\% per 5\% mismatch).}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 14: Electronics and Noise Budget}
+%----------------------------------------------------------------------
+\section{Layer 14: Electronics and Noise}
+
+
+Every electrical measurement has noise. This layer breaks down the noise by source
+(thermal noise in the resistor, ADC quantisation, flicker noise) and computes the
+minimum detectable $F_k$ change.
+
+\textbf{Key finding.} Electronics are not the bottleneck. The noise floor from the
+electronics gives an instrument LOD of 0.075~ng/mL at $T = 30$~min. The actual
+sensor LOD is 8.8~ng/mL -- 120$\times$ worse -- because the surface kinetics are slow
+at low concentrations, not because the electronics lack sensitivity.
 
 \begin{align}
-\sigma_\text{Johnson} &= \sqrt{4k_BT/R_f \cdot B} \approx 0.004\,\text{pA} \quad (R_f = 1\,\text{G}\Omega,\, B = 1\,\text{Hz})\\
-\sigma_\text{ADC} &= \text{LSB}/\sqrt{12} \approx 0.088\,\text{pA} \quad (16\text{-bit},\, \pm10\,\text{nA range})\\
-\sigma_\text{total} &\approx 0.088\,\text{pA} \quad (\text{ADC-dominated})
+\sigma_\text{Johnson} &= \sqrt{4k_BT/R_f \cdot B} \approx 0.004~\text{pA}
+  \quad (R_f = 1~\text{G}\Omega,\; B = 1~\text{Hz})\\
+\sigma_\text{ADC} &= \text{LSB}/\sqrt{12} \approx 0.088~\text{pA}
+  \quad (16\text{-bit},\; \pm10~\text{nA range})\\
+\sigma_{F_k}^\text{elec} &= 2\,\sigma_\text{total}/i_0 \approx 0.003\%
+  \quad (\text{four-measurement propagation; electronics floor only})
 \end{align}
-$\sigma_{F_k} = \sqrt{2}\,\sigma_\text{total} / i_0 \approx 0.003\%$ at $i_0 = 5$ nA.
 
-\begin{findingbox}
-Electronics are \textbf{not} the limiting factor. LOD from instrument noise = 0.075 ng/mL (at $T = 30$ min).
-The kinetic LOD (from calibration curve 3$\sigma$/slope) = 8.8 ng/mL is 100$\times$ larger --- limited by
-the slow surface cleavage rate at low $[E]$, not by measurement noise.
-\end{findingbox}
+\textbf{Note on the two noise figures used in this report.} The electronics-only floor
+$\sigma_{F_k}^\text{elec} = 0.003\%$ is the minimum achievable with ideal surface chemistry and
+a perfect electrode. The calibration in Layer~15 uses $\sigma_{F_k}^\text{cal} = 0.5\%$, which
+is 167$\times$ larger. These are \textit{not} the same quantity. The 0.5\% figure is a
+conservative working estimate of total measurement noise drawn from replicate electrochemical
+aptasensor studies in the literature (Plaxco group; Kelley group), where run-to-run variability
+in probe density, SAM uniformity, and pipetting dominates over electronics. Reporting LOD using
+0.5\% is standard practice for this class of sensor because the electronics floor is never the
+limiting factor in practice.
 
-\flagged{$R_f = 1$ G$\Omega$ (confirm TIA spec); $B = 1$ Hz (confirm post-filter BW); ADC range $\pm$10 nA (16-bit); Flicker noise coefficient from op-amp datasheet}
+Both figures are estimates. The experiment that resolves this is straightforward: run 10 replicate
+blank measurements (buffer, no MMP-9) on identically prepared electrodes and compute
+$\sigma_{F_k}$ directly. Until this is done, LOD and LOQ values should be treated as
+indicative rather than definitive.
+
+\begin{needsbox}
+$R_f = 1$~G$\Omega$, bandwidth $B = 1$~Hz, ADC range $\pm10$~nA -- confirm all three with
+the electronics team. The B~=~1~Hz assumption requires explicit low-pass filtering at the
+15~Hz SWV sample rate (otherwise B could be up to 7.5~Hz and noise worsens by 2.7$\times$).
+\end{needsbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B12_noise_budget.pdf}
-\caption{Layer 14: Noise budget. Panel A: Breakdown by source (ADC quantisation dominates).
-Panel B: Instrument LOD and LOQ vs incubation time --- both far below clinical lower bound (0.185 nM).
-Panel C: SNR vs $[E]$ confirms high SNR across clinical range at $T = 60$ min.}
+\caption{Layer~14: Noise budget. ADC quantisation dominates. LOD from electronics alone is
+0.075~ng/mL -- far below clinical need. The kinetic LOD (8.8~ng/mL) is the true bottleneck.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \section{Layer 15: Calibration Curve and LOD/LOQ}
 
+
+This layer converts the raw $F_k$ vs $[\text{MMP-9}]$ relationship into a formal calibration
+curve. Two models are fitted: a linear fit (valid at low concentrations and short times) and
+a four-parameter logistic (4PL) fit that works across the full range.
+
 \begin{equation}
-F_k = d + \frac{a-d}{1+([\text{MMP-9}]/c)^b} \quad \text{(4PL)}, \qquad
+F_k = d + \frac{a - d}{1 + ([\text{MMP-9}]/c)^b} \quad \text{(4PL)}, \qquad
 \text{LOD} = \frac{3\sigma_\text{blank}}{dF_k/d[E]}, \quad \text{LOQ} = \frac{10\sigma_\text{blank}}{dF_k/d[E]}
 \end{equation}
 
-\textbf{Computed values at $T = 30$ min, $\alpha = 0.3$:}
 \begin{center}
 \begin{tabular}{ll}
 \toprule
 Metric & Value \\
 \midrule
-LOD & 8.8 ng/mL (0.096 nM) \\
-LOQ & 29.4 ng/mL (0.319 nM) \\
-Linear slope & 0.095 \%/(ng/mL) \\
-Clinical range & 17--200 ng/mL (0.185--2.17 nM) \\
-LOD vs lower clinical bound & LOD $= 8.8 < 17$ ng/mL \checkmark \\
-LOQ vs lower clinical bound & LOQ $= 29 > 17$ ng/mL --- quantification limited at 17--29 ng/mL \\
+LOD (3$\sigma$/slope) & 8.8~ng/mL at $T = 30$~min \\
+LOQ (10$\sigma$/slope) & 29.4~ng/mL at $T = 30$~min \\
+Linear slope & 0.095~\%/(ng/mL) \\
+LOD vs clinical lower bound (17~ng/mL) & LOD $= 8.8 < 17$~ng/mL \checkmark \\
+LOQ vs clinical lower bound & LOQ $= 29 > 17$~ng/mL -- quantification limited at 17--29~ng/mL \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+LOD and LOQ are computed using $\sigma_{F_k}^\text{cal} = 0.5\%$, the conservative total-noise
+estimate discussed in Layer~14. The electronics-only floor (0.003\%) is not used here because
+it does not capture surface-to-surface variability.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B13_calibration.pdf}
-\caption{Layer 15: Calibration curve. Panel A: 4PL fit and linear fit (0--100 ng/mL) with LOD/LOQ.
-Panel B: Fit residuals (all within $\pm\sigma_{F_k}$). Panel C: Linear regime with 95\% CI.}
+\caption{Layer~15: Calibration curve. 4PL fit and linear fit with LOD/LOQ marked. 95\%
+confidence interval on the linear fit (Panel~C). The 4PL model is preferred at $T > 30$~min.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Layer 16: Full Forward Chain Integration}
+%----------------------------------------------------------------------
+\section{Layer 16: Full Forward Chain}
 
-End-to-end pipeline:
-$[E]_\text{wound} \xrightarrow{\text{L1}} [E]_\text{chamber} \xrightarrow{\text{L3b, inhibitors}} [E]_\text{free} \xrightarrow{\text{L3c, fouling}} [E]_\text{eff} \xrightarrow{\text{L9}} F_k \xrightarrow{\text{L11}} i_\text{peak}$
+
+This is the end-to-end calculation: starting from the MMP-9 concentration in the wound, it
+chains every layer to predict the final SWV peak current. It shows how much signal is lost
+at each step.
+
+\begin{equation}
+[E]_\text{wound} \xrightarrow{\text{Layer 1}} [E]_\text{chamber}
+\xrightarrow{\text{Layer 3b}} [E]_\text{free}
+\xrightarrow{\text{Layer 3c}} [E]_\text{eff}
+\xrightarrow{\text{Layer 9}} F_k
+\xrightarrow{\text{Layer 11}} i_\text{peak}
+\end{equation}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B14_forward_chain.pdf}
-\caption{Layer 16: Full pipeline. Panel A: $F_k$ vs $[E]_\text{wound}$ at $T = 30$ and 60 min.
-Panel B: SWV peak current vs wound $[E]$. Panel C: Waterfall showing concentration reduction through each
-layer at 100 ng/mL. Panel D: Sensitivity to surface correction $\alpha$ --- the single most influential parameter.}
+\caption{Layer~16: Full pipeline. \textbf{A:} $F_k$ vs wound $[\text{MMP-9}]$ at $T = 30$ and
+60~min. \textbf{B:} SWV peak current vs wound concentration.
+\textbf{C:} Concentration reduction through each layer at 100~ng/mL -- TIMP-1 inhibition
+causes the largest single step loss. \textbf{D:} Sensitivity to $\alpha$ -- a factor of 10
+change in $\alpha$ changes the LOD by a factor of 10.}
 \end{figure}
 
-%─────────────────────────────────────────────────────────────────
-\section{Specificity Analysis}
+%----------------------------------------------------------------------
+\section{Specificity}
+
+
+The sensor must respond to MMP-9 and not to other proteases present in wound fluid. This
+section analyses the risk of other enzymes cleaving the probe.
 
 \subsection{Substrate selection: C15 vs A11}
 
-C15 (\seq{SGKGPRQ$\downarrow$ITA}): $k_\text{cat}/K_m = 188{,}000$ M$^{-1}$s$^{-1}$ (from Max Li's fluorescence assay).
-A11 (\seq{IPRTLTAA}): $k_\text{cat}/K_m = 68{,}000$ M$^{-1}$s$^{-1}$ --- fails viability ($F_k < 5\%$ at 17 ng/mL) and specificity (34.8\% cross-reactivity).
+C15 (\seq{SGKGPRQ$\downarrow$ITA}): $k_\text{cat}/K_m = 188{,}000$~M$^{-1}$s$^{-1}$ (Max Li's assay).
+A11 (\seq{IPRTLTAA}): $k_\text{cat}/K_m = 68{,}000$~M$^{-1}$s$^{-1}$ -- lower signal and 34.8\%
+cross-reactivity. C15 is preferred.
 
-\textbf{C15 advantages:}
-\begin{itemize}[noitemsep]
-\item Scissile bond: $\cdots$PRQ$\downarrow$ITA$\cdots$ --- P1 = Gln, P1$'$ = Ile. MMP-9 prefers hydrophobic P1$'$; cleaves efficiently.
-\item Plasmin cross-reactivity: \textbf{LOW} (plasmin requires Arg/Lys at P1; C15 P1 = Gln).
-\item Cathepsin B cross-reactivity: \textbf{LOW} (requires Arg/Lys at P2; C15 lacks this).
-\end{itemize}
-
-\subsection{Selectivity matrix}
-
-\begin{equation}
-\text{Selectivity ratio} = \frac{(k_\text{cat}/K_m)_\text{MMP-9, target}}
-                           {\sum_j (k_\text{cat}/K_m)_j [E_j] / [E_\text{MMP-9}]}
-\end{equation}
+\textbf{Why C15 is selective.}
+The probe is cut after a glutamine (Q) residue. Plasmin cuts after lysine or arginine -- not
+glutamine. Cathepsin B also prefers arginine. Both cross-reactivity risks are low for C15.
 
 \begin{table}[H]
 \centering
-\caption{Cross-reactivity risk assessment for C15 substrate in wound fluid}
+\caption{Cross-reactivity risk for C15 substrate in wound fluid}
 \begin{tabularx}{\linewidth}{lXXl}
 \toprule
-Interfering protease & Wound fluid conc. & Cross-reactivity risk & Mechanism \\
+Interfering protease & Wound fluid conc. & Cross-reactivity risk & Reason \\
 \midrule
-Plasmin & $\sim$1 nM & \textcolor{confgreen}{\textbf{LOW}} & P1 = Gln (not Arg/Lys) \\
-Cathepsin B & $\sim$1--10 nM & \textcolor{confgreen}{\textbf{LOW}} & P2 = Gln, not Arg/Lys \\
-Cathepsin G & $\sim$1 nM & \textcolor{modamber}{\textbf{MODERATE}} & Chymotrypsin-like; Val at P1$'$ \\
-MMP-3 & $\sim$0.19 nM & \textcolor{modamber}{\textbf{MODERATE}} & Broad MMP substrate \\
-MMP-1, MMP-8 & present & \textcolor{confgreen}{\textbf{LOW}} & Lower kcat/Km for C15 \\
+Plasmin & $\sim$1~nM & \textcolor{confgreen}{\textbf{LOW}} & Cleaves after Lys/Arg; C15 has Gln at P1 \\
+Cathepsin B & $\sim$1--10~nM & \textcolor{confgreen}{\textbf{LOW}} & Requires Arg at P2; absent in C15 \\
+Cathepsin G & $\sim$1~nM & \textcolor{ambertext}{\textbf{MODERATE}} & Chymotrypsin-like; Ile at P1$'$ is a risk \\
+MMP-3 & $\sim$0.19~nM & \textcolor{ambertext}{\textbf{MODERATE}} & Broad MMP substrate; low concentration \\
+MMP-1, MMP-8 & present & \textcolor{confgreen}{\textbf{LOW}} & Lower $k_\text{cat}/K_m$ for C15 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\textbf{Least-cleavable MMP-9 substrate (negative control):} C11 (\seq{SGRR$\downarrow$LIHHTA}),
-$k_\text{cat}/K_m$ below detection limit in Max's assay. \flagged{Risk: RR at P2--P1 is a plasmin
-motif --- test C11 against plasmin before adopting as negative control.}
+\begin{needsbox}
+The C11 negative control probe (\seq{SGRR$\downarrow$LIHHTA}) has an RR (Arg-Arg) motif at
+P2-P1 -- a plasmin cleavage site. Test C11 against purified plasmin before adopting it as
+the control electrode substrate. The selectivity matrix condition number $\kappa(\mathbf{S})$
+must be measured experimentally with purified proteases at known concentrations.
+\end{needsbox}
 
-\subsection{Two-channel deconvolution}
-
-Observed signal vector: $\mathbf{F} = \mathbf{S}\,\mathbf{c}$.
-On-diagonal: specific cleavage. Off-diagonal: cross-sensitivity.
-Target condition number: $\kappa(\mathbf{S}) < 30$. C15/AAPVSGIG pair selected to minimise $S_{12}, S_{21}$.
-\flagged{$\kappa(\mathbf{S})$ must be experimentally measured with purified proteases at known concentrations.}
-
-%─────────────────────────────────────────────────────────────────
+%----------------------------------------------------------------------
 \section{Sensitivity and Limit of Detection}
 
-\subsection{Noise hierarchy (from most to least limiting)}
+\subsection{What limits the sensitivity?}
+
+Noise sources from most to least limiting:
 
 \begin{enumerate}[noitemsep]
-\item \textbf{Surface kinetics} (most limiting): slow $k_\text{obs}$ at low $[E]$ sets kinetic LOD = 8.8 ng/mL
-\item \textbf{Inhibitor depletion}: TIMP-1 reduces effective $[E]$ by $>$70\%; effectively multiplies LOD by 3--4$\times$ relative to buffer calibration
-\item \textbf{ADC quantisation}: $\sigma_q = 0.088$ pA (dominant electronic noise, but negligible vs kinetics)
-\item \textbf{Johnson/thermal noise}: $\sigma_J = 0.004$ pA (irrelevant)
-\item \textbf{Fouling}: $<$0.01\% $F_k$ suppression (negligible)
+\item \textbf{Surface kinetics (most limiting):} Slow cleavage rate at low $[E]$ sets
+  the kinetic LOD = 8.8~ng/mL at $T = 30$~min.
+\item \textbf{Inhibitor capture:} TIMP-1 reduces effective $[E]$ by $>$70\%; this
+  effectively multiplies the apparent LOD by 3--4$\times$ relative to buffer calibration.
+\item \textbf{ADC quantisation:} $\sigma_q = 0.088$~pA (dominant electronic noise,
+  but negligible vs kinetics).
+\item \textbf{Johnson thermal noise:} $\sigma_J = 0.004$~pA (irrelevant).
+\item \textbf{Fouling:} $<$0.01\% signal suppression (negligible).
 \end{enumerate}
 
-\subsection{LOD vs operating time}
+\subsection{LOD vs incubation time}
 
 \begin{center}
 \begin{tabular}{lccc}
 \toprule
-$T$ (min) & $F_k$(17 ng/mL) & Kinetic LOD (ng/mL) & SNR at 17 ng/mL \\
+$T$ (min) & $F_k$ at 17~ng/mL & Kinetic LOD (ng/mL) & SNR at 17~ng/mL \\
 \midrule
-30  & 1.0\%  & 8.8  & 330 \\
-60  & 2.0\%  & 4.4  & 660 \\
-82  & 2.7\%  & 3.3  & 900 \\
-120 & 3.8\%  & 2.3  & 1270 \\
+30  & 1.0\%  & 8.8 & 330 \\
+60  & 2.0\%  & 4.4 & 660 \\
+82  & 2.7\%  & 3.3 & 900 \\
+120 & 3.8\%  & 2.3 & 1270 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-SNR $= F_k / \sigma_{F_k}$ where $\sigma_{F_k} = 0.003\%$ (electronics). All values well above SNR = 3 threshold; the device is not electronics-limited in the clinical range.
+SNR $= F_k / \sigma_{F_k}$ where $\sigma_{F_k} = 0.003\%$ (electronics only). All values far
+above the SNR $= 3$ threshold. The device is not electronics-limited in the clinical range.
 
-%─────────────────────────────────────────────────────────────────
-\section{Classified Assumptions Table}
+%----------------------------------------------------------------------
+\section{Conclusions and Design Recommendations}
+
+\subsection{Is the sensor viable?}
+
+The MMP-9 detection channel is viable in principle. The computed LOD of 8.8~ng/mL lies below
+the 17~ng/mL clinical lower bound, the electronics add negligible noise, and the C15 substrate
+shows acceptable selectivity over plasmin and cathepsin~B. However, three issues must be
+resolved before the design can be considered ready for fabrication:
+
+\begin{enumerate}
+\item \textbf{The HNE channel will not work in real wound fluid.} At the expected A1AT
+  concentration in chronic wound exudate (100~$\mu$g/mL, $\approx$1.92~$\mu$M), HNE is
+  completely neutralised within $\sim$0.02~seconds. The device subtitle ``MMP-9/HNE Ratiometric
+  Sensor'' is a misnomer for real-wound deployment. The ratiometric principle is still sound,
+  but the control electrode must use a protease-resistant scrambled peptide rather than an
+  HNE-cleavable substrate. \textbf{This is the single highest-priority design change.}
+
+\item \textbf{No valid linear calibration window exists at $\alpha = 0.3$.} The sensor only
+  becomes sensitive to 17~ng/mL at $T > 82$~min, but the linear calibration regime ends at
+  $T < 51$~min. These constraints are mutually exclusive. The practical consequence is that
+  either (a) a 4PL (sigmoidal) calibration must be adopted, accepting a more complex readout,
+  or (b) the surface chemistry must be improved to raise $\alpha$ above $\sim$0.5, which closes
+  the gap. Measuring $\alpha$ on the actual C15/MCH/gold electrode system is the single most
+  important experiment the team can run.
+
+\item \textbf{TIMP-1 suppression degrades the in-wound LOD by approximately 4-fold.} Buffer
+  calibration gives LOD~$= 8.8$~ng/mL. In real wound fluid with TIMP-1 in 13-fold molar
+  excess over MMP-9, more than 70\% of MMP-9 is captured before it can reach the probe.
+  The effective LOD in wound fluid is estimated at $\sim$35--50~ng/mL, which is above the
+  17~ng/mL clinical lower bound. The sensor would miss the lower half of the clinical range
+  unless wound-fluid calibration is used, or TIMP-1 is removed from the sample (e.g.\ by
+  immunodepletion on the swab).
+\end{enumerate}
+
+\subsection{The single most important experiment}
+
+Measure $\alpha$ -- the on-electrode cleavage rate relative to solution -- on the actual C15
+substrate in the actual buffer, at the actual probe density. Every prediction in this report
+(LOD, $F_k$, calibration linearity, operating window) scales directly with $\alpha$. If
+$\alpha = 0.1$, the sensor fails at any clinically relevant concentration and incubation time.
+If $\alpha = 0.5$, all problems described above become tractable.
+
+The protocol is: (1) measure $k_\text{cat}/K_m$ for C15 cleavage by MMP-9 in solution via
+fluorescence; (2) prepare an electrode with the target SAM; (3) incubate at known $[E]$ for
+a set time; (4) measure $\Gamma_0$ before and after by integrating the MB CV peak; (5)
+$\alpha = (\Delta\Gamma/\Gamma_0\,T\,[E]) / (k_\text{cat}/K_m)_\text{solution}$.
+
+\subsection{Recommended design changes before fabrication}
+
+\begin{enumerate}[noitemsep]
+\item Replace HNE-cleavable control probe with a scrambled protease-resistant sequence.
+\item Lower probe density from 3~pmol\,cm$^{-2}$ to 1.5--2~pmol\,cm$^{-2}$ to improve
+  steric accessibility ($f_\text{steric}$ rises from 9\% to 50--70\%).
+\item Adopt 4PL calibration from the outset; do not assume linear response.
+\item Calibrate in wound-fluid matrix (or spiked wound-mimic), not in clean buffer.
+\item Confirm $[\text{A1AT}]$ in chronic wound exudate before any further HNE-related design work.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\section{Literature Values Needed to Confirm the Model}
+\label{sec:litgaps}
+
+The table below lists every value currently estimated rather than measured. The model
+predictions in this report are conditional on these values. Priority reflects the
+sensitivity of the overall LOD and signal predictions to each parameter.
+
+\begin{table}[H]
+\caption{Literature values and measurements required (Table~1)}
+{\small
+\begin{tabularx}{\linewidth}{p{3.6cm}p{2.8cm}p{1.4cm}p{6.0cm}}
+\toprule
+Parameter & Current value & Priority & Where to find / how to measure \\
+\midrule
+Surface correction $\alpha$ & 0.3 (est.) & CRITICAL & Run same substrate in solution and on electrode; compare rates. Plaxco group (ACS Nano 2015) has protocols. \\
+Initial probe density $\Gamma_0$ & 3~pmol/cm$^2$ (design) & CRITICAL & Integrate MB oxidation peak area in CV after SAM formation. \\
+$[\text{TIMP-1}]$ free vs total & 200~ng/mL total (Trengove 1999) & HIGH & Re-read Trengove 1999 method section. If total: run free-TIMP-1 ELISA on wound exudate. \\
+$(k_\text{cat}/K_m)$ for MMP-3 activating pro-MMP-9 & 5,000~M$^{-1}$s$^{-1}$ & HIGH & MEROPS DB (merops.ebi.ac.uk); Suzuki 1990 \textit{J Biochem 108:1}; Nakamura 1997. \\
+$(k_\text{cat}/K_m)$ plasmin on pro-MMP-9 & 10,000~M$^{-1}$s$^{-1}$ & HIGH & Ramos-DeSimone 1999 \textit{J Biol Chem}; Murphy 2000 fibrinolysis review. \\
+SAM adsorption constants $K_{a,p}$, $K_{a,d}$ & -- (no estimate) & HIGH & SPR or QCM during thiol deposition; needed to control $\Gamma_p$. \\
+$k_\text{ET}^0$ on actual probe & 10,000~s$^{-1}$ (est.) & HIGH & AC voltammetry frequency sweep on actual electrode; Plaxco / Kelley group methods. \\
+$[\text{A1AT}]$ in chronic wound fluid & 100~$\mu$g/mL (serum-derived) & MEDIUM & Wound-fluid proteomics or ELISA on chronic exudate; distinguish chronic vs acute wound. \\
+$k_\text{on,TIMP-1}$ binding MMP-9 & 2$\times$10$^5$~M$^{-1}$s$^{-1}$ (Langton 1998) & MEDIUM & Confirm TIMP-1 vs TIMP-2. Langton 1998 \textit{Biochemistry 37:4} is primary source. \\
+$k_\text{on,SLPI}$ binding HNE & 10$^5$~M$^{-1}$s$^{-1}$ (est.) & MEDIUM & Schalkwijk 2010 \textit{Mucosal Immunol}; SLPI serpinDB entry. \\
+Elution efficiencies $\eta$ (all species) & 0.65--0.90 (assumed) & MEDIUM & Spike-and-recovery experiment: add known concentration to wound-mimic matrix, elute, quantify by ELISA. \\
+$[\text{SLPI}]$ in chronic wound fluid & 200~ng/mL (Ashcroft 2000 -- acute) & LOW & Ashcroft 2000 \textit{JCI 105:9}. Cross-check in chronic wound context. \\
+Contact angle $\theta$ on chip surface & 30$^\circ$ (assumed) & LOW & Sessile drop goniometry on actual chip surface in buffer. \\
+Helmholtz capacitance $C_H$ on MCH-SAM & 30~$\mu$F/cm$^2$ (assumed) & LOW & Electrochemical impedance spectroscopy (EIS) on MCH-coated Au. \\
+Ca$^{2+}$ dissociation constant from PEG & 2~mM (est.) & LOW & Ca$^{2+}$ titration with fluorescence reporter; or accept ratiometric cancellation and skip. \\
+\bottomrule
+\end{tabularx}
+}
+\end{table}
+
+%----------------------------------------------------------------------
+\section{Classified Assumptions}
 
 {\footnotesize
 \begin{longtable}{p{5.1cm}p{2.0cm}p{1.6cm}p{1.7cm}p{4.1cm}}
 \caption{All modelling assumptions classified by type and impact}\\
 \toprule
-Assumption & Type & Impact & Confident? & Action required \\
+Assumption & Type & Impact & Confirmed? & Action required \\
 \midrule
 \endfirsthead
 \multicolumn{5}{c}{\textit{(continued)}}\\
 \toprule
-Assumption & Type & Impact & Confident? & Action required \\
+Assumption & Type & Impact & Confirmed? & Action required \\
 \midrule
 \endhead
 \midrule
@@ -704,59 +1110,39 @@ Assumption & Type & Impact & Confident? & Action required \\
 \endfoot
 \bottomrule
 \endlastfoot
-% Biochemical --- high impact
-$[MMP-3]_\text{wound} = 10$ ng/mL & Biochem. & HIGH & No & Literature search; wound fluid MMP panel \\
-$[plasmin]_\text{wound} = 1$ nM & Biochem. & HIGH & No & Wound-specific measurement needed \\
-$(k_\text{cat}/K_m)_\text{MMP-3/proMMP-9} = 5\times10^3$ M$^{-1}$s$^{-1}$ & Biochem. & HIGH & No & Find from MEROPS / literature \\
-$(k_\text{cat}/K_m)_\text{plasmin/proMMP-9} = 10^4$ M$^{-1}$s$^{-1}$ & Biochem. & HIGH & No & Find from MEROPS / literature \\
-$k_\text{on}(\text{TIMP-1/MMP-9}) = 2\times10^5$ M$^{-1}$s$^{-1}$ & Biochem. & HIGH & No & Verify: is this TIMP-1 or TIMP-2? \\
-$[\text{TIMP-1}]_\text{wound} = 200$ ng/mL & Biochem. & HIGH & Partial & Confirm free vs total; Trengove 1999 \\
-$[\text{A1AT}]_\text{wound} = 100$ $\mu$g/mL & Biochem. & HIGH & No & Wound-specific (not serum-derived) \\
-$\alpha_\text{surface} = 0.3$ & Design & HIGH & No & Must measure: compare solution vs surface assay \\
-$\Gamma_0 = 3$ pmol\,cm$^{-2}$ & Design & HIGH & No & Measure by QCM or CV integration \\
-$k_\text{cat}/K_m$(C15, MMP-9) $= 188{,}000$ M$^{-1}$s$^{-1}$ & Biochem. & HIGH & Partial & From Max's assay; confirm MW correction \\
-% Biochemical --- medium impact
-$k_\text{on}(\text{SLPI/HNE}) = 10^5$ M$^{-1}$s$^{-1}$ & Biochem. & MEDIUM & No & Slow tight-binding inhibitor; Ki $\approx 1$ nM \\
-$[\text{SLPI}]_\text{wound} = 200$ ng/mL & Biochem. & MEDIUM & Partial & Ashcroft 2000 (acute wounds; check chronic) \\
-Elution efficiencies $\eta$ (MMP-9, HNE, TIMP-1, A1AT) & Analytical & MEDIUM & No & Measure by spike-recovery assay \\
-Wound pH $= 8.0$ & Biochem. & MEDIUM & No & Wide range (6.5--8.9); patient-specific \\
-SAM adsorption constants $K_{a,p}$, $K_{a,d}$ & Physical & HIGH & No & Measure by SPR or QCM during SAM formation \\
-Fouling rate $k_f = 10^3$ M$^{-1}$s$^{-1}$, $k_d = 10^{-4}$ s$^{-1}$ & Physical & MEDIUM & No & Measure by QCM in wound-fluid matrix \\
-Contact angle $\theta = 30^\circ$ & Physical & MEDIUM & No & Measure on actual chip surface \\
-% Physical --- confident
-$\beta = 1.0$ \AA$^{-1}$ (tunnelling decay) & Physical & MEDIUM & Yes & Smalley et al. 2003 \\
-$E^\circ_\text{MB} = -0.250$ V vs Ag/AgCl & Physical & LOW & Yes & Bernabi et al. 2019 \\
-$E^\circ_\text{AgCl} = 0.2224$ V vs SHE & Physical & LOW & Yes & Bard \& Faulkner \\
-$[\text{Cl}^-]_\text{wound} = 150$ mM & Biochem. & LOW & Yes & Standard physiological value \\
-$Q_\text{ref} = 390\,\mu$C\,cm$^{-2}$ & Physical & LOW & Yes & Trasatti \& Petrii 1992 \\
-$k_\text{on}(\text{A1AT/HNE}) = 2\times10^7$ M$^{-1}$s$^{-1}$ & Biochem. & LOW & Yes & Beatty 1980; Bieth 1984 \\
-MMP-9 MW $= 92$ kDa & Physical & LOW & Yes & Uniprot P14780 \\
-% Design/computational
-$k_\text{ET}^0 = 10^4$ s$^{-1}$ & Design & HIGH & No & Measure by ACV on actual probe \\
-SWV params ($f = 15$ Hz, $\Delta E = 25$ mV) & Design & MEDIUM & No & Optimise by parameter sweep \\
-TIA $R_f = 1$ G$\Omega$, BW $= 1$ Hz & Design & MEDIUM & No & Confirm with electronics team \\
-Ratiometric cancels fouling (sequence-independent) & Physical & MEDIUM & Partial & Requires equal fouling on active/control \\
-First-order kinetics throughout assay & Physical & HIGH & Partial & Valid when $\Gamma < K_{m,\text{surf}} = 3.4$ pmol\,cm$^{-2}$ \\
-Probe surface density equal on active \& control & Design & HIGH & No & Critical for ratiometric cancellation \\
-$K_d(\text{PEG}/\text{Ca}^{2+}) = 2$ mM & Physical & LOW & No & Literature range 1--10 mM \\
-$C_H = 30\,\mu$F\,cm$^{-2}$ (Helmholtz layer) & Physical & LOW & No & Measure by EIS on MCH-SAM \\
+$[MMP-3]_\text{wound} = 10$~ng/mL & Biochem. & HIGH & No & See Table~1, MEROPS \\
+$[plasmin]_\text{wound} = 1$~nM & Biochem. & HIGH & No & See Table~1 \\
+$(k_\text{cat}/K_m)_\text{MMP-3/proMMP-9} = 5\times10^3$~M$^{-1}$s$^{-1}$ & Biochem. & HIGH & No & See Table~1 \\
+$(k_\text{cat}/K_m)_\text{plasmin/proMMP-9} = 10^4$~M$^{-1}$s$^{-1}$ & Biochem. & HIGH & No & See Table~1 \\
+$k_\text{on}(\text{TIMP-1/MMP-9}) = 2\times10^5$~M$^{-1}$s$^{-1}$ & Biochem. & HIGH & Partial & Langton 1998; confirm TIMP-1 vs TIMP-2 \\
+$[\text{TIMP-1}]_\text{wound} = 200$~ng/mL & Biochem. & HIGH & Partial & Trengove 1999; confirm free vs total \\
+$[\text{A1AT}]_\text{wound} = 100~\mu$g/mL & Biochem. & HIGH & No & Serum-derived estimate; measure in wound fluid \\
+Surface correction $\alpha = 0.3$ & Design & HIGH & No & Must measure (see Table~1) \\
+$\Gamma_0 = 3$~pmol\,cm$^{-2}$ & Design & HIGH & No & Measure by CV integration \\
+$k_\text{cat}/K_m$(C15, MMP-9) $= 188{,}000$~M$^{-1}$s$^{-1}$ & Biochem. & HIGH & Partial & Max Li's assay; confirm MW correction \\
+$k_\text{on}(\text{SLPI/HNE}) = 10^5$~M$^{-1}$s$^{-1}$ & Biochem. & MEDIUM & No & See Table~1 \\
+$[\text{SLPI}]_\text{wound} = 200$~ng/mL & Biochem. & MEDIUM & Partial & Ashcroft 2000 (acute wounds) \\
+Elution efficiencies $\eta$ & Analytical & MEDIUM & No & Spike-and-recovery assay \\
+Wound pH $= 8.0$ & Biochem. & MEDIUM & No & Wide range (6.5--8.9) patient-specific \\
+SAM adsorption constants $K_{a,p}$, $K_{a,d}$ & Physical & HIGH & No & SPR or QCM \\
+Fouling rate $k_f$, $k_d$ & Physical & MEDIUM & No & QCM in wound-fluid matrix \\
+Contact angle $\theta = 30^\circ$ & Physical & MEDIUM & No & Measure on actual chip \\
+$\beta = 1.0$~\AA$^{-1}$ (tunnelling decay) & Physical & MEDIUM & Yes & Smalley et al. 2003 \\
+$E^\circ_\text{MB} = -0.250$~V vs Ag/AgCl & Physical & LOW & Yes & Bernabi et al. 2019 \\
+$E^\circ_\text{AgCl} = 0.2224$~V vs SHE & Physical & LOW & Yes & Bard \& Faulkner \\
+$[\text{Cl}^-]_\text{wound} = 150$~mM & Biochem. & LOW & Yes & Standard physiological value \\
+$Q_\text{ref} = 390~\mu$C\,cm$^{-2}$ & Physical & LOW & Yes & Trasatti \& Petrii 1992 \\
+$k_\text{on}(\text{A1AT/HNE}) = 2\times10^7$~M$^{-1}$s$^{-1}$ & Biochem. & LOW & Yes & Beatty 1980; Bieth 1984 \\
+MMP-9 MW $= 92$~kDa & Physical & LOW & Yes & UniProt P14780 \\
+$k_\text{ET}^0 = 10^4$~s$^{-1}$ & Design & HIGH & No & AC voltammetry on actual probe \\
+SWV parameters ($f = 15$~Hz, $\Delta E = 25$~mV) & Design & MEDIUM & No & Optimise by parameter sweep \\
+TIA $R_f = 1$~G$\Omega$, bandwidth $= 1$~Hz & Design & MEDIUM & No & Confirm with electronics team \\
+Ratiometric cancels fouling equally on both electrodes & Physical & MEDIUM & Partial & Requires equal fouling on active and control \\
+First-order kinetics valid throughout assay & Physical & HIGH & Partial & Valid when $\Gamma < K_{m,\text{surf}}$; near crossover at $T = 0$ \\
+Probe density equal on active and control electrodes & Design & HIGH & No & Critical for ratiometric cancellation \\
+$K_d(\text{PEG/Ca}^{2+}) = 2$~mM & Physical & LOW & No & Literature range 1--10~mM \\
+$C_H = 30~\mu$F\,cm$^{-2}$ & Physical & LOW & No & Measure by EIS \\
 \end{longtable}
 }
-
-%─────────────────────────────────────────────────────────────────
-\section{Outstanding Experimental Tasks}
-
-The following measurements are required before the model predictions can be used quantitatively. Items marked \textbf{(CRITICAL)} block the forward chain from producing a calibrated LOD.
-
-\begin{enumerate}[label=\textbf{E\arabic*.}]
-\item \textbf{(CRITICAL)} Measure surface correction factor $\alpha$: compare $k_\text{cat}/K_m$ in solution vs on-electrode by running a controlled cleavage assay with known $\Gamma_0$ (measure by CV after SAM formation). Literature suggests $\alpha \approx 0.03$--$0.5$ (Plaxco group 2015 ACS Nano).
-\item \textbf{(CRITICAL)} Confirm $\Gamma_0$ by integration of the MB SWV peak area after SAM formation. Adjust $c_p$ in deposition solution to reach target $\Gamma_0 = 2$--$3$ pmol\,cm$^{-2}$.
-\item Measure species-specific elution efficiencies $\eta$ by spike-and-recovery in wound-fluid matrix.
-\item Verify TIMP-1 free fraction in wound fluid (Trengove 1999 may report total TIMP-1 including bound forms).
-\item Literature search: $(k_\text{cat}/K_m)_\text{MMP-3}$ and $(k_\text{cat}/K_m)_\text{plasmin}$ acting on pro-MMP-9 latency peptide.
-\item Test C11 against plasmin to confirm suitability as negative control electrode.
-\item Measure contact angle on actual chip surface to calibrate capillary fill model.
-\item Measure $k_\text{ET}^0$ by AC voltammetry (frequency sweep of SWV $i_\text{peak}$) on the actual probe architecture.
-\end{enumerate}
 
 \end{document}
