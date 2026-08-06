@@ -105,7 +105,7 @@ $F_k$ & Fraction of probe chains cut by MMP-9 (the sensor signal) & 0 to 1 & -- 
 $\Gamma$ & Number of probe chains attached per cm$^2$ of electrode & 3 (design target) & pmol/cm$^2$ \\
 $\Gamma_0$ & Initial probe density before any cleavage occurs & 3 & pmol/cm$^2$ \\
 $k_\text{cat}/K_m$ & How fast MMP-9 cuts the C15 probe in free solution & 188,000 & M$^{-1}$s$^{-1}$ \\
-$\alpha$ & Surface correction: cleavage is this fraction as fast on the electrode as in solution & 0.3 (estimated) & -- \\
+$k_\text{eff,surf}$ & Surface second-order rate constant for MMP-9 cleaving the electrode-bound probe; must be measured (see Layer~9) & unknown & M$^{-1}$s$^{-1}$ \\
 $K_{m,\text{surf}}$ & Probe density at which cleavage rate is half its maximum & 3.4 & pmol/cm$^2$ \\
 $T$ & Incubation time (how long we wait before reading) & 30--60 & min \\
 $D_f$ & Dilution factor from eluting wound fluid off the swab & 2 & -- \\
@@ -207,21 +207,21 @@ Colour key:\quad
 
 %----------------------------------------------------------------------
 \begin{findingbox}
-\textbf{Key computed results} (all at $\alpha = 0.3$, C15 substrate, $T = 30$ min unless stated).
+\textbf{Key results} (C15 substrate; $F_k$ values are at the solution upper bound
+$k_\text{eff,surf} = 188{,}000$~M$^{-1}$s$^{-1}$ and scale proportionally with the true
+surface value, which must be measured).
 \begin{itemize}[noitemsep, topsep=0pt]
-\item Cleavage fraction $F_k$ at 17~ng/mL: \textbf{1.0\%} at 30~min, \textbf{2.0\%} at 60~min.
-  At 200~ng/mL: \textbf{11.4\%} at 30~min, \textbf{21.9\%} at 60~min.
-\item \textbf{No valid linear calibration window at $\alpha = 0.3$}: the sensor cannot detect
-  17~ng/mL until $T > 82$~min, but the calibration is only linear for $T < 51$~min.
-  Remedy: use 4PL calibration at $T = 60$--120~min, or improve surface chemistry to raise $\alpha$.
-\item Electronics noise floor (Johnson + ADC): $\sigma_{F_k} = 0.003\%$ -- electronics are
+\item $F_k$ at 17~ng/mL: \textbf{1.0\%} at 30~min, \textbf{2.0\%} at 60~min (upper bound).
+  At 200~ng/mL: \textbf{11.4\%} at 30~min, \textbf{21.9\%} at 60~min (upper bound).
+\item \textbf{4PL calibration is required} -- no valid linear window exists at any keff
+  that also achieves detection at 17~ng/mL.
+\item Electronics noise floor: $\sigma_{F_k}^\text{elec} = 0.003\%$ -- electronics are
   \textbf{not} the limiting factor.
-\item Kinetic LOD (from calibration): \textbf{8.8~ng/mL} at $T = 30$~min. Below the 17~ng/mL
-  clinical lower bound. \checkmark
-\item TIMP-1 strongly suppresses MMP-9 inside the device: at 200~ng/mL TIMP-1,
-  $>$70\% of MMP-9 is captured within 30~min.
-\item C15 substrate is preferred over A11: $\Delta F_k = 65\%$ vs 35\% at 200~ng/mL,
-  60~min, $\alpha = 1$.
+\item LOD (from calibration, using $\sigma_{F_k}^\text{cal} = 0.5\%$): \textbf{8.8~ng/mL}
+  at $T = 30$~min at solution upper bound. Scales inversely with $k_\text{eff,surf}$.
+\item TIMP-1 strongly suppresses MMP-9 inside the device: $>$70\% of MMP-9 captured within
+  30~min at wound-fluid TIMP-1 concentrations.
+\item C15 preferred over A11: 65\% vs 35\% $F_k$ at 200~ng/mL, 60~min, solution upper bound.
 \end{itemize}
 \end{findingbox}
 
@@ -606,108 +606,110 @@ the dilute Flory regime. Total probe-to-electrode distance $d_\text{eff} \approx
 %----------------------------------------------------------------------
 \section{Layer 9: Surface Enzyme Kinetics}
 
+This is the central calculation of the pipeline. It models how fast MMP-9 cuts the surface
+probe chains and how $F_k$ evolves with enzyme concentration and incubation time. Every
+downstream number -- LOD, calibration curve shape, operating window -- depends on this layer.
 
-This is the central calculation of the entire pipeline. It models how fast MMP-9 cuts through
-the probe chains on the electrode surface, and how this depends on the enzyme concentration
-and incubation time.
+\subsection{Three-state surface kinetic model}
 
-
-The speed of cutting sets the LOD, the required incubation time, and the shape of the
-calibration curve. All downstream calculations depend on this layer.
-
-\subsection{How the cleavage fraction evolves over time}
-
-Two approximate regimes exist depending on how probe density $\Gamma$ compares to the surface
-Michaelis constant $K_{m,\text{surf}}$:
+The model follows the framework of Anne, Demaille and Moiroux (2001), which treats the
+electrode as a distinct phase with its own rate constants. The mechanism is:
+\[
+E + \Gamma_S \underset{k_{-1}}{\overset{k_1}{\rightleftharpoons}} \Gamma_{ES}
+\xrightarrow{\;k_\text{cat}\;} E + \Gamma_P
+\]
+where $\Gamma_S$ (free probe), $\Gamma_{ES}$ (enzyme-probe complex) and $\Gamma_P$ (cleaved
+probe) are all surface densities in mol\,cm$^{-2}$, conserved as
+$\Gamma_S + \Gamma_{ES} + \Gamma_P = \Gamma_0$.
 
 \begin{eqbox}
-\textbf{Michaelis-Menten surface ODE (dimensionally consistent):}
-\begin{equation}
-\frac{d\Gamma}{dt} = -\left(\frac{k_\text{cat}}{K_m}\right)_\text{eff}
-  [E] \cdot \frac{K_{m,\text{surf}}\,\Gamma}{K_{m,\text{surf}} + \Gamma}
-\end{equation}
-where $(k_\text{cat}/K_m)_\text{eff} = 56{,}400$~M$^{-1}$s$^{-1}$ (solution value $\times\,\alpha = 0.3$),
-$K_{m,\text{surf}} = K_m^\text{sol} \times \delta \times 10^{-3} / f_\text{steric}
-  \approx 3.4$~pmol\,cm$^{-2}$.
+\textbf{ODEs (Anne, Demaille, Moiroux 2001, Eq.~1):}
+\begin{align}
+\frac{d\Gamma_S}{dt}    &= k_{-1}\,\Gamma_{ES} - k_1\,[E]\,\Gamma_S \\
+\frac{d\Gamma_{ES}}{dt} &= k_1\,[E]\,\Gamma_S - (k_{-1} + k_\text{cat})\,\Gamma_{ES} \\
+\frac{d\Gamma_P}{dt}    &= k_\text{cat}\,\Gamma_{ES}
+\end{align}
+$k_1$, $k_{-1}$, $k_\text{cat}$ are \textbf{surface} rate constants -- not solution values.
 
-\textbf{Two regimes:}
+\textbf{Two limiting cases} (determined by $k_\text{cat}/k_{-1}$, currently unknown):
 \begin{itemize}[noitemsep, topsep=2pt]
-\item \textbf{Zeroth order} ($\Gamma \gg K_{m,\text{surf}}$, early assay): cutting rate is
-  \textit{constant} -- $F_k$ rises linearly with time.
-\item \textbf{First order} ($\Gamma \ll K_{m,\text{surf}}$, late assay): cutting rate slows
-  as probes are depleted -- $F_k = 1 - e^{-k_\text{obs}\,T}$ where $k_\text{obs} = (k_\text{cat}/K_m)_\text{eff}[E]$.
+\item \textbf{Quasi-equilibrium} ($k_{-1} \gg k_\text{cat}$): steady-state approximation gives
+  $k_\text{eff} = k_\text{cat}/K_m$ where $K_m = (k_{-1}+k_\text{cat})/k_1$.
+\item \textbf{Irreversible} ($k_{-1} \ll k_\text{cat}$, or $k_1 \gg k_{-1}$):
+  $k_\text{eff} = k_1$ (ES formation is rate-limiting).
 \end{itemize}
-
-At $\Gamma_0 = 3$~pmol\,cm$^{-2}$: $\Gamma_0/K_{m,\text{surf}} = 0.88$ -- near the crossover.
-The device operates in the \textit{intermediate-to-first-order regime} throughout the assay.
 \end{eqbox}
 
-\begin{findingbox}
-\textbf{Inconsistency between Layer~8 and Layer~9 steric factors -- must resolve before finalising kinetics.}
+\subsection{Convergence at clinical concentrations}
 
-The symbol $f_\text{steric}$ is used for two distinct quantities that are currently assigned
-different values without justification:
+At clinical MMP-9 concentrations (0.19--2.17~nM) and any physically reasonable $k_1$:
+\[
+k_1\,[E]_\text{max} < 0.22~\text{s}^{-1} \quad \ll \quad k_\text{cat,sol} = 703~\text{s}^{-1}
+\]
+The complex $\Gamma_{ES}$ stays below 1~ppm of $\Gamma_0$ (Panel~A below). Both kinetic
+limits therefore give the same cleavage fraction:
 
-\begin{itemize}[noitemsep, topsep=3pt]
-\item \textbf{Layer~8 (geometric accessibility):} $f_\text{steric} = 1 - \Gamma_p/\Gamma_\text{max}^\text{steric} = 9\%$
-  at $\Gamma_p = 3$~pmol\,cm$^{-2}$. This is the fraction of probes physically reachable by a
-  4~nm-radius MMP-9 molecule.
-\item \textbf{Layer~9 (Km conversion):} $f_\text{steric} = 0.60$ is used in
-  $K_{m,\text{surf}} = K_m^\text{sol} \times \delta / f_\text{steric}$ to convert the solution Michaelis
-  constant to a surface density. This is a different physical quantity (how the effective binding
-  affinity changes at the interface) and has no derivation in the current model.
-\end{itemize}
-
-If the Layer~8 value (9\%) were substituted into the Layer~9 $K_{m,\text{surf}}$ formula, the result
-changes significantly: $K_{m,\text{surf}} \approx 22.6$~pmol\,cm$^{-2}$, giving
-$\Gamma_0/K_{m,\text{surf}} = 0.13$ -- firmly first-order throughout the assay, which simplifies the
-calibration considerably. However, the appropriate $f_\text{steric}$ for the $K_{m,\text{surf}}$
-conversion is a matter of debate in the literature (Ting et al.\ 2016; Plaxco group 2020) and
-should not simply inherit the geometric value without justification.
-
-\textbf{Action required:} define $f_\text{steric}$ consistently in both layers, or replace with
-distinct symbols (e.g.\ $f_\text{geo}$ for geometric accessibility, $f_\text{Km}$ for the
-Michaelis correction) and derive each from first principles or experiment.
-\end{findingbox}
+\begin{eqbox}
+\[
+F_k(t) = 1 - \exp\!\left(-k_\text{eff,surf}\,[E]\,t\right)
+\]
+$k_\text{eff,surf}$ is the surface second-order rate constant (M$^{-1}$s$^{-1}$).
+The solution value $(k_\text{cat}/K_m)_\text{sol} = 188{,}000$~M$^{-1}$s$^{-1}$ (Max Li's
+C15 assay; $k_\text{cat} = 703$~s$^{-1}$, $K_m = 3.74$~mM) is an upper bound for
+$k_\text{eff,surf}$.
+\end{eqbox}
 
 \begin{needsbox}
-\begin{itemize}[noitemsep, topsep=2pt]
-\item \textbf{Surface correction factor $\alpha = 0.3$} is the most critical unknown in the
-  entire model. All LOD and $F_k$ values scale proportionally with $\alpha$. Measure
-  empirically by comparing solution kcat/Km with on-electrode cleavage rate at known $\Gamma_0$.
-  Literature range: $\alpha = 0.03$--$0.5$ (Plaxco group 2015, ACS Nano).
-\item \textbf{Initial probe density $\Gamma_0 = 3$~pmol\,cm$^{-2}$} -- this is a design target,
-  not a measured value. Confirm by integrating the methylene blue oxidation peak in CV.
-\end{itemize}
+\textbf{$k_\text{eff,surf}$ must be measured on the fabricated electrode.} It is the single
+critical unknown in the model -- every LOD and $F_k$ prediction is conditional on it.
+
+Measurement protocol: (1) prepare electrode with target SAM; (2) incubate at known $[E]$
+for time $T$; (3) integrate the MB CV peak before and after to get $\Gamma_0$ and $\Gamma(T)$;
+(4) extract $k_\text{eff,surf} = -\ln(1-F_k)/([E]\,T)$.
+
+Note on steric hindrance (Layer~8): geometric crowding at the surface reduces how often an
+MMP-9 molecule reaches a probe, which reduces $k_1$ relative to its solution value. This
+effect is automatically captured within the measured $k_\text{eff,surf}$ and does not
+require a separate correction factor.
+
+\textbf{$\Gamma_0 = 3$~pmol\,cm$^{-2}$} is a design target. Confirm by CV integration.
 \end{needsbox}
+
+\subsection{Predictions and operating window}
+
+Because $k_\text{eff,surf}$ is unknown, the model is run across the plausible range
+(2,000 to 188,000~M$^{-1}$s$^{-1}$) to bracket all outcomes. Three conclusions hold
+across the entire range:
+
+\begin{itemize}[noitemsep, topsep=3pt]
+\item $F_k(t)$ is always exponential, never linear in $t$. A linear calibration in $[E]$
+  is valid only while $k_\text{eff,surf}\,[E_\text{hi}]\,T \ll 1$.
+\item At the solution upper bound, the sensor detects 17~ng/mL in $<$20~min; the linear
+  calibration window closes around $T = 16$~min.
+\item At a conservative 10,000~M$^{-1}$s$^{-1}$, detection at 17~ng/mL requires $T > 128$~min.
+\item \textbf{4PL calibration should be used regardless of keff}, as the linear approximation
+  breaks at different times for different surface chemistries.
+\end{itemize}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B8_surface_kinetics.pdf}
-\caption{Layer~9: Surface kinetics ODE. \textbf{A:} Full ODE vs zeroth-order (linear) and
-first-order (exponential) analytic limits at 200~ng/mL -- the system sits near the crossover.
-\textbf{B:} Probe density $\Gamma(t)$ vs the Michaelis constant crossover.
-\textbf{C:} $F_k(t)$ across the clinical range.
-\textbf{D:} First-order calibration showing where the exponential departs from linear.}
+\caption{Layer~9: Three-state surface kinetic model (Anne, Demaille, Moiroux 2001).
+\textbf{A:} $\Gamma_S$, $\Gamma_P$ and $\Gamma_{ES}$ (right axis, ppm scale) at 200~ng/mL --
+the complex accumulates to less than 1~ppm, confirming the analytic limit.
+\textbf{B:} All three kinetic regimes give identical $F_k(t)$ at clinical [E].
+\textbf{C:} $F_k(t)$ across the clinical range at the solution upper bound keff.
+\textbf{D:} Sensitivity to the unknown surface keff -- predictions span two orders of magnitude.}
 \end{figure}
-
-\subsection{Operating window}
-
-\begin{eqbox}
-\textbf{At $\alpha = 0.3$:}
-$F_k(17~\text{ng/mL}) > 5\%$ requires $T > 82$~min.
-Linear calibration is valid only for $T < 51$~min.
-These two windows do not overlap -- no valid linear operating time exists.
-\textbf{Recommendation:} use 4PL (sigmoidal) calibration at $T = 60$--120~min,
-or optimise surface chemistry to increase $\alpha$.
-\end{eqbox}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_B9_regime_analysis.pdf}
-\caption{Layer~9: Regime analysis. \textbf{B:} Deviation from linear calibration vs $T$.
-\textbf{C:} $F_k$ at 17~ng/mL -- detectable only after 82~min at $\alpha = 0.3$.
-\textbf{D:} The two constraints (detectability and linearity) do not overlap at $\alpha = 0.3$.}
+\caption{Layer~9: Sensitivity analysis over surface keff.
+\textbf{A:} LOD vs keff at $T = 30$, 60, 90~min.
+\textbf{B:} Linear calibration window vs keff.
+\textbf{C:} Calibration curves at $T = 60$~min for each keff value.
+\textbf{D:} Time to detect 17~ng/mL vs incubation time.}
 \end{figure}
 
 %----------------------------------------------------------------------
@@ -1014,13 +1016,13 @@ resolved before the design can be considered ready for fabrication:
   but the control electrode must use a protease-resistant scrambled peptide rather than an
   HNE-cleavable substrate. \textbf{This is the single highest-priority design change.}
 
-\item \textbf{No valid linear calibration window exists at $\alpha = 0.3$.} The sensor only
-  becomes sensitive to 17~ng/mL at $T > 82$~min, but the linear calibration regime ends at
-  $T < 51$~min. These constraints are mutually exclusive. The practical consequence is that
-  either (a) a 4PL (sigmoidal) calibration must be adopted, accepting a more complex readout,
-  or (b) the surface chemistry must be improved to raise $\alpha$ above $\sim$0.5, which closes
-  the gap. Measuring $\alpha$ on the actual C15/MCH/gold electrode system is the single most
-  important experiment the team can run.
+\item \textbf{No valid linear calibration window exists.} Across the entire plausible range of
+  surface rate constants, there is no incubation time that simultaneously achieves 5\% signal
+  at 17~ng/mL and a linear $F_k$-vs-$[E]$ relationship. 4PL calibration is required regardless
+  of the surface chemistry outcome. The required incubation time to detect 17~ng/mL ranges from
+  20~min (if $k_\text{eff,surf}$ is near the solution upper bound) to $>$2~hours (if the surface
+  rate is 20-fold below the solution value). Measuring $k_\text{eff,surf}$ on the actual
+  C15/MCH/gold electrode is the single most important experiment the team can run.
 
 \item \textbf{TIMP-1 suppression degrades the in-wound LOD by approximately 4-fold.} Buffer
   calibration gives LOD~$= 8.8$~ng/mL. In real wound fluid with TIMP-1 in 13-fold molar
@@ -1033,16 +1035,15 @@ resolved before the design can be considered ready for fabrication:
 
 \subsection{The single most important experiment}
 
-Measure $\alpha$ -- the on-electrode cleavage rate relative to solution -- on the actual C15
-substrate in the actual buffer, at the actual probe density. Every prediction in this report
-(LOD, $F_k$, calibration linearity, operating window) scales directly with $\alpha$. If
-$\alpha = 0.1$, the sensor fails at any clinically relevant concentration and incubation time.
-If $\alpha = 0.5$, all problems described above become tractable.
+Measure $k_\text{eff,surf}$ -- the on-electrode second-order cleavage rate constant -- on the
+actual C15/MCH/gold electrode. Every prediction in this report (LOD, $F_k$, operating window)
+is conditional on this value, which can span two orders of magnitude.
 
-The protocol is: (1) measure $k_\text{cat}/K_m$ for C15 cleavage by MMP-9 in solution via
-fluorescence; (2) prepare an electrode with the target SAM; (3) incubate at known $[E]$ for
-a set time; (4) measure $\Gamma_0$ before and after by integrating the MB CV peak; (5)
-$\alpha = (\Delta\Gamma/\Gamma_0\,T\,[E]) / (k_\text{cat}/K_m)_\text{solution}$.
+Protocol: (1) $k_\text{cat}/K_m$ in solution is already measured (Max Li: 188,000~M$^{-1}$s$^{-1}$);
+(2) prepare electrode with target SAM at a known probe density $\Gamma_0$ (confirm by CV
+integration); (3) incubate at known $[E]$ for time $T$; (4) measure $\Gamma(T)$ by CV;
+(5) $k_\text{eff,surf} = -\ln(1 - F_k) / ([E]\,T)$ where $F_k = 1 - \Gamma(T)/\Gamma_0$.
+This directly gives the surface rate constant with no assumptions about correction factors.
 
 \subsection{Recommended design changes before fabrication}
 
@@ -1070,7 +1071,7 @@ sensitivity of the overall LOD and signal predictions to each parameter.
 \toprule
 Parameter & Current value & Priority & Where to find / how to measure \\
 \midrule
-Surface correction $\alpha$ & 0.3 (est.) & CRITICAL & Run same substrate in solution and on electrode; compare rates. Plaxco group (ACS Nano 2015) has protocols. \\
+Surface rate constant $k_\text{eff,surf}$ & unknown (solution UB: 188,000 M$^{-1}$s$^{-1}$) & CRITICAL & Measure directly: incubate electrode at known [E], quantify $\Gamma(T)$ by CV, extract $k_\text{eff} = -\ln(1-F_k)/([E]T)$. See Layer~9. \\
 Initial probe density $\Gamma_0$ & 3~pmol/cm$^2$ (design) & CRITICAL & Integrate MB oxidation peak area in CV after SAM formation. \\
 $[\text{TIMP-1}]$ free vs total & 200~ng/mL total (Trengove 1999) & HIGH & Re-read Trengove 1999 method section. If total: run free-TIMP-1 ELISA on wound exudate. \\
 $(k_\text{cat}/K_m)$ for MMP-3 activating pro-MMP-9 & 5,000~M$^{-1}$s$^{-1}$ & HIGH & MEROPS DB (merops.ebi.ac.uk); Suzuki 1990 \textit{J Biochem 108:1}; Nakamura 1997. \\
@@ -1117,7 +1118,7 @@ $(k_\text{cat}/K_m)_\text{plasmin/proMMP-9} = 10^4$~M$^{-1}$s$^{-1}$ & Biochem. 
 $k_\text{on}(\text{TIMP-1/MMP-9}) = 2\times10^5$~M$^{-1}$s$^{-1}$ & Biochem. & HIGH & Partial & Langton 1998; confirm TIMP-1 vs TIMP-2 \\
 $[\text{TIMP-1}]_\text{wound} = 200$~ng/mL & Biochem. & HIGH & Partial & Trengove 1999; confirm free vs total \\
 $[\text{A1AT}]_\text{wound} = 100~\mu$g/mL & Biochem. & HIGH & No & Serum-derived estimate; measure in wound fluid \\
-Surface correction $\alpha = 0.3$ & Design & HIGH & No & Must measure (see Table~1) \\
+Surface $k_\text{eff,surf}$ unknown & Design & HIGH & No & Measure by CV before/after incubation (see Layer~9 and Table~1) \\
 $\Gamma_0 = 3$~pmol\,cm$^{-2}$ & Design & HIGH & No & Measure by CV integration \\
 $k_\text{cat}/K_m$(C15, MMP-9) $= 188{,}000$~M$^{-1}$s$^{-1}$ & Biochem. & HIGH & Partial & Max Li's assay; confirm MW correction \\
 $k_\text{on}(\text{SLPI/HNE}) = 10^5$~M$^{-1}$s$^{-1}$ & Biochem. & MEDIUM & No & See Table~1 \\

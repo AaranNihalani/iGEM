@@ -1,25 +1,47 @@
 """
-surface_kinetics.py  —  Layer 9  (CORE MODEL)
-================================================
-Surface Michaelis-Menten ODE in both regimes:
+surface_kinetics.py -- Layer 9 (CORE MODEL)
+============================================
+Three-state surface kinetic model following:
+  Anne A., Demaille C., Moiroux J. (2001) Macromolecules 34, 5735-5745
 
-  dΓ/dt = -kcat * [E] * Γ / (Km_surf + Γ)
+Surface mechanism:
+  E + Gamma_S <--k1--> Gamma_ES --kcat--> E + Gamma_P
+                k-1
 
-ZEROTH-ORDER regime (Γ >> Km_surf):
-  dΓ/dt ≈ -kcat * [E]          (rate independent of Γ)
-  Γ(t) = Γ_0 - kcat * [E] * t
-  F_k(t) = kcat * [E] * t / Γ_0    ← LINEAR in time
+State variables (all mol/cm2):
+  Gamma_S  : uncleaved surface probe
+  Gamma_ES : enzyme-probe surface complex
+  Gamma_P  : cleaved probe (product)
 
-FIRST-ORDER regime (Γ << Km_surf):
-  dΓ/dt ≈ -(kcat/Km_surf) * [E] * Γ
-  Γ(t) = Γ_0 * exp(-k_obs * t)
-  F_k(t) = 1 - exp(-k_obs * t)     ← EXPONENTIAL in time
-  where k_obs = (kcat/Km_surf) * [E]
+Conservation: Gamma_S + Gamma_ES + Gamma_P = Gamma_0
 
-The CROSSOVER occurs at Γ = Km_surf.
-We WANT first-order: Γ << Km_surf throughout the assay.
+ODEs (Anne et al. 2001, Eq. 1):
+  dGamma_S/dt  = k_m1 * Gamma_ES - k1 * [E] * Gamma_S
+  dGamma_ES/dt = k1 * [E] * Gamma_S - (k_m1 + kcat) * Gamma_ES
+  dGamma_P/dt  = kcat * Gamma_ES
 
-This is the critical model for interpreting experimental data.
+k1 (M-1 s-1), k_m1 (s-1), kcat (s-1) are SURFACE rate constants.
+They must be measured on the fabricated electrode, not borrowed from solution.
+
+ANALYTIC LIMITS
+---------------
+At clinical [E] (0.19-2.17 nM) and any physically reasonable k1 (<1e8 M-1s-1):
+  k1 * [E_max] < 0.22 s-1  <<  kcat_sol = 703 s-1
+
+Gamma_ES therefore accumulates negligibly. Both kinetic limits reduce to:
+
+  Fk(t) = 1 - exp(-keff_surf * [E] * t)
+
+  Steady-state limit (k_m1 >> kcat):  keff = kcat / Km  (Km = (k_m1+kcat)/k1)
+  Irreversible limit  (k_m1 << kcat): keff = k1
+
+The solution value kcat/Km_sol = 188,000 M-1 s-1 is an UPPER BOUND for keff_surf.
+The actual surface value must be measured on the fabricated electrode.
+
+From Max Li's solution assay (C15 peptide, MMP-9, pH 7.4, 37 C):
+  kcat_sol    = 703  s-1
+  kcat_Km_sol = 188,000  M-1 s-1
+  Km_sol      = kcat_sol / kcat_Km_sol = 3.74 mM
 """
 
 import numpy as np
@@ -31,163 +53,139 @@ from pathlib import Path
 
 FIGURES = Path(__file__).parents[2] / "reports" / "figures"
 
-# ── Parameters ────────────────────────────────────────────────────────────────
-# C15 substrate (MMP-9 channel), solution values from Max's assay
-kcat_sol  = 703.0          # s-1  (C15, from experimental data)
-Km_sol_mM = 3.7            # mM
-Km_sol    = Km_sol_mM * 1e-3   # M
+# ── Known solution parameters (Max Li's assay) ───────────────────────────────
+kcat_sol    = 703.0
+kcat_Km_sol = 188e3          # M-1s-1 (upper bound for surface keff)
+Km_sol      = kcat_sol / kcat_Km_sol   # 3.74e-3 M
 
-# Surface correction factor alpha (empirical; from Layer 8 steric model)
-alpha_base = 0.3           # FLAG: must be measured (Plaxco group best practice)
+MW_MMP9 = 92e3
+E_lo_M  = 17e-6  / MW_MMP9  # 0.185 nM
+E_hi_M  = 200e-6 / MW_MMP9  # 2.17  nM
 
-# Effective surface 2nd-order rate constant: kcat/Km × alpha
-# Units: M⁻¹s⁻¹  — this is the correctly-calibrated constant used in the ODE
-kcat_Km_eff = 188e3 * alpha_base   # M⁻¹s⁻¹  (solution assay value × alpha)
+Gamma_0_pmol = 3.0
+Gamma_0      = Gamma_0_pmol * 1e-12   # mol/cm2
 
-# Surface crossover concentration Km_surf [mol/cm²]
-# This is the effective surface Km, derived from solution Km × probe-layer thickness / f_steric
-# It sets the boundary between zeroth-order (Γ >> Km_surf) and first-order (Γ << Km_surf) regime
-delta     = 5.5e-9         # m (L_PEG + L_peptide; from Layer 8)
-f_steric  = 0.6            # steric accessibility factor (from steric_hindrance.py)
-Km_surf_molcm2 = Km_sol * 1e-3 * (delta * 1e2) / f_steric   # mol/cm²
-# = Km_sol [mol/L] × 1e-3 [L/cm³ → mol/cm³] × delta [cm] / f_steric ≈ 3.39 pmol/cm²
 
-# Initial probe density
-Gamma_0_pmol = 3.0         # pmol/cm²
-Gamma_0      = Gamma_0_pmol * 1e-12   # mol/cm²
+def ode_3state(t, y, k1, k_m1, kcat, E_M):
+    """Anne et al. 2001 three-state surface kinetic ODE."""
+    Gs, Ges, Gp = y
+    dGs  = k_m1 * Ges - k1 * E_M * Gs
+    dGes = k1 * E_M * Gs - (k_m1 + kcat) * Ges
+    dGp  = kcat * Ges
+    return [dGs, dGes, dGp]
 
-# Clinical [E] range (C15 MMP-9 channel)
-MW_MMP9     = 92e3
-E_lo_M      = 17e-6 / MW_MMP9    # 17 ng/mL → 0.185 nM
-E_hi_M      = 200e-6 / MW_MMP9   # 200 ng/mL → 2.17 nM
-E_clinical  = np.array([E_lo_M, 0.5e-9, 1e-9, E_hi_M])
-E_labels    = ["17 ng/mL (0.18 nM)", "0.5 nM", "1.0 nM", "200 ng/mL (2.17 nM)"]
 
-print(f"Km_sol     = {Km_sol*1e3:.1f} mM")
-print(f"Km_surf    = {Km_surf_molcm2*1e12:.4f} pmol/cm²")
-print(f"Gamma_0    = {Gamma_0_pmol:.1f} pmol/cm²")
-print(f"Gamma_0/Km_surf = {Gamma_0/Km_surf_molcm2:.2f}  "
-      f"(>> 1 → zeroth-order; << 1 → first-order)")
-
-# ── ODE solver ────────────────────────────────────────────────────────────────
-# Full surface MM ODE (dimensionally consistent):
-#   dΓ/dt = -kcat_Km_eff [M⁻¹s⁻¹] × E [M] × Γ [mol/cm²] × Km_surf / (Km_surf + Γ)
-# Units: (L/mol/s) × (mol/L) × (mol/cm²) × (mol/cm²)/(mol/cm²) = mol/cm²/s ✓
-# Zeroth-order limit (Γ >> Km_surf): rate → kcat_Km_eff × E × Km_surf = const
-# First-order limit  (Γ << Km_surf): rate → kcat_Km_eff × E × Γ       (linear in Γ)
-def surface_kinetics_ode(t, Gamma, E_M, kcat_Km, Km_surf):
-    v = kcat_Km * E_M * Km_surf * Gamma[0] / (Km_surf + Gamma[0])
-    return [-v]
-
-def solve_Gamma(E_M, t_end_s=3600, Gamma_0=Gamma_0, kcat_Km=kcat_Km_eff,
-                Km_surf=Km_surf_molcm2, N=1000):
+def solve_3state(E_M, t_end_s, k1, k_m1, kcat, N=2000):
     t_eval = np.linspace(0, t_end_s, N)
-    sol = solve_ivp(surface_kinetics_ode, (0, t_end_s), [Gamma_0],
-                    args=(E_M, kcat_Km, Km_surf),
-                    t_eval=t_eval, method="RK45", rtol=1e-10, atol=1e-15)
-    Fk = 1 - sol.y[0] / Gamma_0
-    return sol.t, sol.y[0], Fk
+    sol = solve_ivp(ode_3state, (0, t_end_s), [Gamma_0, 0.0, 0.0],
+                    args=(k1, k_m1, kcat, E_M),
+                    t_eval=t_eval, method="RK45", rtol=1e-10, atol=1e-18)
+    Gs, Ges, Gp = sol.y
+    return sol.t, Gs, Ges, Gp, Gp / Gamma_0
 
-# ── Analytic approximations ────────────────────────────────────────────────────
-def Fk_zeroth_order(E_M, t_arr, kcat_Km=kcat_Km_eff, Km_surf=Km_surf_molcm2,
-                    Gamma_0_val=None):
-    """Zeroth-order analytic: valid when Γ >> Km_surf (constant cleavage rate)."""
-    if Gamma_0_val is None:
-        Gamma_0_val = Gamma_0
-    V_max = kcat_Km * E_M * Km_surf   # mol/cm²/s (const rate at saturation)
-    Gamma_t = np.maximum(0, Gamma_0_val - V_max * t_arr)
-    return 1 - Gamma_t / Gamma_0_val
 
-def Fk_first_order(E_M, t_arr, kcat_Km=kcat_Km_eff):
-    """First-order analytic: valid when Γ << Km_surf (exponential decay)."""
-    k_obs = kcat_Km * E_M   # s⁻¹
-    return 1 - np.exp(-k_obs * t_arr)
+def Fk_analytic(E_M, t_arr, keff_surf):
+    """Valid when k1*[E] << kcat (confirmed at clinical concentrations)."""
+    return 1 - np.exp(-keff_surf * E_M * t_arr)
 
 
 def plot_surface_kinetics(save=True):
-    t_max = 3600   # 60 min
-    t_arr = np.linspace(0, t_max, 1000)
-    E_demo = E_hi_M   # upper clinical [E] for regime demonstration
+    t_max = 3600
+    t_arr = np.linspace(0, t_max, 2000)
 
-    # Full ODE
-    t_ode, Gamma_ode, Fk_ode = solve_Gamma(E_demo, t_end_s=t_max)
+    # Irreversible limit: k-1 = 0, k1 = kcat/Km_sol (solution upper bound)
+    k1_demo   = kcat_Km_sol
+    k_m1_demo = 0.0
 
-    # Analytic limits
-    Fk_zero  = Fk_zeroth_order(E_demo, t_arr)
-    Fk_first = Fk_first_order(E_demo, t_arr)
+    # Same keff, three different k-1/kcat ratios to show regime independence
+    regimes = [
+        ("Irreversible ($k_{-1}=0$)",          0.0,         k1_demo,     "#1565C0"),
+        ("Intermediate ($k_{-1}=k_{cat}$)",    kcat_sol,    2*k1_demo,   "#00897B"),
+        ("Quasi-equil. ($k_{-1}=10k_{cat}$)",  10*kcat_sol, 11*k1_demo,  "#C62828"),
+    ]
 
-    # Crossover time: when Gamma(t) = Km_surf
-    # Zeroth-order approximation: Gamma_0 - kcat*E*t_cross = Km_surf
-    Gamma_ratio = Gamma_0 / Km_surf_molcm2
-    regime_label = "zeroth-order" if Gamma_ratio > 10 else \
-                   "first-order"  if Gamma_ratio < 0.1 else "intermediate"
+    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
 
-    fig = plt.figure(figsize=(14, 9))
-    gs  = plt.GridSpec(2, 3, figure=fig, hspace=0.45, wspace=0.38)
+    # Panel A: 3-state trajectories -- show Gamma_ES is negligible
+    ax = axes[0, 0]
+    t_ode, Gs, Ges, Gp, _ = solve_3state(
+        E_hi_M, t_max, k1_demo, k_m1_demo, kcat_sol)
+    ax.plot(t_ode/60, Gs/Gamma_0*100, "b-", lw=2,
+            label=r"$\Gamma_S$ (free probe)")
+    ax.plot(t_ode/60, Gp/Gamma_0*100, "g-", lw=2,
+            label=r"$\Gamma_P$ (cleaved)")
+    ax2 = ax.twinx()
+    ax2.plot(t_ode/60, Ges/Gamma_0*1e6, "r--", lw=1.5,
+             label=r"$\Gamma_{ES}$ (ppm, right)")
+    ax2.set_ylabel(r"$\Gamma_{ES}/\Gamma_0$ (ppm)", color="red", fontsize=9)
+    ax2.tick_params(axis="y", colors="red")
+    ax.set_xlabel("Incubation time (min)")
+    ax.set_ylabel("% of initial probe density")
+    ax.set_title("A  --  3-state populations at [E] = 200 ng/mL\n"
+                 r"$\Gamma_{ES}$ < 1 ppm: analytic limit valid at clinical [E]")
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1+h2, l1+l2, fontsize=8, loc="center right")
+    ax.set_xlim(0, 60)
 
-    # Panel A: F_k(t) — all three curves on one plot
-    ax1 = fig.add_subplot(gs[0, :2])
-    ax1.plot(t_ode/60, Fk_ode*100,   "k-",   lw=2.5, label="Full ODE (exact)", zorder=5)
-    ax1.plot(t_arr/60, Fk_zero*100,  "r--",  lw=2,   label="Zeroth-order approx (Γ >> Km): LINEAR")
-    ax1.plot(t_arr/60, Fk_first*100, "b--",  lw=2,   label="First-order approx (Γ << Km): EXPONENTIAL")
-    ax1.axvline(30, color="gray", ls=":", lw=1.2, label="T=30 min")
-    ax1.axvline(60, color="gray", ls="-.", lw=1.2, label="T=60 min")
-    ax1.set_xlabel("Incubation time (min)")
-    ax1.set_ylabel("F_k (%)")
-    ax1.set_title(f"A  —  F_k(t) — zeroth vs first order + full ODE  "
-                  f"([E] = {E_demo*1e9:.2f} nM)\n"
-                  f"Γ_0/Km_surf = {Gamma_ratio:.1f}  →  regime: {regime_label}")
-    ax1.legend(fontsize=8, loc="upper left")
-    ax1.set_xlim(0, 60)
+    # Panel B: all three regimes give same Fk
+    ax = axes[0, 1]
+    for lbl, k_m1, k1, col in regimes:
+        _, _, _, _, Fk_r = solve_3state(E_hi_M, t_max, k1, k_m1, kcat_sol)
+        ax.plot(t_ode/60, Fk_r*100, color=col, lw=2.5, label=lbl)
+    ax.plot(t_arr/60, Fk_analytic(E_hi_M, t_arr, kcat_Km_sol)*100,
+            "k--", lw=1.5, label="Analytic (both limits)")
+    ax.set_xlabel("Incubation time (min)")
+    ax.set_ylabel("$F_k$ (%)")
+    ax.set_title("B  --  All regimes give identical $F_k(t)$ at clinical [E]\n"
+                 "(each uses keff = 188,000 M$^{-1}$s$^{-1}$; curves overlap)")
+    ax.legend(fontsize=8)
+    ax.set_xlim(0, 60)
 
-    # Panel B: Γ(t) showing crossover point
-    ax2 = fig.add_subplot(gs[0, 2])
-    ax2.plot(t_ode/60, Gamma_ode*1e12, "k-", lw=2)
-    ax2.axhline(Km_surf_molcm2*1e12, color="purple", ls="--", lw=1.5,
-                label=f"Km_surf = {Km_surf_molcm2*1e12:.4f} pmol/cm²\n(crossover)")
-    ax2.axhline(Gamma_0_pmol, color="gray", ls=":", lw=1, label="Γ_0")
-    ax2.set_xlabel("Incubation time (min)")
-    ax2.set_ylabel("Γ (pmol/cm²)")
-    ax2.set_title("B  —  Surface probe density Γ(t)")
-    ax2.legend(fontsize=7)
-    ax2.set_xlim(0, 60)
+    # Panel C: Fk(t) across clinical [E], solution upper bound
+    ax = axes[1, 0]
+    E_clin  = [E_lo_M, 0.5e-9, 1.0e-9, E_hi_M]
+    E_labs  = ["17 ng/mL", "46 ng/mL", "92 ng/mL", "200 ng/mL"]
+    colors_c = ["#1565C0", "#0288D1", "#00897B", "#C62828"]
+    for E_M, lbl, col in zip(E_clin, E_labs, colors_c):
+        ax.plot(t_arr/60, Fk_analytic(E_M, t_arr, kcat_Km_sol)*100,
+                color=col, lw=2, label=lbl)
+    ax.axhline(5, color="gray", ls=":", lw=1)
+    ax.axvline(30, color="gray", ls=":",  lw=1, label="T=30/60 min")
+    ax.axvline(60, color="gray", ls="-.", lw=1)
+    ax.set_xlabel("Incubation time (min)")
+    ax.set_ylabel("$F_k$ (%)")
+    ax.set_title("C  --  $F_k(t)$ across clinical range\n"
+                 "at solution upper bound keff = 188,000 M$^{-1}$s$^{-1}$")
+    ax.legend(fontsize=8)
+    ax.set_xlim(0, 60)
 
-    # Panel C: F_k(t) for clinical [E] range
-    ax3 = fig.add_subplot(gs[1, :2])
-    colors = ["#1565C0", "#0288D1", "#00897B", "#C62828"]
-    for E_M, lbl, col in zip(E_clinical, E_labels, colors):
-        _, _, Fk_c = solve_Gamma(E_M, t_end_s=t_max)
-        ax3.plot(t_ode/60, Fk_c*100, color=col, lw=2, label=lbl)
-    ax3.axvline(30, color="gray", ls=":", lw=1.2)
-    ax3.axvline(60, color="gray", ls="-.", lw=1.2)
-    ax3.axhspan(5, 90, alpha=0.07, color="green", label="Operating window (5–90%)")
-    ax3.set_xlabel("Incubation time (min)")
-    ax3.set_ylabel("F_k (%)")
-    ax3.set_title("C  —  F_k(t) across clinical MMP-9 concentration range")
-    ax3.legend(fontsize=8)
-    ax3.set_xlim(0, 60)
+    # Panel D: sensitivity to unknown surface keff
+    ax = axes[1, 1]
+    keff_vals = [2000, 10000, 30000, 56400, 100000, 188000]
+    keff_labs = ["2,000", "10,000", "30,000",
+                 "56,400 (prev. est.)", "100,000", "188,000 (sol. UB)"]
+    t_120 = np.linspace(0, 7200, 3000)
+    colors_d = plt.cm.plasma(np.linspace(0.05, 0.85, len(keff_vals)))
+    for keff, lbl, col in zip(keff_vals, keff_labs, colors_d):
+        ax.plot(t_120/60, Fk_analytic(E_lo_M, t_120, keff)*100,
+                color=col, lw=2, label=f"{lbl}")
+    ax.axhline(5, color="gray", ls=":", lw=1, label="5% threshold")
+    ax.set_xlabel("Incubation time (min)")
+    ax.set_ylabel("$F_k$ at 17 ng/mL (%)")
+    ax.set_title("D  --  Sensitivity to unknown surface keff\n"
+                 "(17 ng/mL; all predictions bracketed until keff is measured)")
+    ax.legend(fontsize=7, title="keff (M$^{-1}$s$^{-1}$)")
+    ax.set_xlim(0, 120)
 
-    # Panel D: F_k vs [E] — linear calibration check
-    ax4 = fig.add_subplot(gs[1, 2])
-    E_range = np.linspace(0.05e-9, 3e-9, 200)   # 0.05–3 nM
-    for T_min, col, ls in [(15,"b","-"), (30,"g","-"), (60,"r","-")]:
-        Fk_fo = Fk_first_order(E_range, T_min * 60)
-        ax4.plot(E_range*1e9, Fk_fo*100, color=col, lw=2, ls=ls,
-                 label=f"T={T_min} min (exp)")
-        # Linear approximation: valid when k_obs × T << 1
-        Fk_lin = kcat_Km_eff * E_range * T_min * 60 * 100
-        ax4.plot(E_range*1e9, np.minimum(Fk_lin, 100), color=col, lw=1.2, ls="--",
-                 label=f"T={T_min} min (linear approx)")
-    ax4.axhspan(5, 90, alpha=0.07, color="green")
-    ax4.set_xlabel("[E] (nM)")
-    ax4.set_ylabel("F_k (%)")
-    ax4.set_title("D  —  First-order calibration: exp vs linear approx")
-    ax4.legend(fontsize=6.5)
-    ax4.set_xlim(0, 3)
-
-    fig.suptitle("Layer 9: Surface kinetics — zeroth vs first order + crossover\n"
-                 f"C15 substrate | kcat/Km_eff={kcat_Km_eff:.0f} M⁻¹s⁻¹ | "
-                 f"α={alpha_base}, f_steric={f_steric}", fontsize=10)
+    fig.suptitle(
+        "Layer 9: Surface kinetics (Anne, Demaille, Moiroux 2001)\n"
+        "$k_{cat,sol}$ = 703 s$^{-1}$,  $K_{m,sol}$ = 3.74 mM,  "
+        "$(k_{cat}/K_m)_{sol}$ = 188,000 M$^{-1}$s$^{-1}$  "
+        "[surface keff must be measured]",
+        fontsize=10
+    )
+    plt.tight_layout()
 
     if save:
         out = FIGURES / "fig_B8_surface_kinetics.pdf"
@@ -195,11 +193,18 @@ def plot_surface_kinetics(save=True):
         print(f"Saved {out}")
     plt.close(fig)
 
+    print(f"\nAnalytic limit check: kcat / (k1*[E_hi]) = "
+          f"{kcat_sol/(kcat_Km_sol*E_hi_M):.2e}  >> 1 -- valid")
+    t_chk = np.linspace(60, 7200, 5000)
+    print("T to detect 17 ng/mL (Fk > 5%) at each keff:")
+    for keff in keff_vals:
+        fk = Fk_analytic(E_lo_M, t_chk, keff)
+        idx = np.searchsorted(fk, 0.05)
+        if idx < len(t_chk):
+            print(f"  keff = {keff:7.0f}:  T = {t_chk[idx]/60:.0f} min")
+        else:
+            print(f"  keff = {keff:7.0f}:  > 120 min")
+
 
 if __name__ == "__main__":
     plot_surface_kinetics()
-    # Key readouts at T=30 and 60 min
-    for E_M, lbl in zip(E_clinical, E_labels):
-        _, _, Fk = solve_Gamma(E_M, t_end_s=3600)
-        idx30 = 500; idx60 = 999
-        print(f"[E]={lbl}: F_k(30min)={Fk[idx30]*100:.1f}%  F_k(60min)={Fk[idx60]*100:.1f}%")

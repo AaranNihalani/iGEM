@@ -1,16 +1,15 @@
 """
-regime_analysis.py  —  Layer 9
-==================================
-Identify the incubation time T where:
-  (a) The F_k vs [E] calibration curve is still linear (F_k < 0.20)
-  (b) F_k at the lower clinical bound (17 ng/mL) is detectable (> 5%)
+regime_analysis.py -- Layer 9 (sensitivity analysis)
+======================================================
+Explores how the unknown surface rate constant keff_surf governs
+detection limit and calibration linearity.
 
-This defines the OPTIMAL OPERATING TIME for live experiments.
+Since both the steady-state and irreversible limits reduce to:
+  Fk(t) = 1 - exp(-keff_surf * [E] * t)
+at clinical concentrations, keff_surf is the single parameter that
+must be measured on the fabricated electrode.
 
-Key insight:
-  First-order F_k = 1 - exp(-k_obs * T)  where k_obs = (kcat/Km_surf) * [E]
-  Linear regime: k_obs * T << 1  →  F_k ≈ k_obs * T  (calibration is linear in [E])
-  Linearity holds while F_k < ~0.2 (exp deviates <10% from linear below ~0.2)
+The solution value kcat/Km_sol = 188,000 M-1 s-1 is an upper bound.
 """
 
 import numpy as np
@@ -21,156 +20,133 @@ from pathlib import Path
 
 FIGURES = Path(__file__).parents[2] / "reports" / "figures"
 
-# ── Parameters (from surface_kinetics.py) ────────────────────────────────────
-kcat_sol       = 703.0       # s-1  (C15)
-Km_sol         = 3.7e-3      # M
-delta          = 5.5e-9      # m
-f_steric       = 0.6
-Km_surf_molcm2 = Km_sol * 1e-3 * (delta * 1e2) / f_steric   # mol/cm²
-alpha_base     = 0.3
+MW_MMP9     = 92e3
+kcat_Km_sol = 188e3          # M-1s-1, solution upper bound
+E_lo_M      = 17e-6  / MW_MMP9
+E_hi_M      = 200e-6 / MW_MMP9
 
-kcat_Km_surf   = alpha_base * (kcat_sol / Km_surf_molcm2)   # effective M-1s-1 (vol units)
-# Note: kcat/Km_surf has units of (s-1)/(mol/cm²) = cm²/mol/s
-# To use with [E] in mol/L: k_obs = (kcat/Km_surf) [cm²/mol/s] * [E] [mol/L]
-# = kcat_sol/Km_surf_molcm2 * 1e-3 [L/cm³] * alpha  [s-1]
-kcat_Km_surf_vol = alpha_base * kcat_sol / (Km_surf_molcm2 * 1e3 / 1e-4)
-# Simpler: use the calibrated value from mmp9_substrate_selection.py
-# kcat/Km_solution (M-1s-1) * alpha → effective surface rate
-kcat_Km_eff = 188e3 * alpha_base   # M-1s-1 (solution units; alpha accounts for surface)
-
-# Clinical [E] range
-MW_MMP9 = 92e3
-E_lo    = 17e-6  / MW_MMP9   # 0.185 nM
-E_hi    = 200e-6 / MW_MMP9   # 2.17 nM
-E_range = np.linspace(E_lo * 0.5, E_hi * 1.5, 300)  # mol/L
-
-T_values_min = [5, 10, 15, 20, 30, 45, 60]
-T_values_s   = [t * 60 for t in T_values_min]
+# Range of plausible surface keff values
+keff_vals = [2000, 5000, 10000, 20000, 56400, 100000, 188000]
+keff_labs = ["2,000", "5,000", "10,000", "20,000",
+             "56,400 (prev.)", "100,000", "188,000 (sol. UB)"]
+colors    = plt.cm.plasma(np.linspace(0.05, 0.85, len(keff_vals)))
 
 
-def Fk_first_order(E_M, T_s, kcat_Km=kcat_Km_eff):
-    k_obs = kcat_Km * E_M
-    return 1 - np.exp(-k_obs * T_s)
-
-def Fk_linear_approx(E_M, T_s, kcat_Km=kcat_Km_eff):
-    return kcat_Km * E_M * T_s
-
-def linearity_deviation(E_M, T_s, kcat_Km=kcat_Km_eff):
-    """Fractional deviation of exponential from linear approximation."""
-    Fk_exp = Fk_first_order(E_M, T_s, kcat_Km)
-    Fk_lin = Fk_linear_approx(E_M, T_s, kcat_Km)
-    return np.abs(Fk_exp - Fk_lin) / (Fk_exp + 1e-10)
+def Fk(E_M, t_s, keff):
+    return 1 - np.exp(-keff * E_M * t_s)
 
 
-def find_linear_regime_T(max_deviation=0.10, E_check=E_hi):
-    """
-    Find maximum T where deviation from linearity < max_deviation at E_hi.
-    Returns T in seconds.
-    """
-    T_arr = np.linspace(60, 7200, 5000)
-    devs  = linearity_deviation(E_check, T_arr)
-    idx   = np.searchsorted(devs, max_deviation)
-    if idx >= len(T_arr):
-        return T_arr[-1]
-    return T_arr[idx]
+def Fk_linear(E_M, t_s, keff):
+    return keff * E_M * t_s
 
-T_linear_10pct = find_linear_regime_T(0.10, E_hi)
-T_linear_20pct = find_linear_regime_T(0.20, E_hi)
+
+def linearity_deviation(t_s, keff, E_check=E_hi_M):
+    fe = Fk(E_check, t_s, keff)
+    fl = Fk_linear(E_check, t_s, keff)
+    return np.abs(fe - fl) / (fe + 1e-12)
+
+
+def T_detect(keff, threshold=0.05, E_M=E_lo_M):
+    """Incubation time (s) for Fk to exceed threshold at E_M."""
+    t_arr = np.linspace(60, 14400, 10000)
+    fk    = Fk(E_M, t_arr, keff)
+    idx   = np.searchsorted(fk, threshold)
+    return t_arr[min(idx, len(t_arr)-1)]
+
+
+def T_linear(keff, max_dev=0.10, E_check=E_hi_M):
+    """Last incubation time (s) where calibration is linear to within max_dev."""
+    t_arr = np.linspace(60, 14400, 10000)
+    devs  = linearity_deviation(t_arr, keff, E_check)
+    idx   = np.searchsorted(devs, max_dev)
+    return t_arr[min(idx, len(t_arr)-1)]
 
 
 def plot_regime(save=True):
-    colors = plt.cm.plasma(np.linspace(0.1, 0.9, len(T_values_min)))
+    t_arr = np.linspace(60, 7200, 3000)   # 1 min to 120 min
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 9))
-    axes = axes.flatten()
+    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
 
-    # Panel A: F_k vs [E] calibration curves at different T
-    ax = axes[0]
-    for T_s, T_min, col in zip(T_values_s, T_values_min, colors):
-        Fk = Fk_first_order(E_range, T_s) * 100
-        ax.plot(E_range * 1e9, Fk, color=col, lw=2, label=f"T={T_min} min")
-    # Linear approx at 60 min
-    ax.plot(E_range*1e9, Fk_linear_approx(E_range, 3600)*100, "k--",
-            lw=1.5, label="T=60 min (linear)")
-    ax.axhspan(5, 90, alpha=0.07, color="green", label="Operating window")
-    ax.axvline(E_lo*1e9, color="gray", ls=":", lw=1.2, label="17 ng/mL")
-    ax.axvline(E_hi*1e9, color="gray", ls="-.", lw=1.2, label="200 ng/mL")
-    ax.set_xlabel("[MMP-9] (nM)")
-    ax.set_ylabel("F_k (%)")
-    ax.set_title("A  —  Calibration curve F_k vs [E] at different T")
-    ax.legend(fontsize=7, ncol=2)
-    ax.set_xlim(0, E_hi*1e9*1.5)
+    # Panel A: LOD vs keff (key plot)
+    ax = axes[0, 0]
+    sigma_Fk = 0.005   # conservative 0.5% total noise estimate
+    keff_cont = np.logspace(3, 5.3, 200)
+    # LOD = 3*sigma / slope; slope = keff * T * (1e-6/MW) at small Fk
+    for T_min, col, ls in [(30, "#1565C0", "-"), (60, "#C62828", "--"),
+                            (90, "#00897B", ":")]:
+        T_s    = T_min * 60
+        slope  = keff_cont * T_s * (1e-6 / MW_MMP9)   # per (ng/mL)
+        LOD_ng = 3 * sigma_Fk / slope
+        ax.loglog(keff_cont, LOD_ng, color=col, lw=2, ls=ls, label=f"T = {T_min} min")
+    ax.axhline(17,  color="gray", ls=":", lw=1.5, label="17 ng/mL (clinical LB)")
+    ax.axhline(200, color="gray", ls="-.", lw=1, label="200 ng/mL (clinical UB)")
+    ax.axvline(kcat_Km_sol, color="orange", ls=":", lw=1.5,
+               label="Solution upper bound")
+    ax.set_xlabel("Surface keff (M$^{-1}$s$^{-1}$)")
+    ax.set_ylabel("LOD (ng/mL)")
+    ax.set_title("A  --  LOD vs surface keff at T = 30, 60, 90 min\n"
+                 "(sigma_Fk = 0.5%; clinical range shaded)")
+    ax.axhspan(17, 200, alpha=0.07, color="green")
+    ax.legend(fontsize=8)
+    ax.set_xlim(1e3, 2e5)
+    ax.set_ylim(0.1, 1e4)
 
-    # Panel B: Linearity deviation at E_hi vs T
-    ax2 = axes[1]
-    T_arr = np.linspace(60, 7200, 1000)
-    dev   = linearity_deviation(E_hi, T_arr) * 100
-    ax2.plot(T_arr/60, dev, "b-", lw=2)
-    ax2.axhline(10, color="orange", ls="--", lw=1.5, label="10% deviation limit")
-    ax2.axhline(20, color="red",    ls="--", lw=1.5, label="20% deviation limit")
-    ax2.axvline(T_linear_10pct/60, color="orange", ls=":", lw=1.5,
-                label=f"T_max(10%) = {T_linear_10pct/60:.0f} min")
-    ax2.axvline(T_linear_20pct/60, color="red",    ls=":", lw=1.5,
-                label=f"T_max(20%) = {T_linear_20pct/60:.0f} min")
-    ax2.set_xlabel("Incubation time T (min)")
-    ax2.set_ylabel("Linearity deviation at 200 ng/mL (%)")
-    ax2.set_title("B  —  Departure from linear calibration vs T")
-    ax2.legend(fontsize=8)
-    ax2.set_xlim(0, 120)
-    ax2.set_ylim(0, 50)
+    # Panel B: linearity window vs keff
+    ax = axes[0, 1]
+    T_lin_arr = np.array([T_linear(k, 0.10) for k in keff_cont])
+    T_det_arr = np.array([T_detect(k, 0.05) for k in keff_cont])
+    ax.loglog(keff_cont, T_lin_arr/60, "b-",  lw=2, label="Linear to 10% (T_max)")
+    ax.loglog(keff_cont, T_det_arr/60, "r--", lw=2, label="Detectable at 17 ng/mL (T_min)")
+    ax.fill_between(keff_cont,
+                    np.where(T_det_arr < T_lin_arr, T_det_arr/60, np.nan),
+                    np.where(T_det_arr < T_lin_arr, T_lin_arr/60, np.nan),
+                    alpha=0.2, color="green", label="Valid linear window")
+    ax.axvline(kcat_Km_sol, color="orange", ls=":", lw=1.5, label="Solution UB")
+    ax.set_xlabel("Surface keff (M$^{-1}$s$^{-1}$)")
+    ax.set_ylabel("Incubation time (min)")
+    ax.set_title("B  --  Linear calibration window vs keff\n"
+                 "(green = valid window; red above blue = no linear window)")
+    ax.legend(fontsize=8)
+    ax.set_xlim(1e3, 2e5)
 
-    # Panel C: F_k at lower bound (17 ng/mL) vs T — detectability
-    ax3 = axes[2]
-    Fk_lo_arr = Fk_first_order(E_lo, T_arr) * 100
-    ax3.plot(T_arr/60, Fk_lo_arr, "g-", lw=2)
-    ax3.axhline(5, color="red", ls="--", lw=1.5, label="LOD threshold 5%")
-    # Time when F_k(E_lo) > 5%:
-    idx_det = np.searchsorted(Fk_lo_arr, 5)
-    T_detect = T_arr[min(idx_det, len(T_arr)-1)]
-    ax3.axvline(T_detect/60, color="green", ls=":", lw=1.5,
-                label=f"T_detect = {T_detect/60:.0f} min")
-    ax3.set_xlabel("Incubation time T (min)")
-    ax3.set_ylabel("F_k at 17 ng/mL (%)")
-    ax3.set_title("C  —  Detectability of lower clinical bound vs T")
-    ax3.legend(fontsize=9)
-    ax3.set_xlim(0, 120)
+    # Panel C: calibration curves at T=60 min for different keff
+    ax = axes[1, 0]
+    E_ng = np.linspace(0, 250, 300)
+    E_M  = E_ng * 1e-6 / MW_MMP9
+    T_s  = 60 * 60
+    for keff, lbl, col in zip(keff_vals, keff_labs, colors):
+        ax.plot(E_ng, Fk(E_M, T_s, keff)*100, color=col, lw=2, label=lbl)
+    ax.axvline(17,  color="gray", ls=":",  lw=1)
+    ax.axvline(200, color="gray", ls="-.", lw=1)
+    ax.text(18, 0.5, "17 ng/mL", fontsize=8, color="gray")
+    ax.text(180, 0.5, "200 ng/mL", fontsize=8, color="gray")
+    ax.set_xlabel("[MMP-9] (ng/mL)")
+    ax.set_ylabel("$F_k$ (%)")
+    ax.set_title("C  --  Calibration curves at T = 60 min\n"
+                 "for range of surface keff values (M$^{-1}$s$^{-1}$)")
+    ax.legend(fontsize=7, title="keff")
+    ax.set_xlim(0, 250)
 
-    # Panel D: Operating window — recommended T with annotations
-    ax4 = axes[3]
-    T_op = np.linspace(0, 120, 500)
-    Fk_lo_op = Fk_first_order(E_lo, np.array(T_op)*60) * 100
-    Fk_hi_op = Fk_first_order(E_hi, np.array(T_op)*60) * 100
-    ax4.fill_between(T_op, Fk_lo_op, Fk_hi_op, alpha=0.25, color="blue",
-                     label="F_k range (17→200 ng/mL)")
-    ax4.plot(T_op, Fk_lo_op, "b-",  lw=1.5, label="17 ng/mL")
-    ax4.plot(T_op, Fk_hi_op, "r-",  lw=1.5, label="200 ng/mL")
-    ax4.axhspan(5, 90, alpha=0.08, color="green")
-    ax4.axhline(5,  color="gray", ls=":", lw=1)
-    ax4.axhline(90, color="gray", ls=":", lw=1)
-    # Recommended window: T_detect → T_linear_20pct
-    T_rec_lo = T_detect / 60
-    T_rec_hi = T_linear_20pct / 60
-    if T_rec_lo < T_rec_hi:
-        ax4.axvspan(T_rec_lo, T_rec_hi, alpha=0.15, color="gold",
-                    label=f"Linear window: {T_rec_lo:.0f}–{T_rec_hi:.0f} min")
-    else:
-        ax4.text(0.5, 0.5,
-                 f"No valid linear window at α={alpha_base}\n"
-                 f"Detectable at T>{T_rec_lo:.0f} min, but\n"
-                 f"linear regime ends at T<{T_rec_hi:.0f} min\n"
-                 f"→ increase α or use 4PL calibration",
-                 transform=ax4.transAxes, ha="center", va="center",
-                 color="red", fontsize=9, fontweight="bold",
-                 bbox=dict(boxstyle="round,pad=0.4", facecolor="lightyellow", alpha=0.9))
-    ax4.set_xlabel("Incubation time T (min)")
-    ax4.set_ylabel("F_k (%)")
-    ax4.set_title("D  —  Operating window for live experiments")
-    ax4.legend(fontsize=8)
-    ax4.set_xlim(0, 120)
+    # Panel D: Fk at 17 ng/mL vs T for each keff
+    ax = axes[1, 1]
+    t_120 = np.linspace(0, 7200, 2000)
+    for keff, lbl, col in zip(keff_vals, keff_labs, colors):
+        ax.plot(t_120/60, Fk(E_lo_M, t_120, keff)*100, color=col, lw=2, label=lbl)
+    ax.axhline(5, color="gray", ls=":", lw=1.5, label="5% detection threshold")
+    ax.set_xlabel("Incubation time (min)")
+    ax.set_ylabel("$F_k$ at 17 ng/mL (%)")
+    ax.set_title("D  --  Detectability of 17 ng/mL vs T\n"
+                 "for range of surface keff values")
+    ax.legend(fontsize=7, title="keff (M$^{-1}$s$^{-1}$)")
+    ax.set_xlim(0, 120)
 
-    fig.suptitle("Layer 9: Regime analysis — optimal incubation time for first-order linear calibration\n"
-                 f"C15 | kcat/Km_eff = {kcat_Km_eff:.0f} M⁻¹s⁻¹  "
-                 f"(kcat/Km_sol × α = 188,000 × {alpha_base})", fontsize=10)
+    fig.suptitle(
+        "Layer 9: Sensitivity analysis -- predictions span 2 orders of magnitude in keff\n"
+        "All quantitative outputs (LOD, operating window) are conditional on measuring "
+        "keff_surf on the fabricated electrode",
+        fontsize=10
+    )
+    plt.tight_layout()
 
     if save:
         out = FIGURES / "fig_B9_regime_analysis.pdf"
@@ -178,16 +154,13 @@ def plot_regime(save=True):
         print(f"Saved {out}")
     plt.close(fig)
 
-    print(f"\nRecommended incubation time for first-order linear calibration:")
-    print(f"  Detectable at 17 ng/mL:    T > {T_detect/60:.0f} min")
-    print(f"  Linear to within 10%:      T < {T_linear_10pct/60:.0f} min")
-    print(f"  Linear to within 20%:      T < {T_linear_20pct/60:.0f} min")
-    if T_detect/60 < T_linear_20pct/60:
-        print(f"  → RECOMMENDED WINDOW: {T_detect/60:.0f}–{T_linear_20pct/60:.0f} min (linear range)")
-    else:
-        print(f"  → NO VALID LINEAR WINDOW at α={alpha_base}: detectable T>{T_detect/60:.0f} min "
-              f"but linear only T<{T_linear_20pct/60:.0f} min")
-        print(f"     → Use 4PL calibration (nonlinear), or increase α by optimising SAM chemistry")
+    print("\nOperating window summary:")
+    for keff, lbl in zip(keff_vals, keff_labs):
+        T_d = T_detect(keff) / 60
+        T_l = T_linear(keff) / 60
+        window = f"{T_d:.0f}--{T_l:.0f} min" if T_d < T_l else "NO LINEAR WINDOW"
+        print(f"  keff = {keff:7.0f}: T_detect = {T_d:.0f} min, "
+              f"T_linear = {T_l:.0f} min  --> {window}")
 
 
 if __name__ == "__main__":
