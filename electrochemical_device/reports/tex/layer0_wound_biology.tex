@@ -155,6 +155,19 @@ wound fluid from 56 patients with chronic pressure ulcers. Key values (all from 
   \item The MMP-9:TIMP-1 ratio was a predictor of healing trajectory (text p.34, Figure~11).
 \end{itemize}
 
+\textbf{Rao et al.\ (1995)\litref{7}} examined A1AT integrity in wound fluid from chronic
+and healing wounds (J Invest Dermatol 105:572--578, text p.572--575). In healing and acute
+wound fluid, A1AT was intact and functional in all samples. In chronic wound fluid, A1AT was
+degraded and non-functional in 9 of 10 samples; the authors attribute this to sustained
+serine and metalloprotease activity in the chronic wound environment. This finding is critical
+for the HNE channel: functional A1AT cannot be assumed present in chronic wounds.
+
+\textbf{Nwomeh et al.\ (1999)\litref{8}} measured matrix metalloproteinase activities and
+inhibitor levels in venous leg ulcers (J Surg Res 81:189--195). TIMP-1 levels in chronic
+ulcer fluid were ``very low or not detected'' (text p.193), consistent with the low TIMP-1
+values in Trengove 1999\litref{1} and confirming TIMP-1 suppression as a hallmark of the
+chronic wound environment.
+
 \begin{needsbox}
 \textbf{Healing wound concentrations (not confirmed):} Ladwig 2002 is a pressure ulcer
 study; the healing scenario MMP-9 ($\approx5{,}400$~ng/mL) is read approximately from
@@ -197,9 +210,9 @@ $[\text{TIMP-1}]$
 $[\text{HNE}]$ (both states)
   & \multicolumn{2}{c}{47~nM (1.4~$\mu$g/mL)}
   & \symconf & [1] text \\
-$[\text{A1AT}]$ (both states)
-  & \multicolumn{2}{c}{1.92~$\mu$M (estimate)}
-  & \symneed & serum $\div$10 \\\hline\hline
+$[\text{A1AT}]$ (functional)
+  & $\approx 0$ (degraded) & 1.92~$\mu$M (estimate)
+  & \symconf/\symneed & [7] text/est. \\\hline\hline
 \end{tabular}
 \end{center}
 
@@ -209,6 +222,12 @@ $K_i(\text{TIMP-1/MMP-9}) = 8.5$~nM (Olson 1997\litref{4}, confirmed), which is 
 compared to both concentrations, TIMP-1 is nearly fully bound and free MMP-9 persists at
 $\approx 32$~nM (ODE result, t = 30~min). In healing wounds (estimated), TIMP-1 (39~nM)
 exceeds active MMP-9 (22~nM) by 17~nM, suppressing free MMP-9 to $\approx 6$~nM.
+
+A1AT integrity provides a second discriminating axis for HNE (Rao 1995\litref{7}): in healing
+wounds A1AT is intact, quenching HNE to 0.00~pM within milliseconds; in chronic wounds A1AT
+is degraded in 9/10 samples, leaving HNE partially regulated only by SLPI ($\approx$30~nM
+at $t = 30$~min). However, elevated HNE was detected in only 6 of 13 chronic VLU samples
+(Trengove 1999\litref{1}), limiting its reliability as a primary discriminator.
 
 %----------------------------------------------------------------------
 \section{II. \; Activation Kinetics (MMP-9 Pathway)}
@@ -292,7 +311,7 @@ A1AT forms a covalent acyl-enzyme intermediate with HNE that is effectively irre
 \end{equation}
 \end{eqbox}
 
-\textbf{Half-life of free HNE} (with $[\text{A1AT}]_0 = 1.92$~$\mu$M, estimated):
+\textbf{Half-life of free HNE in healing wounds} (with functional $[\text{A1AT}]_0 = 1.92$~$\mu$M, estimated):
 \begin{eqbox}
 \begin{equation}
   t_{1/2}^{\rm HNE}
@@ -304,26 +323,39 @@ A1AT forms a covalent acyl-enzyme intermediate with HNE that is effectively irre
 
 Because $[\text{A1AT}]_0$ is an estimate, the conclusion is verified at 10$\times$ lower
 $[\text{A1AT}]_0$: $t_{1/2} = 55$~ms, still three orders of magnitude below the
-5-minute measurement window.
+5-minute measurement window. This analysis applies to healing wounds where A1AT is intact
+(Rao et al.\ 1995\litref{7}). In chronic wounds, A1AT is degraded in 9 of 10 samples;
+see the finding below.
 
 \begin{alertbox}
-\textbf{HNE channel is not viable.}
-Free HNE has a half-life of $\sim$5.5~ms under estimated wound conditions (confirmed
-$\kon = 6.5\times10^7$~M$^{-1}$s$^{-1}$, Beatty 1980\litref{5}). ODE integration
-confirms $[\text{HNE}]_{\rm free} = 0.00$~pM at all $t \geq 5$~min in both wound states.
-The conclusion is insensitive to $[\text{A1AT}]_0$ uncertainty: even at 10$\times$ lower
-A1AT than assumed, $t_{1/2} = 55$~ms. The second electrode must serve as an internal
-reference or control, not a HNE sensing channel.
+\textbf{A1AT is wound-state dependent (Rao et al.\ 1995\litref{7}).}
+In \textbf{healing} wounds A1AT is intact; HNE is quenched to 0.00~pM within 5.5~ms
+(confirmed $\kon = 6.5\times10^7$~M$^{-1}$s$^{-1}$, Beatty 1980\litref{5}; insensitive
+to [A1AT] estimate: $t_{1/2} = 55$~ms even at 10$\times$ lower A1AT). In \textbf{chronic}
+wounds, A1AT is degraded and non-functional in 9/10 samples (Rao 1995\litref{7}); HNE is
+only partially inhibited by SLPI, persisting at $\approx$30~nM at $t = 30$~min.
+
+\textbf{HNE is an unreliable primary sensor target.} Although HNE discriminates between
+wound states (chronic $\approx$30~nM vs healing 0~pM), elevated HNE was detected in only
+6 of 13 chronic VLU samples (Trengove 1999\litref{1}): the remaining 50\% of chronic
+cases have HNE at or below detection. MMP-9 is the preferred primary target. The second
+electrode should serve as an internal reference or control, not a primary HNE sensing channel.
 \end{alertbox}
 
 \subsection{SLPI / HNE (secondary inhibitor)}
 
 SLPI is a serine protease inhibitor expressed in wound healing tissue\litref{6}.
-Placeholder kinetic constants ($\kon = 10^5$~M$^{-1}$s$^{-1}$, $\koff = 10^{-4}$~s$^{-1}$)
-are used. Ashcroft et al.\ (2000)\litref{6} confirmed the importance of SLPI to wound
-healing outcomes in knockout mice but did not state a quantitative SLPI concentration in
-human wound fluid. Because HNE is already completely neutralised by A1AT, the SLPI
-sub-system does not influence any device-relevant prediction.
+Placeholder kinetic constants ($\kon = 10^5$~M$^{-1}$s$^{-1}$, $\koff = 10^{-4}$~s$^{-1}$,
+concentration $\approx$200~ng/mL $\approx$ 17~nM) are used. Ashcroft et al.\ (2000)\litref{6}
+confirmed the importance of SLPI to wound healing outcomes in knockout mice but did not
+state a quantitative SLPI concentration in human wound fluid.
+
+In healing wounds, HNE is completely neutralised by intact A1AT (Rao 1995\litref{7}),
+making SLPI irrelevant. In chronic wounds, A1AT is degraded in 9/10 samples (Rao
+1995\litref{7}), and SLPI provides the primary remaining HNE inhibition; the ODE predicts
+$\approx$30~nM free HNE at $t = 30$~min after partial SLPI inhibition. The chronic wound
+HNE prediction is sensitive to placeholder SLPI kinetics and concentration, which remain
+unconfirmed from papers in this folder.
 
 %----------------------------------------------------------------------
 \section{IV. \; Full ODE System}
@@ -404,10 +436,13 @@ $[\text{TIMP-1}]_{\rm free}$
   & $\approx$6~nM & $\approx$22~nM
   & -- & ODE \\
 $[\text{HNE}]_{\rm free}$
-  & 0.00~pM & 0.00~pM
-  & n/a & ODE \\\hline\hline
+  & $\approx$30~nM$^{\dagger}$ & 0.00~pM
+  & -- & ODE\litref{7} \\\hline\hline
 \end{tabular}
 \end{center}
+{\footnotesize $\dagger$~A1AT degraded in chronic wounds (Rao 1995\litref{7});
+HNE elevated in only 50\% of chronic VLU (Trengove 1999\litref{1}).
+Chronic HNE $\approx$30~nM is sensitive to placeholder SLPI kinetics.}
 
 \begin{findingbox}
 \textbf{Confirmed chronic wound prediction.}
@@ -422,6 +457,14 @@ from Ladwig Figure~8 (approximate) and healing TIMP-1 with no paper source. The
 discrimination ratio ($\sim$5$\times$) should be treated as a working estimate until
 a joint VLU ELISA is performed. The mechanism is sound: when TIMP-1 excess exceeds
 active MMP-9, free MMP-9 is suppressed; the exact ratio follows from the confirmed $K_i$.
+
+\textbf{HNE secondary channel.}
+Confirmed A1AT wound-state dependence (Rao 1995\litref{7}) gives strong HNE discrimination:
+chronic $\approx$30~nM vs healing 0.00~pM. However, elevated HNE was observed in only
+6/13 (50\%) of chronic VLU samples (Trengove 1999\litref{1}); the other 50\% show HNE
+at or below detection. HNE is therefore not a reliable standalone discriminator and the
+30~nM chronic estimate is sensitive to unconfirmed SLPI kinetics. MMP-9 ($\sim$5$\times$
+discrimination, grounded in confirmed kinetics) is the preferred primary target.
 \end{findingbox}
 
 \subsection{Layer~1 dilution and sensor range}
@@ -497,11 +540,15 @@ $K_i$ (TIMP-1/MMP-9)
 $\kon$ (A1AT/HNE)
   & $6.5\!\times\!10^7$~M$^{-1}$s$^{-1}$
   & Beatty 1980\litref{5} Table~1
-  & \symconf & HNE n/v & Low \\
-$[\text{A1AT}]$
-  & 1.92~$\mu$M
-  & Serum $\div$10 estimate
-  & \symneed & HNE $t_{1/2}$ & Low* \\
+  & \symconf & HNE (heal.) & Low \\
+$[\text{A1AT}]$ (healing)
+  & 1.92~$\mu$M (est.)
+  & Serum $\div$10; intact (Rao 1995\litref{7})
+  & \symconf/\symneed & HNE 0~pM & Low* \\
+$[\text{A1AT}]$ (chronic)
+  & $\approx 0$ (degraded)
+  & Rao 1995\litref{7} text: 9/10 samples
+  & \symconf & HNE $\approx$30~nM & High \\
 $[\text{MMP-3}]$
   & 10~ng/mL
   & Placeholder
@@ -517,12 +564,15 @@ $k_{\rm cat}/K_m$ (MMP-3)
 $[\text{SLPI}]$
   & 200~ng/mL
   & Ashcroft 2000\litref{6}: no conc.\ stated
-  & \symneed & HNE (n/v) & None \\\hline\hline
+  & \symneed & HNE (chr.) & Moderate \\\hline\hline
 \end{tabular}
 }
 \end{center}
 
-\textit{\small *Low sensitivity: even at 10$\times$ lower [A1AT] than estimated, HNE $t_{1/2} = 55$~ms; HNE non-viability conclusion unchanged.}
+\textit{\small *In healing wounds, A1AT intact (Rao 1995\litref{7}): HNE $t_{1/2} = 55$~ms
+even at 10$\times$ lower [A1AT]; healing HNE $= 0.00$~pM is insensitive to this estimate.
+In chronic wounds, A1AT $\approx 0$ (confirmed degraded); chronic HNE prediction depends on
+placeholder SLPI kinetics (Moderate sensitivity).}
 
 %----------------------------------------------------------------------
 \section{References}
@@ -567,6 +617,23 @@ unless otherwise noted.
   \textbf{ashcroft2000.pdf} -- confirms SLPI role in wound healing (knockout mouse model).
   Does not provide SLPI concentration in human wound fluid; SLPI concentration remains
   unconfirmed in this model.
+
+\item Rao CN, Ladin DA, Liu YY et al.\ (1995) $\alpha_1$-Antitrypsin is degraded and
+  non-functional in chronic wounds but intact and functional in acute wounds: the inhibitor
+  protects fibronectin from degradation by chronic wound fluid enzymes.
+  \textit{J Invest Dermatol} 105(4):572--578.
+  \textbf{rao1995.pdf} -- A1AT intact in all healing/acute samples; degraded and
+  non-functional in 9/10 chronic wound samples. Confirmed from text (p.572--575).
+  No quantitative A1AT concentration in ng/mL is provided; healing-state concentration
+  remains an estimate (serum $\div$10).
+
+\item Nwomeh BC, Liang HX, Cohen IK, Yager DR (1999) MMP-8 is the predominant collagenase
+  in healing wounds and nonhealing ulcers.
+  \textit{J Surg Res} 81(2):189--195.
+  \textbf{nwomeh1999.pdf} -- TIMP-1 levels ``very low or not detected'' in chronic ulcer
+  fluid (text p.193), confirming TIMP-1 suppression in chronic wound environments.
+  Quantitative TIMP-1 values are in ng per 100~$\mu$g protein (not ng/mL); cannot be
+  converted to absolute concentration without protein content data.
 \end{enumerate}
 
 \end{document}
