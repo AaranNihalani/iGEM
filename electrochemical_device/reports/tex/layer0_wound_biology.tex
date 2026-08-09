@@ -597,6 +597,23 @@ The healing signal approaching the LOD under large $D_f$ is a risk to quantify i
   \item \textbf{HNE elevation is inconsistent across chronic wound samples.}
     With elevated HNE in only 50\% of chronic VLU cases, the HNE channel has limited
     diagnostic utility regardless of the kinetic model accuracy.
+  \item \textbf{Substrate competition with TIMP-1 and A1AT is not modelled.}
+    The ODE treats inhibitor binding as an isolated equilibrium, without Michaelis--Menten
+    substrate terms. In a full competitive system, the apparent inhibition constant would
+    become $K_{i,\text{app}} = K_i(1 + [S]/K_m)$. This simplification is justified here
+    because (a)~the sensor detects free MMP-9 \emph{protein} via aptamer binding, not
+    enzymatic activity, so the relevant quantity is the partition between free and
+    TIMP-1-bound MMP-9, not substrate turnover; (b)~TIMP-1 is a slow-tight inhibitor
+    whose complex half-life ($t_{1/2} \approx 5.5$ min) greatly exceeds substrate
+    catalytic cycle times (ms), so TIMP-1 wins the competition thermodynamically;
+    and (c)~the $K_i = 8.5$ nM from Olson~1997~\cit{4} was measured in enzyme
+    inhibition assays conducted in the presence of a fluorogenic substrate, so
+    some substrate competition is already implicit in the reported value.
+    For HNE, the serpin trapping mechanism means A1AT is not a classical competitive
+    inhibitor, and the half-life conclusion is insensitive to a 10-fold change in $\kon^A$.
+    If future layers require modelling MMP-9 \emph{activity} rather than concentration,
+    substrate terms would need to be added with wound-fluid substrate concentrations
+    currently unavailable in any paper in the folder.
 \end{enumerate}
 
 %=======================================================================
