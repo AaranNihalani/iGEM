@@ -4,21 +4,27 @@
 \usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
 \usepackage{parskip}
 \usepackage{microtype}
-\usepackage{amsmath,amssymb}
-\usepackage{array,tabularx,multirow}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
 \usepackage[table]{xcolor}
 \usepackage{graphicx,float}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{fancyhdr}
 
-\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+% ---- Section numbering: Roman numerals ---------------------------------
+\renewcommand\thesection{\Roman{section}}
+% ---- Equation numbering: (I.1), (II.2), etc. ---------------------------
+\numberwithin{equation}{section}
+
+% ---- Section formatting ------------------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
 \titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
 \titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
-\titlespacing{\section}{0pt}{1.4ex plus .2ex}{0.5ex}
-\titlespacing{\subsection}{0pt}{0.9ex}{0.3ex}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
 
-% Page headers
+% ---- Page headers ------------------------------------------------------
 \pagestyle{fancy}
 \fancyhf{}
 \setlength{\headheight}{15pt}
@@ -27,613 +33,628 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.35pt}
 
-% Colour palette -- muted
-\definecolor{boxblue}{rgb}{0.93,0.96,0.99}
-\definecolor{boxgreen}{rgb}{0.91,0.97,0.92}
-\definecolor{boxamber}{rgb}{0.99,0.97,0.88}
-\definecolor{boxgray}{rgb}{0.95,0.95,0.95}
-\definecolor{boxred}{rgb}{0.99,0.92,0.92}
-\definecolor{ambertext}{rgb}{0.46,0.24,0.00}
-\definecolor{alertred}{rgb}{0.68,0.06,0.06}
-
-\setlength{\fboxsep}{7pt}
-\newsavebox{\tmpbox}
-
-\newenvironment{infobox}{%
-  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}}%
- {\vspace{0.2em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.4em}\noindent\colorbox{boxblue}{\usebox{\tmpbox}}\par\vspace{0.4em}}
-
-\newenvironment{findingbox}{%
-  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}}%
- {\vspace{0.2em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.4em}\noindent\colorbox{boxgreen}{\usebox{\tmpbox}}\par\vspace{0.4em}}
-
-\newenvironment{needsbox}{%
-  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}%
-  \textbf{\textcolor{ambertext}{Outstanding measurements:}}\par\vspace{0.15em}}%
- {\vspace{0.2em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.4em}\noindent\colorbox{boxamber}{\usebox{\tmpbox}}\par\vspace{0.4em}}
-
-\newenvironment{alertbox}{%
-  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}%
-  \textbf{\textcolor{alertred}{Critical finding:}}\par\vspace{0.15em}}%
- {\vspace{0.2em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.4em}\noindent\colorbox{boxred}{\usebox{\tmpbox}}\par\vspace{0.4em}}
-
-\newenvironment{eqbox}{%
-  \begin{lrbox}{\tmpbox}\begin{minipage}{0.965\textwidth}\vspace{0.2em}}%
- {\vspace{0.2em}\end{minipage}\end{lrbox}%
-  \par\vspace{0.3em}\noindent\colorbox{boxgray}{\usebox{\tmpbox}}\par\vspace{0.3em}}
-
-% Macros
-\newcommand{\litref}[1]{\textsuperscript{\normalfont[#1]}}
+% ---- Macros ------------------------------------------------------------
 \newcommand{\kon}{k_{\text{on}}}
 \newcommand{\koff}{k_{\text{off}}}
-
-% Table status symbols
-\newcommand{\symconf}{$\checkmark$}     % confirmed from paper text
-\newcommand{\symapprox}{${\sim}$}       % approximate from figure
-\newcommand{\symneed}{$\circ$}          % needs citation/measurement
+\newcommand{\Mms}{\text{M}^{-1}\text{s}^{-1}}
+\newcommand{\cit}[1]{[#1]}   % inline citation: [1], [7], etc.
 
 \begin{document}
 
-%----------------------------------------------------------------------
+%=======================================================================
 \begin{center}
 {\LARGE\bfseries Layer 0: Wound Biology}\\[0.4em]
-{\large Protease Cascade ODE: MMP-9 and HNE in Chronic Wound Fluid}\\[0.25em]
-{\small\color{gray} Eton iGEM 2026, Dry Lab \quad|\quad
-Layer 0 of 17-Layer Biosensor Modelling Pipeline \quad|\quad
+{\large Protease Cascade ODE: MMP-9 and HNE in Wound Fluid}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer 0 of 17-Layer Biosensor Pipeline \quad$|$\quad
 \texttt{wound\_biology.py}}
 \end{center}
 \vspace{0.4em}\hrule\vspace{0.7em}
 
-%----------------------------------------------------------------------
-\section{Purpose}
+\noindent
+Layer~0 predicts the \textbf{free protease concentrations in wound fluid at the
+time of swab sampling}. Its two key outputs, $[\text{MMP-9}]_{\text{free}}(t)$
+and $[\text{HNE}]_{\text{free}}(t)$, are in-situ wound fluid concentrations.
+Layer~1 (sample collection) applies a swab dilution factor $D_f$ to convert
+these to the concentrations entering the electrochemical device; the sensor
+detection range (17--200~ng/mL MMP-9, equivalent to 0.185--2.17~nM) is reached
+only after that dilution.
 
-Layer~0 predicts the \textbf{free protease concentration in wound fluid at the time of
-swab sampling} and how it evolves over the 2-hour post-sampling window.
-Its outputs, $[\text{MMP-9}]_{\text{free}}(t)$ and $[\text{HNE}]_{\text{free}}(t)$,
-are in-situ wound fluid concentrations. Layer~1 (sample collection) applies
-the swab dilution factor $D_f$ to convert from in-situ concentrations to what enters the device.
+The model tracks nine coupled species through a system of ordinary differential
+equations (Section~\ref{sec:ode}), solved numerically with a stiff implicit integrator.
+Every parameter value must be grounded in a paper physically present in
+\texttt{papers/layer\_00/}; values that are estimates rather than text-confirmed
+are explicitly labelled throughout.
 
-The distinction between healing and chronic wound states is encoded through two distinct
-initial-condition parameter sets, both grounded in published ELISA data.
-The model is a system of ODEs for nine coupled species: pro-MMP-9, free MMP-9, free TIMP-1,
-MMP-9:TIMP-1 complex, free HNE, free A1AT, HNE:A1AT complex, free SLPI, and HNE:SLPI complex.
-
-\begin{infobox}
-\textbf{Parameter citation policy.} Every parameter used by this model must be grounded
-in a paper in \texttt{electrochemical\_device/papers/layer\_00/} (status: \symconf),
-approximate from a figure in such a paper (status: \symapprox), or explicitly flagged
-as awaiting measurement (status: \symneed). No values from secondary literature alone.
-\end{infobox}
-
-%----------------------------------------------------------------------
-\section{I. \; Wound Fluid Composition}
+%=======================================================================
+\section{Wound Fluid Composition}
+\label{sec:composition}
 
 \subsection{Biological rationale}
 
-Chronic wounds are characterised by a prolonged inflammatory phase driven by persistent
-neutrophil and macrophage infiltration\litref{1}. This sustains elevated protease secretion
-long after acute wounds have resolved. The two proteases targeted by this device are:
+Chronic wounds are characterised by a prolonged inflammatory phase sustained by
+persistent neutrophil and macrophage infiltration \cit{1}. This drives elevated
+secretion of two serine and metalloprotease families that are the targets of this
+device. MMP-9 (gelatinase B, a zinc-dependent matrix metalloprotease) is secreted as
+an inactive zymogen (pro-MMP-9); activation requires proteolytic removal of the
+prodomain. HNE (human neutrophil elastase) is released already active from azurophil
+granules and is regulated primarily by $\alpha_1$-antitrypsin (A1AT) and secondarily
+by secretory leukocyte protease inhibitor (SLPI).
+
+\subsection{Unit conversion}
+
+All species concentrations are held internally in mol/L. The conversion from the
+ng/mL units reported in ELISA literature is:
+
+\begin{equation}
+C \;\bigg[\frac{\text{mol}}{\text{L}}\bigg]
+= \frac{c\;\bigg[\dfrac{\text{ng}}{\text{mL}}\bigg]
+  \times 10^{-6}\;\bigg[\dfrac{\text{g/L}}{\text{ng/mL}}\bigg]}
+  {M_W\;\bigg[\dfrac{\text{g}}{\text{mol}}\bigg]}
+\label{eq:unit}
+\end{equation}
+
+For $\mu$g/mL values the prefactor is $10^{-3}$ instead of $10^{-6}$. Applying
+Eq.~\eqref{eq:unit} to active MMP-9 in chronic wound fluid (4800 ng/mL,
+$M_W = 92{,}000$ g/mol):
+
+\begin{equation*}
+C_{\text{MMP-9}} = \frac{4800 \times 10^{-6}}{92{,}000}
+= 5.22 \times 10^{-8}\;\text{mol/L} = 52\;\text{nM}
+\end{equation*}
+
+\subsection{Literature values}
+
+\textbf{Ladwig et~al.\ (2002)} \cit{2} used quantitative ELISA and gelatin
+zymography on wound fluid from 56 patients with chronic pressure ulcers. All values
+below are from paper text (p.~31):
 
 \begin{itemize}[noitemsep]
-  \item \textbf{MMP-9 (gelatinase B)}: secreted by neutrophils and macrophages as an
-    inactive zymogen (pro-MMP-9). Activation requires proteolytic removal of the prodomain.
-    In chronic wounds, both forms are elevated; the ratio of active to pro form predicts
-    healing outcome.
-  \item \textbf{HNE (human neutrophil elastase)}: a serine protease released already
-    active from azurophil granules. Regulated primarily by $\alpha_1$-antitrypsin (A1AT)
-    and secondarily by SLPI.
+  \item Pro-MMP-9: $8{,}100 \pm 3{,}000$ ng/mL; active MMP-9: $4{,}800 \pm 1{,}300$ ng/mL.
+  \item Total MMP-9 $= 12{,}900$ ng/mL; pro-form fraction $= 63\%$.
+  \item MMP-9:TIMP-1 ratio inversely correlated with healing
+    (text pp.~33--34): higher active MMP-9 and lower TIMP-1 in non-healing wounds.
 \end{itemize}
 
-\subsection{Literature evidence}
+\textbf{Trengove et~al.\ (1999)} \cit{1} used ELISA in venous leg ulcer (VLU) wound
+fluid. Values from text (p.~448):
 
-\textbf{Trengove et al.\ (1999)\litref{1}} measured protease activity in wound fluid
-from chronic venous leg ulcers (VLU) versus acute wounds (all values from paper text, p.446--448):
 \begin{itemize}[noitemsep]
-  \item Chronic VLU MMP activity: median $22.8\;\mu\text{g/mL}$, versus $0.76\;\mu\text{g/mL}$
-    in acute wounds ($\approx30\times$ elevation, $p<0.001$; 92-kDa MMP-9 predominant on zymography).
-  \item TIMP-1 (ELISA): chronic VLU median $0.8\;\mu\text{g/mL} = 800$~ng/mL ($n=5$; text p.448).
-  \item HNE (activity assay): non-healing VLU median $1.4\;\mu\text{g/mL} \approx 47$~nM
-    (range $<1$--$11.9\;\mu\text{g/mL}$; elevated in only 6 of 13 chronic samples; text p.448).
-  \item MMP activity decreased significantly as wounds healed ($p < 0.01$; text p.449).
+  \item TIMP-1 in chronic VLU: median 0.8~$\mu$g/mL $= 800$ ng/mL ($n = 5$).
+  \item HNE in non-healing VLU: median 1.4~$\mu$g/mL $\approx 47$ nM
+    (range $<1$--11.9~$\mu$g/mL; elevated in 6 of 13 chronic samples).
+  \item MMP activity significantly lower in healing wounds ($p < 0.01$, text p.~449).
 \end{itemize}
 
-\textbf{Ladwig et al.\ (2002)\litref{2}} used quantitative gelatin zymography and ELISA in
-wound fluid from 56 patients with chronic pressure ulcers. Key values (all from paper text p.31):
+\textbf{Rao et~al.\ (1995)} \cit{7} examined A1AT integrity by western blot and
+elastase-inhibitory capacity (text pp.~572--575):
+
 \begin{itemize}[noitemsep]
-  \item Pro-MMP-9: mean $8{,}100 \pm 3{,}000$~ng/mL.
-    Active MMP-9: mean $4{,}800 \pm 1{,}300$~ng/mL.
-  \item Total MMP-9 $= 8{,}100 + 4{,}800 = 12{,}900$~ng/mL; pro-form fraction
-    $= 8{,}100/12{,}900 = 63\%$.
-  \item Active MMP-9 significantly higher in poor healers at Day~0 (text p.33;
-    approximate values from Figure~8).
-  \item TIMP-1 significantly higher in good healers at Day~0 (text p.33;
-    approximate values from Figure~10).
-  \item The MMP-9:TIMP-1 ratio was a predictor of healing trajectory (text p.34, Figure~11).
+  \item A1AT intact and functional in all healing and acute wound samples.
+  \item A1AT degraded and non-functional in 9 of 10 chronic wound samples.
+  \item No quantitative ng/mL wound-fluid A1AT concentration is given in Rao~1995.
+    The healing-state estimate $[A_0] \approx 1.92\;\mu\text{M}$ (serum
+    $\approx 2$~mg/mL at 10-fold dilution into wound fluid) is used; Section~\ref{sec:hne}
+    shows the qualitative conclusion is insensitive to this estimate.
 \end{itemize}
 
-\textbf{Rao et al.\ (1995)\litref{7}} examined A1AT integrity in wound fluid from chronic
-and healing wounds (J Invest Dermatol 105:572--578, text p.572--575). In healing and acute
-wound fluid, A1AT was intact and functional in all samples. In chronic wound fluid, A1AT was
-degraded and non-functional in 9 of 10 samples; the authors attribute this to sustained
-serine and metalloprotease activity in the chronic wound environment. This finding is critical
-for the HNE channel: functional A1AT cannot be assumed present in chronic wounds.
-
-\textbf{Nwomeh et al.\ (1999)\litref{8}} measured matrix metalloproteinase activities and
-inhibitor levels in venous leg ulcers (J Surg Res 81:189--195). TIMP-1 levels in chronic
-ulcer fluid were ``very low or not detected'' (text p.193), consistent with the low TIMP-1
-values in Trengove 1999\litref{1} and confirming TIMP-1 suppression as a hallmark of the
-chronic wound environment.
-
-\begin{needsbox}
-\textbf{Healing wound concentrations (not confirmed):} Ladwig 2002 is a pressure ulcer
-study; the healing scenario MMP-9 ($\approx5{,}400$~ng/mL) is read approximately from
-Figure~8 (not stated in text). The healing TIMP-1 ($= 1{,}104$~ng/mL) has no
-paper-text source -- it is a working estimate. The healing wound prediction (Section~V)
-is therefore illustrative. It depends on the sign of the MMP-9/TIMP-1 excess, not the
-exact values; a confirmed joint VLU ELISA (MMP-9 + TIMP-1 in the same cohort, chronic
-and healing time points) is needed before the discrimination ratio is finalised.
-\end{needsbox}
+\textbf{Nwomeh et~al.\ (1999)} \cit{8} reported that TIMP-1 was ``very low or not
+detected'' in chronic ulcer fluid (text p.~193), consistent with Trengove~1999~\cit{1}
+and confirming TIMP-1 suppression as a hallmark of the chronic wound environment.
+Values are expressed per~$\mu$g protein and cannot be converted to ng/mL without the
+protein content data, so Trengove~1999 is used for quantitative TIMP-1.
 
 \subsection{Initial conditions}
 
-Status: \symconf~confirmed from paper text, \symapprox~approximate from figure,
-\symneed~needs measurement.
+Table~\ref{tab:ics} gives the initial conditions for both wound states.
 
-\begin{center}
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.35}
-\begin{tabular}{>{\small}p{3.8cm}
-                >{\small\raggedright\arraybackslash}p{3.3cm}
-                >{\small\raggedright\arraybackslash}p{3.3cm}
-                >{\small\centering\arraybackslash}p{0.8cm}
-                >{\small\raggedright\arraybackslash}p{2.8cm}}
-\hline\hline
-\textbf{Parameter} & \textbf{Chronic wound} & \textbf{Healing wound} & \textbf{St.} & \textbf{Source} \\\hline
-$[\text{MMP-9}]_{\rm total}$
-  & 12{,}900~ng/mL (140~nM) & 5{,}400~ng/mL (59~nM)
-  & \symconf/\symapprox & [2] text/Fig.~8 \\
-$[\text{pro-MMP-9}]$ (63\%)
-  & 8{,}100~ng/mL (88~nM) & 3{,}400~ng/mL (37~nM)
-  & \symconf/\symapprox & [2] text \\
-$[\text{active MMP-9}]$ (37\%)
-  & 4{,}800~ng/mL (52~nM) & 2{,}000~ng/mL (22~nM)
-  & \symconf/\symapprox & [2] text/Fig.~8 \\
-\hline
-$[\text{TIMP-1}]$
-  & 800~ng/mL (28~nM) & 1{,}104~ng/mL (39~nM)
-  & \symconf/\symneed & [1] text/estimate \\
-\hline
-$[\text{HNE}]$ (both states)
-  & \multicolumn{2}{c}{47~nM (1.4~$\mu$g/mL)}
-  & \symconf & [1] text \\
-$[\text{A1AT}]$ (functional)
-  & $\approx 0$ (degraded) & 1.92~$\mu$M (estimate)
-  & \symconf/\symneed & [7] text/est. \\\hline\hline
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Species} & \textbf{Chronic wound} & \textbf{Healing wound} & \textbf{Confirmed?} & \textbf{Source} \\
+\midrule
+Total MMP-9    & 12,900 ng/mL (140 nM) & 5,400 ng/mL (59 nM)  & Chronic yes / Healing fig. & \cit{2} \\
+Pro-MMP-9 (63\%) & 8,100 ng/mL (88 nM) & 3,400 ng/mL (37 nM) & Chronic text / Healing est. & \cit{2} \\
+Active MMP-9 (37\%) & 4,800 ng/mL (52 nM) & 2,000 ng/mL (22 nM) & Chronic text / Healing fig. & \cit{2} \\
+\midrule
+TIMP-1         & 800 ng/mL (28 nM)    & 1,104 ng/mL (39 nM) & Chronic text / Healing none & \cit{1} \\
+HNE            & \multicolumn{2}{l}{47 nM (1.4 $\mu$g/mL), both states} & Text & \cit{1} \\
+A1AT (functional) & $\approx 0$ (degraded) & 1.92 $\mu$M (est.) & Qualitative & \cit{7} \\
+\midrule
+SLPI           & \multicolumn{2}{l}{$\approx 200$ ng/mL ($\approx 17$ nM)} & Not confirmed & est. \\
+\bottomrule
 \end{tabular}
-\end{center}
+\caption{Initial conditions for the Layer~0 ODE. Healing MMP-9 is read from Ladwig~2002
+Figure~8 (approximate, not stated in text). Healing TIMP-1 has no paper source. A1AT
+wound-state status is qualitative from Rao~1995~\cit{7} with an estimated concentration.}
+\label{tab:ics}
+\end{table}
 
-\textbf{Physical basis for wound-state discrimination.}
-In chronic wounds, active MMP-9 (52~nM) exceeds TIMP-1 (28~nM) by 24~nM. Since
-$K_i(\text{TIMP-1/MMP-9}) = 8.5$~nM (Olson 1997\litref{4}, confirmed), which is small
-compared to both concentrations, TIMP-1 is nearly fully bound and free MMP-9 persists at
-$\approx 32$~nM (ODE result, t = 30~min). In healing wounds (estimated), TIMP-1 (39~nM)
-exceeds active MMP-9 (22~nM) by 17~nM, suppressing free MMP-9 to $\approx 6$~nM.
+%=======================================================================
+\section{MMP-9 Inhibition by TIMP-1}
+\label{sec:mmp9}
 
-A1AT integrity provides a second discriminating axis for HNE (Rao 1995\litref{7}): in healing
-wounds A1AT is intact, quenching HNE to 0.00~pM within milliseconds; in chronic wounds A1AT
-is degraded in 9/10 samples, leaving HNE partially regulated only by SLPI ($\approx$30~nM
-at $t = 30$~min). However, elevated HNE was detected in only 6 of 13 chronic VLU samples
-(Trengove 1999\litref{1}), limiting its reliability as a primary discriminator.
+TIMP-1 binds reversibly to the MMP-9 active site in non-covalent slow-tight inhibition.
+Denoting free MMP-9 as $M$, free TIMP-1 as $T$, and their complex as $C_1$, the
+rate equations are:
 
-%----------------------------------------------------------------------
-\section{II. \; Activation Kinetics (MMP-9 Pathway)}
-
-Pro-MMP-9 activation by MMP-3 and plasmin is modelled as pseudo-first-order in pro-MMP-9:
-
-\begin{eqbox}
-\begin{equation}
-  \frac{d[\text{pro-MMP-9}]}{dt}
-  = -\left(\frac{k_{\rm cat}}{K_m}\right)_{\rm MMP3}\![\text{MMP-3}]\,[\text{pro-MMP-9}]
-    -\left(\frac{k_{\rm cat}}{K_m}\right)_{\rm plasmin}\![\text{plasmin}]\,[\text{pro-MMP-9}]
-\end{equation}
-\end{eqbox}
-
-\begin{needsbox}
-$(k_{\rm cat}/K_m)_{\rm MMP3}$, $(k_{\rm cat}/K_m)_{\rm plasmin}$, $[\text{MMP-3}]$, and
-$[\text{plasmin}]$ in wound fluid are all unconfirmed placeholders. No paper in the papers
-folder provides wound-fluid MMP-3 or plasmin concentrations or the relevant kinetic constants.
-With current placeholder values, $<1$\% of pro-MMP-9 is activated in 120~min, so these
-values have no effect on the chronic wound free MMP-9 prediction. They would matter only if
-pro-MMP-9 activation within the 2-hour window were a significant fraction of the total.
-\end{needsbox}
-
-%----------------------------------------------------------------------
-\section{III. \; Inhibition Kinetics}
-
-\subsection{TIMP-1 / MMP-9 (reversible tight inhibition)}
-
-TIMP-1 binds to the MMP-9 active site in a non-covalent, reversible manner with biphasic
-kinetics (two binding sites; high-affinity site dominates at wound fluid concentrations):
-
-\begin{eqbox}
-\begin{equation}
-  \text{MMP-9} + \text{TIMP-1} \underset{\koff}{\overset{\kon}{\rightleftharpoons}}
-  \text{MMP-9:TIMP-1}
-  \qquad K_i = \frac{\koff}{\kon}
-\end{equation}
-\end{eqbox}
-
-\textbf{Confirmed kinetic constants (Olson et al.\ 1997\litref{4}, Table~IV,
-enzyme inhibition assay, MMP-9 82~kDa active form):}
-
-\begin{eqbox}
-\begin{align*}
-  \kon &= 2.48 \pm 0.47 \times 10^5\;\text{M}^{-1}\text{s}^{-1} \\
-  \koff &= 2.1 \pm 1.1 \times 10^{-3}\;\text{s}^{-1} \\
-  K_i &= \koff/\kon = 8.5 \pm 2.9\;\text{nM}
-    \quad\text{(stated directly in Table~IV; check: }2.1\times10^{-3}/2.48\times10^5 = 8.47\;\text{nM)}
-\end{align*}
-\end{eqbox}
-
-Enzyme inhibition assay values are used in preference to SPR values (Olson 1997
-Tables~I and II) because they reflect solution-phase kinetics at conditions closer to
-wound fluid. As noted by Olson 1997 (p.29981), enzyme inhibition $\kon$ values are
-consistently 2.5--7$\times$ higher than SPR values, making them more appropriate for
-modelling diffusion-limited association in wound fluid.
-
-\textbf{Sensitivity of discrimination ratio to $K_i$.}
-The chronic wound prediction ($\approx32$~nM free MMP-9 at 30~min) is robust: changing
-$K_i$ from 8.5~nM to 1~nM shifts the result from 32~nM to 27~nM (a 15\% change).
-The healing prediction is more sensitive: $K_i = 8.5$~nM gives 6~nM free MMP-9,
-whereas $K_i = 1$~nM gives 1.3~nM. This is because the healing wound MMP-9/TIMP-1 excess
-is only 17~nM, comparable to $K_i$.
-
-\subsection{A1AT / HNE (near-irreversible inhibition)}
-
-A1AT forms a covalent acyl-enzyme intermediate with HNE that is effectively irreversible:
-
-\begin{eqbox}
-\begin{equation}
-  \text{HNE} + \text{A1AT} \xrightarrow{\kon} \text{HNE:A1AT}
-  \quad(\text{irreversible; }\koff \approx 0)
-\end{equation}
-\end{eqbox}
-
-\textbf{Confirmed kinetic constant (Beatty, Bieth \& Travis 1980\litref{5}, Table~1):}
-\begin{eqbox}
-\begin{equation}
-  \kon(\text{HNE}/\text{A1AT}) = 6.5 \pm 4.0 \times 10^7\;\text{M}^{-1}\text{s}^{-1}
-  \quad\text{(at 25\,\textdegree C, pH 8.0)}
-\end{equation}
-\end{eqbox}
-
-\textbf{Half-life of free HNE in healing wounds} (with functional $[\text{A1AT}]_0 = 1.92$~$\mu$M, estimated):
-\begin{eqbox}
-\begin{equation}
-  t_{1/2}^{\rm HNE}
-  = \frac{\ln 2}{\kon \cdot [\text{A1AT}]_0}
-  = \frac{0.693}{6.5\times10^7 \times 1.92\times10^{-6}}
-  = 0.0055\;\text{s} \quad (5.5\;\text{ms})
-\end{equation}
-\end{eqbox}
-
-Because $[\text{A1AT}]_0$ is an estimate, the conclusion is verified at 10$\times$ lower
-$[\text{A1AT}]_0$: $t_{1/2} = 55$~ms, still three orders of magnitude below the
-5-minute measurement window. This analysis applies to healing wounds where A1AT is intact
-(Rao et al.\ 1995\litref{7}). In chronic wounds, A1AT is degraded in 9 of 10 samples;
-see the finding below.
-
-\begin{alertbox}
-\textbf{A1AT is wound-state dependent (Rao et al.\ 1995\litref{7}).}
-In \textbf{healing} wounds A1AT is intact; HNE is quenched to 0.00~pM within 5.5~ms
-(confirmed $\kon = 6.5\times10^7$~M$^{-1}$s$^{-1}$, Beatty 1980\litref{5}; insensitive
-to [A1AT] estimate: $t_{1/2} = 55$~ms even at 10$\times$ lower A1AT). In \textbf{chronic}
-wounds, A1AT is degraded and non-functional in 9/10 samples (Rao 1995\litref{7}); HNE is
-only partially inhibited by SLPI, persisting at $\approx$30~nM at $t = 30$~min.
-
-\textbf{HNE is an unreliable primary sensor target.} Although HNE discriminates between
-wound states (chronic $\approx$30~nM vs healing 0~pM), elevated HNE was detected in only
-6 of 13 chronic VLU samples (Trengove 1999\litref{1}): the remaining 50\% of chronic
-cases have HNE at or below detection. MMP-9 is the preferred primary target. The second
-electrode should serve as an internal reference or control, not a primary HNE sensing channel.
-\end{alertbox}
-
-\subsection{SLPI / HNE (secondary inhibitor)}
-
-SLPI is a serine protease inhibitor expressed in wound healing tissue\litref{6}.
-Placeholder kinetic constants ($\kon = 10^5$~M$^{-1}$s$^{-1}$, $\koff = 10^{-4}$~s$^{-1}$,
-concentration $\approx$200~ng/mL $\approx$ 17~nM) are used. Ashcroft et al.\ (2000)\litref{6}
-confirmed the importance of SLPI to wound healing outcomes in knockout mice but did not
-state a quantitative SLPI concentration in human wound fluid.
-
-In healing wounds, HNE is completely neutralised by intact A1AT (Rao 1995\litref{7}),
-making SLPI irrelevant. In chronic wounds, A1AT is degraded in 9/10 samples (Rao
-1995\litref{7}), and SLPI provides the primary remaining HNE inhibition; the ODE predicts
-$\approx$30~nM free HNE at $t = 30$~min after partial SLPI inhibition. The chronic wound
-HNE prediction is sensitive to placeholder SLPI kinetics and concentration, which remain
-unconfirmed from papers in this folder.
-
-%----------------------------------------------------------------------
-\section{IV. \; Full ODE System}
-
-\noindent Variable key (all concentrations in mol/L):
-
-\vspace{3pt}
-\begin{center}
-\small
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{@{}ll@{\qquad}ll@{}}
-$P$ & pro-MMP-9           & $C_1$ & MMP-9:TIMP-1 complex \\
-$M$ & free (active) MMP-9 & $H$   & free HNE \\
-$T$ & free TIMP-1         & $A$   & free A1AT \\
-$C_2$ & HNE:A1AT complex  & $S$   & free SLPI \\
-$C_3$ & HNE:SLPI complex  &       & \\
-\end{tabular}
-\end{center}
-
-\begin{eqbox}
-\small
 \begin{align}
-  \dot{P}   &= -k^*\,P \\[2pt]
-  \dot{M}   &= +k^*\,P  - \kon^{T} MT + \koff^{T} C_1 \\[2pt]
-  \dot{T}   &= -\kon^{T} MT + \koff^{T} C_1 \\[2pt]
-  \dot{C}_1 &= +\kon^{T} MT - \koff^{T} C_1 \\[2pt]
-  \dot{H}   &= -\kon^{A} HA - \kon^{S} HS + \koff^{S} C_3 \\[2pt]
-  \dot{A}   &= -\kon^{A} HA \\[2pt]
-  \dot{C}_2 &= +\kon^{A} HA \\[2pt]
-  \dot{S}   &= -\kon^{S} HS + \koff^{S} C_3 \\[2pt]
-  \dot{C}_3 &= +\kon^{S} HS - \koff^{S} C_3
+\frac{d[M]}{dt} &= -\kon^T\,[M][T] + \koff^T\,[C_1] \label{eq:dM} \\
+\frac{d[T]}{dt} &= -\kon^T\,[M][T] + \koff^T\,[C_1] \label{eq:dT} \\
+\frac{d[C_1]}{dt} &= +\kon^T\,[M][T] - \koff^T\,[C_1] \label{eq:dC1}
 \end{align}
-\vspace{-4pt}
-\noindent where $k^* = (k_{\rm cat}/K_m)_{\rm MMP3}[{\rm MMP\text{-}3}]
-+ (k_{\rm cat}/K_m)_{\rm plasmin}[{\rm plasmin}]$;\;
-$k_{\rm on,off}^{T}$ for TIMP-1/MMP-9 (Olson 1997\litref{4});\;
-$\kon^{A}$ for A1AT/HNE (Beatty 1980\litref{5}).
-\end{eqbox}
 
-Solved with the Radau stiff solver (\texttt{scipy.integrate.solve\_ivp},
-\texttt{rtol=1e-10, atol=1e-15}). Stiff integration is required because the A1AT/HNE
-timescale ($\sim$5.5~ms) is $10^7$-fold faster than the pro-MMP-9 activation timescale
-($\sim$30--120~min). The TIMP-1/MMP-9 equilibration is intermediate ($\tau \approx 2$~min).
+Olson et~al.\ (1997)~\cit{4} reported kinetic constants from solution-phase enzyme
+inhibition assays (Table~IV, 82~kDa active MMP-9):
 
-%----------------------------------------------------------------------
-\section{V. \; Model Output and Wound-State Discrimination}
+\begin{align*}
+\kon^T &= 2.48 \pm 0.47 \times 10^5\;\Mms \\
+\koff^T &= 2.1 \pm 1.1 \times 10^{-3}\;\text{s}^{-1}
+\end{align*}
 
-\subsection{Discrimination between wound states at $t = 30$ min}
+The equilibrium inhibition constant $K_i$ is stated directly in Olson~1997 Table~IV
+as $K_i = 8.5 \pm 2.9$ nM; the ratio confirms this:
+
+\begin{equation}
+K_i = \frac{\koff^T}{\kon^T}
+= \frac{2.1 \times 10^{-3}}{2.48 \times 10^5}
+= 8.47\;\text{nM} \approx 8.5\;\text{nM}
+\label{eq:Ki}
+\end{equation}
+
+Enzyme inhibition values are used in preference to the SPR values in Olson~1997
+Tables~I and~II because solution-phase kinetics are more representative of wound-fluid
+conditions; $\kon^T$ from enzyme inhibition is 2.5--7$\times$ higher than from SPR
+(Olson~1997, p.~29981).
+
+\subsection{Equilibrium free MMP-9}
+
+The TIMP-1/MMP-9 equilibration timescale is:
+
+\begin{equation*}
+\tau = \frac{1}{\kon^T\,[T_0]}
+= \frac{1}{2.48 \times 10^5 \times 28 \times 10^{-9}}
+\approx 144\;\text{s} \approx 2.4\;\text{min}
+\end{equation*}
+
+This is short relative to the 30-min measurement window, so the system rapidly
+reaches an approximate binding equilibrium. Setting $d[C_1]/dt = 0$ in
+Eq.~\eqref{eq:dC1} gives:
+
+\begin{equation}
+K_i = \frac{[M][T]}{[C_1]} \label{eq:Keq}
+\end{equation}
+
+Conservation of each species pool requires:
+
+\begin{align}
+[M_0] &= [M] + [C_1] \label{eq:Mcons} \\
+[T_0] &= [T] + [C_1] \label{eq:Tcons}
+\end{align}
+
+From Eq.~\eqref{eq:Mcons}: $[C_1] = [M_0] - [M]$. Substituting into
+Eq.~\eqref{eq:Tcons}: $[T] = [T_0] - [M_0] + [M]$. Substituting both into
+Eq.~\eqref{eq:Keq} and writing $x = [M]_{\text{free}}$:
+
+\begin{equation*}
+K_i\,(M_0 - x) = x\,(T_0 - M_0 + x)
+\end{equation*}
+
+Expanding and collecting terms:
+
+\begin{equation}
+x^2 + x\,(T_0 - M_0 + K_i) - K_i\,M_0 = 0
+\label{eq:quadratic}
+\end{equation}
+
+Eq.~\eqref{eq:quadratic} is a quadratic in $x$. Taking the positive root (the only
+physically meaningful solution, since $[M]_{\text{free}} \geq 0$):
+
+\begin{equation}
+[M]_{\text{free}} =
+\frac{-(T_0 - M_0 + K_i) + \sqrt{(T_0 - M_0 + K_i)^2 + 4\,K_i\,M_0}}{2}
+\label{eq:Mfree}
+\end{equation}
+
+\textbf{Chronic wound} ($M_0 = 52$ nM, $T_0 = 28$ nM, $K_i = 8.5$ nM):
+
+\begin{align*}
+b &= T_0 - M_0 + K_i = 28 - 52 + 8.5 = -15.5\;\text{nM} \\
+[M]_{\text{free}} &=
+  \frac{15.5 + \sqrt{(-15.5)^2 + 4 \times 8.5 \times 52}}{2} \\
+  &= \frac{15.5 + \sqrt{240.3 + 1768}}{2}
+   = \frac{15.5 + 44.8}{2}
+   \approx \mathbf{30.2\;\text{nM}}
+\end{align*}
+
+\textbf{Healing wound} ($M_0 = 22$ nM, $T_0 = 39$ nM, $K_i = 8.5$ nM):
+
+\begin{align*}
+b &= T_0 - M_0 + K_i = 39 - 22 + 8.5 = +25.5\;\text{nM} \\
+[M]_{\text{free}} &=
+  \frac{-25.5 + \sqrt{(25.5)^2 + 4 \times 8.5 \times 22}}{2} \\
+  &= \frac{-25.5 + \sqrt{650.3 + 748}}{2}
+   = \frac{-25.5 + 37.4}{2}
+   \approx \mathbf{5.9\;\text{nM}}
+\end{align*}
+
+These analytical equilibrium values agree closely with the full ODE result at
+$t = 30$ min (31.9 nM chronic, 6.2 nM healing; Table~\ref{tab:outputs}). The small
+difference reflects ongoing pro-MMP-9 activation driving the system slightly away
+from the pure TIMP-1 equilibrium.
+
+\subsection{Sensitivity to $K_i$}
+
+Changing $K_i$ from 8.5 nM to 1 nM in Eq.~\eqref{eq:Mfree} shifts the chronic
+result from 30.2 nM to 26.5 nM (a 12\% decrease). The healing result is more
+sensitive: at $K_i = 1$ nM it falls from 5.9 nM to 1.4 nM, because the TIMP-1
+excess (17 nM) is comparable to $K_i$. The reported uncertainty ($\pm 2.9$ nM) is
+within this regime; the healing estimate should be treated as order-of-magnitude.
+
+The following assumptions underlie this section:
+
+\begin{enumerate}[noitemsep]
+  \item The equilibrium approximation is valid because $\tau \approx 2.4$ min is
+    short relative to the 30-min read window and the pro-MMP-9 activation timescale.
+  \item Solution-phase enzyme inhibition constants (Olson~1997 \cit{4} Table~IV)
+    are used in preference to SPR values, as the wound fluid environment is closer to
+    solution phase.
+  \item Pro-MMP-9 activation (Section~\ref{sec:ode}) is negligible with current
+    placeholder kinetics; the active MMP-9 initial condition is approximately constant
+    over the measurement window.
+\end{enumerate}
+
+%=======================================================================
+\section{HNE Inhibition}
+\label{sec:hne}
+
+\subsection{A1AT/HNE near-irreversible binding}
+
+A1AT inhibits HNE via serpin mechanism: a covalent acyl-enzyme intermediate forms
+and the complex is effectively irreversible ($\koff^A \approx 0$). The rate of free
+HNE depletion is:
+
+\begin{equation}
+\frac{d[H]}{dt} = -\kon^A\,[A][H]
+\label{eq:dH}
+\end{equation}
+
+In healing wounds where $[A_0] \gg [H_0]$ (see below), the free A1AT concentration
+remains approximately constant throughout the reaction. This pseudo-first-order
+approximation reduces Eq.~\eqref{eq:dH} to:
+
+\begin{equation}
+\frac{d[H]}{dt} \approx -k^*\,[H], \qquad k^* = \kon^A\,[A_0]
+\label{eq:pseudo}
+\end{equation}
+
+Eq.~\eqref{eq:pseudo} is a first-order linear ODE with exponential solution:
+
+\begin{equation}
+[H](t) = [H_0]\,\exp\!\bigl(-\kon^A\,[A_0]\,t\bigr)
+\label{eq:Hdecay}
+\end{equation}
+
+The half-life, at which $[H] = [H_0]/2$, follows from setting $\exp(-k^* t_{1/2}) = 1/2$:
+
+\begin{equation}
+t_{1/2} = \frac{\ln 2}{\kon^A\cdot[A_0]}
+\label{eq:thalf}
+\end{equation}
+
+Beatty, Bieth \& Travis (1980)~\cit{5} confirmed $\kon^A = 6.5 \pm 4.0 \times 10^7\;\Mms$
+from direct kinetic measurement (Table~1, human leukocyte elastase vs.\ native
+$\alpha_1$-PI). With the healing-wound estimate $[A_0] = 1.92\;\mu\text{M}$:
+
+\begin{equation}
+t_{1/2} = \frac{0.693}{6.5 \times 10^7 \times 1.92 \times 10^{-6}}
+= \frac{0.693}{124.8}
+\approx 5.5\;\text{ms}
+\label{eq:thalf_val}
+\end{equation}
+
+\textbf{Sensitivity to $[A_0]$.}
+At $[A_0]$ ten-fold lower ($0.192\;\mu$M):
+
+\begin{equation}
+t_{1/2} = \frac{0.693}{6.5 \times 10^7 \times 0.192 \times 10^{-6}} \approx 55\;\text{ms}
+\label{eq:thalf_lo}
+\end{equation}
+
+Even at this lower bound, $t_{1/2} = 55$ ms remains three orders of magnitude below
+the 5-min practical minimum measurement window. The healing-wound conclusion,
+$[\text{HNE}]_{\text{free}} \approx 0$, is therefore insensitive to the [A1AT]
+estimate over a 10-fold range.
+
+\textit{Validity check.} In healing wounds $[A_0] = 1.92\;\mu\text{M} \gg [H_0] = 47$ nM,
+confirming the pseudo-first-order approximation. After complete HNE absorption:
+$[A]_{\text{free}} \approx 1.92\;\mu\text{M} - 47\;\text{nM} \approx 1.87\;\mu\text{M}$
+(confirmed by ODE, Table~\ref{tab:outputs}).
+
+\subsection{A1AT wound-state dependence}
+
+Rao et~al.\ (1995)~\cit{7} showed that functional A1AT cannot be assumed present
+across wound types:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Healing and acute wounds}: A1AT intact and functional in all samples.
+    Eq.~\eqref{eq:thalf_val} applies; $[\text{HNE}]_{\text{free}} = 0$ within milliseconds.
+  \item \textbf{Chronic wounds}: A1AT degraded and non-functional in 9 of 10 samples.
+    With functional $[A_0] \approx 0$, Eq.~\eqref{eq:dH} gives $d[H]/dt \approx 0$:
+    HNE persists in wound fluid at near its initial concentration (moderated only by SLPI).
+\end{itemize}
+
+This A1AT wound-state switch provides a second discriminating axis: healing wounds have
+$[\text{HNE}]_{\text{free}} \approx 0$ while chronic wounds (where A1AT is degraded)
+retain elevated free HNE. However, HNE elevation itself was detected in only 6 of 13
+chronic VLU samples in Trengove~1999~\cit{1}, meaning $\sim$50\% of chronic cases are
+HNE-low regardless of A1AT status. HNE is therefore not a reliable standalone
+discriminator (see also Section~\ref{sec:output}).
+
+\subsection{SLPI secondary inhibition in chronic wounds}
+
+In chronic wounds where A1AT is non-functional, SLPI provides the residual HNE
+inhibition. Ashcroft et~al.\ (2000)~\cit{6} confirmed SLPI's role in wound healing
+using knockout mice but did not report a quantitative wound-fluid SLPI concentration.
+The model uses placeholder kinetics ($\kon^S = 10^5\;\Mms$, $\koff^S = 10^{-4}$ s$^{-1}$,
+$[S_0] \approx 200$ ng/mL $\approx 17$ nM); with these values the ODE gives
+$[\text{HNE}]_{\text{free}} \approx 30$ nM at $t = 30$ min in chronic wounds.
+This prediction is sensitive to the placeholder SLPI kinetics.
+
+The following assumptions underlie this section:
+
+\begin{enumerate}[noitemsep]
+  \item Pseudo-first-order kinetics are valid for healing wounds because
+    $[A_0] = 1.92\;\mu\text{M} \gg [H_0] = 47$ nM.
+  \item $[A_0] = 1.92\;\mu\text{M}$ is a serum/10 estimate; the half-life
+    conclusion is insensitive over a 10-fold range (Eq.~\eqref{eq:thalf_lo}).
+  \item $\kon^A$ was measured at 25$^{\circ}$C, pH~8.0 in Beatty~1980~\cit{5};
+    applied here at wound pH~7.4 as the best available value.
+  \item SLPI concentration and kinetics are unconfirmed placeholders; the chronic
+    HNE prediction is not considered quantitatively reliable.
+\end{enumerate}
+
+%=======================================================================
+\section{Full ODE System}
+\label{sec:ode}
+
+\subsection{Species and notation}
+
+Nine coupled species track the wound fluid protease cascade. All concentrations in mol/L:
 
 \begin{center}
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.35}
-\begin{tabular}{>{\small}p{4.4cm}
-                >{\small\raggedright\arraybackslash}p{3.0cm}
-                >{\small\raggedright\arraybackslash}p{3.0cm}
-                >{\small\centering\arraybackslash}p{1.1cm}
-                >{\small\raggedright\arraybackslash}p{2.0cm}}
-\hline\hline
-\textbf{Parameter} & \textbf{Chronic wound} & \textbf{Healing wound} & \textbf{C/H} & \textbf{Source} \\\hline
-$[\text{MMP-9}]_{\rm total}$ (in-situ)
-  & 12{,}900~ng/mL (140~nM) & 5{,}400~ng/mL (59~nM)
-  & $2.4\times$ & [2] text/Fig. \\
-$[\text{MMP-9}]_{\rm active}$ (in-situ)
-  & 4{,}800~ng/mL (52~nM) & 2{,}000~ng/mL (22~nM)
-  & $2.4\times$ & [2] text/Fig. \\
-$[\text{TIMP-1}]$ (in-situ)
-  & 800~ng/mL (28~nM) & 1{,}104~ng/mL (39~nM)
-  & $0.72\times$ & [1] text/est. \\
-MMP-9 vs TIMP-1 excess
-  & $+24$~nM (MMP-9) & $-17$~nM (TIMP-1)
-  & -- & derived \\
-\hline
-\multicolumn{5}{l}{\footnotesize\textit{ODE output at $t = 30$~min (in-situ, before Layer~1 dilution $D_f$):}} \\[1pt]
-$[\text{MMP-9}]_{\rm free}$
-  & $\mathbf{32}$~nM & $\mathbf{6}$~nM
-  & $\mathbf{5\times}$ & ODE \\
-$[\text{TIMP-1}]_{\rm free}$
-  & $\approx$6~nM & $\approx$22~nM
-  & -- & ODE \\
-$[\text{HNE}]_{\rm free}$
-  & $\approx$30~nM$^{\dagger}$ & 0.00~pM
-  & -- & ODE\litref{7} \\\hline\hline
+\small\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}ll@{\quad}ll@{}}
+$P$ & pro-MMP-9         & $C_1$ & MMP-9:TIMP-1 complex \\
+$M$ & free (active) MMP-9 & $H$   & free HNE \\
+$T$ & free TIMP-1        & $A$   & free A1AT \\
+$C_2$ & HNE:A1AT complex & $S$   & free SLPI \\
+$C_3$ & HNE:SLPI complex &       & \\
 \end{tabular}
 \end{center}
-{\footnotesize $\dagger$~A1AT degraded in chronic wounds (Rao 1995\litref{7});
-HNE elevated in only 50\% of chronic VLU (Trengove 1999\litref{1}).
-Chronic HNE $\approx$30~nM is sensitive to placeholder SLPI kinetics.}
 
-\begin{findingbox}
-\textbf{Confirmed chronic wound prediction.}
-With Ladwig 2002 text-confirmed concentrations (active MMP-9 $= 52$~nM, TIMP-1 $= 28$~nM)\litref{2}
-and Olson 1997 confirmed kinetics ($K_i = 8.5$~nM)\litref{4}, the ODE gives free MMP-9
-$\approx 32$~nM at $t = 30$~min in chronic wounds. This is driven entirely by the
-24~nM MMP-9 excess over TIMP-1; no production rate assumptions are needed.
+\subsection{Governing equations}
 
-\textbf{Illustrative healing comparison.}
-The healing result ($\approx 6$~nM) depends on unconfirmed estimates: healing MMP-9
-from Ladwig Figure~8 (approximate) and healing TIMP-1 with no paper source. The
-discrimination ratio ($\sim$5$\times$) should be treated as a working estimate until
-a joint VLU ELISA is performed. The mechanism is sound: when TIMP-1 excess exceeds
-active MMP-9, free MMP-9 is suppressed; the exact ratio follows from the confirmed $K_i$.
+Pro-MMP-9 is activated by MMP-3 and plasmin in excess, so the activation is
+pseudo-first-order in $P$ with effective rate $k^{**}$:
 
-\textbf{HNE secondary channel.}
-Confirmed A1AT wound-state dependence (Rao 1995\litref{7}) gives strong HNE discrimination:
-chronic $\approx$30~nM vs healing 0.00~pM. However, elevated HNE was observed in only
-6/13 (50\%) of chronic VLU samples (Trengove 1999\litref{1}); the other 50\% show HNE
-at or below detection. HNE is therefore not a reliable standalone discriminator and the
-30~nM chronic estimate is sensitive to unconfirmed SLPI kinetics. MMP-9 ($\sim$5$\times$
-discrimination, grounded in confirmed kinetics) is the preferred primary target.
-\end{findingbox}
+\begin{align}
+\dot{P}   &= -k^{**}\,P \label{eq:dP} \\
+\dot{M}   &= +k^{**}\,P - \kon^T MT + \koff^T C_1 \label{eq:dM2} \\
+\dot{T}   &= -\kon^T MT + \koff^T C_1 \label{eq:dT2} \\
+\dot{C}_1 &= +\kon^T MT - \koff^T C_1 \label{eq:dC12} \\
+\dot{H}   &= -\kon^A HA - \kon^S HS + \koff^S C_3 \label{eq:dH2} \\
+\dot{A}   &= -\kon^A HA \label{eq:dA} \\
+\dot{C}_2 &= +\kon^A HA \label{eq:dC2} \\
+\dot{S}   &= -\kon^S HS + \koff^S C_3 \label{eq:dS} \\
+\dot{C}_3 &= +\kon^S HS - \koff^S C_3 \label{eq:dC3}
+\end{align}
+
+where $k^{**} = (k_{\text{cat}}/K_m)_{\text{MMP-3}}\,[\text{MMP-3}]
++ (k_{\text{cat}}/K_m)_{\text{plasmin}}\,[\text{plasmin}]$ is the total first-order
+activation rate; $\kon^T$, $\koff^T$ from Olson~1997~\cit{4};
+$\kon^A$ from Beatty~1980~\cit{5}; $\kon^S$, $\koff^S$ are placeholders.
+
+\subsection{Mass conservation}
+
+Adding the appropriate equations confirms that each species pool is separately conserved:
+
+\begin{align*}
+\tfrac{d}{dt}(P + M + C_1)    &= 0 \qquad \text{(total MMP-9)} \\
+\tfrac{d}{dt}(T + C_1)        &= 0 \qquad \text{(total TIMP-1)} \\
+\tfrac{d}{dt}(H + C_2 + C_3)  &= 0 \qquad \text{(total HNE)} \\
+\tfrac{d}{dt}(A + C_2)        &= 0 \qquad \text{(total A1AT)} \\
+\tfrac{d}{dt}(S + C_3)        &= 0 \qquad \text{(total SLPI)}
+\end{align*}
+
+These identities provide a numerical check: deviations indicate integration error.
+The Radau solver maintains conservation to within
+$\text{rtol} = 10^{-10}$, $\text{atol} = 10^{-15}$ tolerances.
+
+\subsection{Stiff integration}
+
+The system spans seven orders of magnitude in characteristic timescale:
+
+\begin{itemize}[noitemsep]
+  \item A1AT/HNE reaction: $t_{1/2} \approx 5.5$ ms (fastest)
+  \item TIMP-1/MMP-9 equilibration: $\tau \approx 2.4$ min (intermediate)
+  \item Pro-MMP-9 activation: $\sim$120 min (slowest; negligible with placeholders)
+\end{itemize}
+
+The timescale ratio $\sim$$10^7$ makes the system stiff: explicit solvers would require
+$\Delta t \lesssim 1$ ms, making a 120-min integration prohibitively expensive.
+The Radau implicit solver (\texttt{scipy.integrate.solve\_ivp}, method~\texttt{Radau})
+is used throughout.
+
+%=======================================================================
+\section{Model Output and Wound-State Discrimination}
+\label{sec:output}
+
+Figures~\ref{fig:cascade} and~\ref{fig:comparison} show the ODE trajectories.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../figures/fig_B1_wound_biology.pdf}
+  \caption{Layer~0 ODE output for the chronic wound state over 120~min.
+    Top left: in-situ initial concentrations. Top right: MMP-9 activation vs.\
+    TIMP-1 inhibition. Bottom left: HNE in both wound states (log scale;
+    note 5.5~ms half-life in healing). Bottom right: free enzyme at read times.}
+  \label{fig:cascade}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../figures/fig_B1b_wound_state_comparison.pdf}
+  \caption{Chronic vs.\ healing wound states. Left: free MMP-9 over time.
+    Centre: free TIMP-1. Right: MMP-9 discrimination at read times.}
+  \label{fig:comparison}
+\end{figure}
+
+\subsection{ODE results at $t = 30$ min}
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lllr@{}}
+\toprule
+\textbf{Species} & \textbf{Chronic wound} & \textbf{Healing wound} & \textbf{C/H ratio} \\
+\midrule
+Free MMP-9   & 31.9 nM & 6.2 nM  & $5.1\times$ \\
+Free TIMP-1  & 5.9 nM  & 22.4 nM & -- \\
+Free HNE     & 30.5 nM$^{\,\dagger}$ & 0.00 pM & -- \\
+Free A1AT    & 0.00 $\mu$M & 1.88 $\mu$M & -- \\
+\bottomrule
+\end{tabular}
+\caption{ODE output at $t = 30$ min. ${}^{\dagger}$A1AT degraded in 9/10 chronic
+samples (Rao~1995~\cit{7}); HNE elevated in only 50\% of chronic VLU
+(Trengove~1999~\cit{1}). Chronic HNE prediction is sensitive to placeholder SLPI
+kinetics. Healing values depend on unconfirmed initial conditions.}
+\label{tab:outputs}
+\end{table}
+
+\subsection{MMP-9 wound-state discrimination}
+
+The 5.1$\times$ discrimination ratio arises from the sign of the MMP-9 vs.\ TIMP-1
+excess, as made explicit by Eq.~\eqref{eq:Mfree}:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Chronic wound}: MMP-9 (52 nM) exceeds TIMP-1 (28 nM) by 24 nM.
+    With $K_i = 8.5$ nM $\ll M_0, T_0$, TIMP-1 is nearly fully bound and free
+    MMP-9 persists at $\approx 32$ nM.
+  \item \textbf{Healing wound} (estimated): TIMP-1 (39 nM) exceeds MMP-9 (22 nM)
+    by 17 nM. TIMP-1 excess suppresses free MMP-9 to $\approx 6$ nM.
+\end{itemize}
+
+The mechanism is structurally robust: for $K_i \ll M_0, T_0$,
+Eq.~\eqref{eq:Mfree} gives $[M]_{\text{free}} \approx M_0 - T_0$ to first order
+(the excess simply remains free). Any wound state where active MMP-9 exceeds TIMP-1
+will show elevated free MMP-9, independent of exact parameter values.
+
+\subsection{HNE wound-state discrimination}
+
+The A1AT wound-state switch (Rao~1995~\cit{7}, Section~\ref{sec:hne}) produces a
+strong binary in HNE: healing wounds have $[\text{HNE}]_{\text{free}} = 0.00$ pM,
+while chronic wounds with degraded A1AT show $[\text{HNE}]_{\text{free}} \approx 30$ nM.
+However, elevated HNE was observed in only 6/13 (50\%) of chronic VLU samples
+(Trengove~1999~\cit{1}); the remaining 50\% of chronic wounds are HNE-low regardless
+of A1AT status. HNE is not a reliable primary discriminant; MMP-9 ($5\times$
+discrimination, grounded in confirmed kinetics) is the preferred target. The second
+electrode targeting HNE serves as an internal reference rather than a primary channel.
 
 \subsection{Layer~1 dilution and sensor range}
 
-For chronic wound free MMP-9 (32~nM) to land in the sensor range (17--200~ng/mL $= 0.185$--2.17~nM):
+The sensor detection range (17--200 ng/mL MMP-9 $= 0.185$--2.17 nM) is reached only
+after Layer~1 dilution. The required dilution factor $D_f$ is:
 
-\begin{eqbox}
 \begin{equation}
-  D_f = \frac{[\text{MMP-9}]_{\rm free,\,in\text{-}situ}}{[\text{MMP-9}]_{\rm target}}
-  = \frac{32\;\text{nM}}{0.185\text{--}2.17\;\text{nM}} \approx 15\text{--}173
+D_f = \frac{[\text{MMP-9}]_{\text{free,\,in-situ}}}{[\text{MMP-9}]_{\text{device}}}
+= \frac{32\;\text{nM}}{0.185\text{--}2.17\;\text{nM}}
+\approx 15\text{--}173
 \end{equation}
-\end{eqbox}
 
-A dilution factor $D_f \approx 10$--100 is within the range of practical swab designs.
-Example with $D_f = 50$: chronic wound device entry $= 32/50 = 0.64$~nM $= 59$~ng/mL
-(within sensor range); healing wound $= 6/50 = 0.12$~nM $= 11$~ng/mL (near the lower end).
-The healing signal approaching the LOD under large $D_f$ is a risk to address in Layer~1.
+With $D_f = 50$: chronic device entry $= 32/50 = 0.64$ nM $= 59$ ng/mL (within range);
+healing device entry $= 6.2/50 = 0.12$ nM $= 11$ ng/mL (near the lower LOD).
+The healing signal approaching the LOD under large $D_f$ is a risk to quantify in Layer~1.
 
-%----------------------------------------------------------------------
-\section{VI. \; Parameter Summary}
+\subsection{Limitations of this model}
 
-\textbf{Status}: \symconf~confirmed from paper text, \symapprox~from figure (not text), \symneed~needs measurement/citation.
-\textbf{Sensitivity}: whether changing the value by 10$\times$ affects the
-device-relevant predictions.
+\begin{enumerate}[noitemsep]
+  \item \textbf{Healing wound initial conditions not text-confirmed.} The healing MMP-9
+    estimate (5,400 ng/mL) is read from Ladwig~2002 Figure~8; the healing TIMP-1
+    (1,104 ng/mL) has no paper source. The $\sim$5$\times$ discrimination ratio should
+    be treated as a working estimate until a joint VLU ELISA (MMP-9 and TIMP-1 in the
+    same cohort at chronic and healing time points) is available.
+  \item \textbf{SLPI kinetics are unconfirmed placeholders.} The chronic wound HNE
+    prediction ($\approx 30$ nM) is sensitive to the unconfirmed SLPI concentration
+    and binding kinetics. Wound-fluid SLPI ELISA would substantially reduce this
+    uncertainty.
+  \item \textbf{Pro-MMP-9 activation is negligible at current parameter values.}
+    The activation kinetics (via MMP-3 and plasmin) use order-of-magnitude placeholders;
+    $<1\%$ of pro-MMP-9 activates in 120 min. These parameters become important only
+    if wound-fluid MMP-3 or plasmin concentrations prove substantially higher than assumed.
+  \item \textbf{HNE elevation is inconsistent across chronic wound samples.}
+    With elevated HNE in only 50\% of chronic VLU cases, the HNE channel has limited
+    diagnostic utility regardless of the kinetic model accuracy.
+\end{enumerate}
 
-\begin{center}
-{\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.28}
-\begin{tabular}{p{3.0cm}p{2.2cm}p{4.4cm}cp{1.5cm}p{1.2cm}}
-\hline\hline
-\textbf{Parameter} & \textbf{Value} & \textbf{Source} & \textbf{St.} & \textbf{Affects} & \textbf{Sensitv.} \\\hline
-$[\text{MMP-9}]_{\rm pro}$ (chr.)
-  & 8{,}100~ng/mL
-  & Ladwig 2002\litref{2} text p.31
-  & \symconf & I.C. & Low \\
-$[\text{MMP-9}]_{\rm act}$ (chr.)
-  & 4{,}800~ng/mL
-  & Ladwig 2002\litref{2} text p.31
-  & \symconf & I.C. & High \\
-Pro-form fraction
-  & 63\%
-  & Ladwig 2002\litref{2} (8100/12900)
-  & \symconf & I.C. & Low \\
-$[\text{TIMP-1}]$ (chronic)
-  & 800~ng/mL
-  & Trengove 1999\litref{1} text p.448
-  & \symconf & MMP-9 eq. & High \\
-$[\text{HNE}]$
-  & 47~nM
-  & Trengove 1999\litref{1} text p.448
-  & \symconf & HNE (n/v) & n/a \\
-$[\text{MMP-9}]_{\rm act}$ (heal.)
-  & 2{,}000~ng/mL
-  & Ladwig 2002\litref{2} Fig.~8 (approx.)
-  & \symapprox & I.C. (heal.) & High \\
-$[\text{TIMP-1}]$ (healing)
-  & 1{,}104~ng/mL
-  & No paper in folder -- estimate
-  & \symneed & MMP-9 eq. & High \\
-$\kon$ (TIMP-1/MMP-9)
-  & $2.48\!\times\!10^5$~M$^{-1}$s$^{-1}$
-  & Olson 1997\litref{4} Table IV
-  & \symconf & MMP-9 eq. & Low \\
-$\koff$ (TIMP-1/MMP-9)
-  & $2.1\!\times\!10^{-3}$~s$^{-1}$
-  & Olson 1997\litref{4} Table IV
-  & \symconf & $K_i$ & Moderate \\
-$K_i$ (TIMP-1/MMP-9)
-  & 8.5~nM
-  & Olson 1997\litref{4} Table IV
-  & \symconf & MMP-9 eq. & Moderate \\
-$\kon$ (A1AT/HNE)
-  & $6.5\!\times\!10^7$~M$^{-1}$s$^{-1}$
-  & Beatty 1980\litref{5} Table~1
-  & \symconf & HNE (heal.) & Low \\
-$[\text{A1AT}]$ (healing)
-  & 1.92~$\mu$M (est.)
-  & Serum $\div$10; intact (Rao 1995\litref{7})
-  & \symconf/\symneed & HNE 0~pM & Low* \\
-$[\text{A1AT}]$ (chronic)
-  & $\approx 0$ (degraded)
-  & Rao 1995\litref{7} text: 9/10 samples
-  & \symconf & HNE $\approx$30~nM & High \\
-$[\text{MMP-3}]$
-  & 10~ng/mL
-  & Placeholder
-  & \symneed & Act. rate & None \\
-$[\text{plasmin}]$
-  & 1~nM
-  & Placeholder
-  & \symneed & Act. rate & None \\
-$k_{\rm cat}/K_m$ (MMP-3)
-  & $5\!\times\!10^3$~M$^{-1}$s$^{-1}$
-  & Placeholder
-  & \symneed & Act. rate & None \\
-$[\text{SLPI}]$
-  & 200~ng/mL
-  & Ashcroft 2000\litref{6}: no conc.\ stated
-  & \symneed & HNE (chr.) & Moderate \\\hline\hline
-\end{tabular}
-}
-\end{center}
+%=======================================================================
+\section*{References}
 
-\textit{\small *In healing wounds, A1AT intact (Rao 1995\litref{7}): HNE $t_{1/2} = 55$~ms
-even at 10$\times$ lower [A1AT]; healing HNE $= 0.00$~pM is insensitive to this estimate.
-In chronic wounds, A1AT $\approx 0$ (confirmed degraded); chronic HNE prediction depends on
-placeholder SLPI kinetics (Moderate sensitivity).}
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_00/}.
 
-%----------------------------------------------------------------------
-\section{References}
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
 
-All papers in \texttt{electrochemical\_device/papers/layer\_00/}
-unless otherwise noted.
+\item Trengove NJ, Stacey MC, Macauley S, Bennett N, Gibson J, Burslem F, Murphy G,
+  Schultz G (1999). Analysis of the acute and chronic wound environments: the role of
+  proteases and their inhibitors. \textit{Wound Repair Regen} 7(6):442--452.
+  \textbf{trengove1999.pdf} -- TIMP-1 and HNE values from text (p.~448) confirmed.
 
-\begin{enumerate}[label={[\arabic*]},noitemsep]
-\item Trengove NJ, Stacey MC, Macauley S et al.\ (1999) Analysis of the acute and chronic
-  wound environments: the role of proteases and their inhibitors.
-  \textit{Wound Repair Regen} 7(6):442--52.
-  \textbf{trengove1999.pdf} -- values from text confirmed.
-
-\item Ladwig GP, Robson MC, Liu R et al.\ (2002) Ratios of activated matrix
-  metalloproteinase-9 to tissue inhibitor of metalloproteinase-1 in wound fluids
-  are inversely correlated with healing of pressure ulcers.
+\item Ladwig GP, Robson MC, Liu R, Kuhn MA, Muir DF, Schultz GS (2002). Ratios of
+  activated matrix metalloproteinase-9 to tissue inhibitor of metalloproteinase-1 in
+  wound fluids are inversely correlated with healing of pressure ulcers.
   \textit{Wound Repair Regen} 10(1):26--37.
-  \textbf{ladwig2002.pdf} -- chronic concentrations from text (p.31) confirmed.
-  Healing concentrations from Figure~8 only (approximate).
+  \textbf{ladwig2002.pdf} -- chronic MMP-9 and TIMP-1 from text (p.~31) confirmed;
+  healing values from Figure~8 only (approximate).
 
-\item Nagase H, Woessner JF~Jr (1999) Matrix metalloproteinases.
-  \textit{J Biol Chem} 274(31):21491--4.
-  \textbf{nagase\_woessner1999.pdf} -- MMP overview. Contains no kinetic constants
-  for TIMP-1/MMP-9; cited for biological context only.
+\item Nagase H, Woessner JF Jr (1999). Matrix metalloproteinases.
+  \textit{J Biol Chem} 274(31):21491--21494.
+  \textbf{nagase\_woessner1999.pdf} -- biological context; no kinetic constants used.
 
-\item Olson MW, Gervasi DC, Mobashery S, Fridman R (1997) Kinetic analysis of the
+\item Olson MW, Gervasi DC, Mobashery S, Fridman R (1997). Kinetic analysis of the
   binding of human matrix metalloproteinase-2 and -9 to tissue inhibitor of
   metalloproteinase (TIMP)-1 and TIMP-2.
-  \textit{J Biol Chem} 272(47):29975--83.
-  \textbf{olson1997.pdf} -- $\kon$, $\koff$, $K_i$ for MMP-9 (82~kDa)/TIMP-1
-  confirmed from Table~IV (enzyme inhibition assay).
+  \textit{J Biol Chem} 272(47):29975--29983.
+  \textbf{olson1997.pdf} -- $\kon^T$, $\koff^T$, $K_i$ for MMP-9/TIMP-1 confirmed
+  from Table~IV.
 
-\item Beatty K, Bieth J, Travis J (1980) Kinetics of association of serine proteinases
-  with native and oxidized $\alpha$-1-proteinase inhibitor and $\alpha$-1-antichymotrypsin.
-  \textit{J Biol Chem} 255(9):3931--34.
-  \textbf{beatty1980.pdf} -- $\kon$(HNE/$\alpha_1$-PI) $= 6.5\times10^7$~M$^{-1}$s$^{-1}$
-  confirmed from Table~1.
+\item Beatty K, Bieth J, Travis J (1980). Kinetics of association of serine proteinases
+  with native and oxidized $\alpha$-1-proteinase inhibitor and
+  $\alpha$-1-antichymotrypsin.
+  \textit{J Biol Chem} 255(9):3931--3934.
+  \textbf{beatty1980.pdf} -- $\kon^A = 6.5 \times 10^7\;\Mms$ confirmed from Table~1.
 
-\item Ashcroft GS, Lei K, Jin W et al.\ (2000) Secretory leukocyte protease inhibitor
-  mediates non-redundant functions necessary for normal wound healing.
-  \textit{Nat Med} 6(10):1147--53.
-  \textbf{ashcroft2000.pdf} -- confirms SLPI role in wound healing (knockout mouse model).
-  Does not provide SLPI concentration in human wound fluid; SLPI concentration remains
-  unconfirmed in this model.
+\item Ashcroft GS, Lei K, Jin W, Longenecker G, Kulkarni AB, Greenwell-Wild T,
+  Hale-Donze H, McGrady G, Song XY, Wahl SM (2000). Secretory leukocyte protease
+  inhibitor mediates non-redundant functions necessary for normal wound healing.
+  \textit{Nat Med} 6(10):1147--1153.
+  \textbf{ashcroft2000.pdf} -- SLPI role confirmed in knockout mouse model; no
+  quantitative wound-fluid SLPI concentration reported.
 
-\item Rao CN, Ladin DA, Liu YY et al.\ (1995) $\alpha_1$-Antitrypsin is degraded and
-  non-functional in chronic wounds but intact and functional in acute wounds: the inhibitor
-  protects fibronectin from degradation by chronic wound fluid enzymes.
-  \textit{J Invest Dermatol} 105(4):572--578.
-  \textbf{rao1995.pdf} -- A1AT intact in all healing/acute samples; degraded and
-  non-functional in 9/10 chronic wound samples. Confirmed from text (p.572--575).
-  No quantitative A1AT concentration in ng/mL is provided; healing-state concentration
-  remains an estimate (serum $\div$10).
+\item Rao CN, Ladin DA, Liu YY, Chilukuri K, Dong Z, Bhagwat SV (1995).
+  $\alpha_1$-Antitrypsin is degraded and non-functional in chronic wounds but intact
+  and functional in acute wounds: the inhibitor protects fibronectin from degradation
+  by chronic wound fluid enzymes. \textit{J Invest Dermatol} 105(4):572--578.
+  \textbf{rao1995.pdf} -- A1AT degraded in 9/10 chronic samples, intact in healing,
+  confirmed from text (pp.~572--575). No quantitative wound-fluid A1AT concentration given.
 
-\item Nwomeh BC, Liang HX, Cohen IK, Yager DR (1999) MMP-8 is the predominant collagenase
-  in healing wounds and nonhealing ulcers.
+\item Nwomeh BC, Liang HX, Cohen IK, Yager DR (1999). MMP-8 is the predominant
+  collagenase in healing wounds and nonhealing ulcers.
   \textit{J Surg Res} 81(2):189--195.
-  \textbf{nwomeh1999.pdf} -- TIMP-1 levels ``very low or not detected'' in chronic ulcer
-  fluid (text p.193), confirming TIMP-1 suppression in chronic wound environments.
-  Quantitative TIMP-1 values are in ng per 100~$\mu$g protein (not ng/mL); cannot be
-  converted to absolute concentration without protein content data.
+  \textbf{nwomeh1999.pdf} -- TIMP-1 ``very low or not detected'' in chronic ulcer fluid
+  confirmed from text (p.~193). Units not convertible to ng/mL without protein content.
+
 \end{enumerate}
 
 \end{document}
