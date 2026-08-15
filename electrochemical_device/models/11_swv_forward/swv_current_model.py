@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "09_surface_kinetics"))
 FIGURES = Path(__file__).parents[2] / "reports" / "figures"
 
 # ── Parameters ────────────────────────────────────────────────────────────────
-kcat_Km_eff = 188e3 * 0.3   # M-1s-1  (C15, alpha=0.3)
+kcat_Km_eff = 67.5e3 * 0.3  # M-1s-1  (A11/SGKIPRTLTA, alpha=0.3, Kridel 2001)
 MW_MMP9     = 92e3
 
 E_clinical_ngml = [17, 50, 100, 150, 200]
@@ -106,7 +106,7 @@ def plot_current_decay(save=True):
     fig.suptitle("Layer 11: Normalised SWV peak current vs incubation time\n"
                  r"$i_\mathrm{peak}(t) = i_0 \times (1 - F_k(t))$, "
                  r"$F_k = 1 - e^{-k_\mathrm{obs}\,t}$, "
-                 f"C15 | α = 0.3", fontsize=10)
+                 f"A11 (SGKIPRTLTA) | α = 0.3", fontsize=10)
     plt.tight_layout()
 
     if save:

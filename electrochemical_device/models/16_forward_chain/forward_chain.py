@@ -31,7 +31,7 @@ FIGURES = Path(__file__).parents[2] / "reports" / "figures"
 MW_MMP9     = 92e3
 eta_MMP9    = 0.70           # elution efficiency
 Df          = 2.0            # dilution factor
-kcat_Km_eff = 188e3 * 0.3   # M-1s-1 (surface, C15, alpha=0.3)
+kcat_Km_eff = 67.5e3 * 0.3  # M-1s-1 (surface est., A11/SGKIPRTLTA, alpha=0.3)
 k_on_TIMP1  = 2e5            # M-1s-1 (FLAG)
 k_off_TIMP1 = 2e-5           # s-1
 k_f_foul    = 1e3            # M-1s-1 (FLAG)
@@ -164,7 +164,7 @@ def plot_forward_chain(save=True):
     E_hi = 200e-6 / MW_MMP9
     E_lo = 17e-6  / MW_MMP9
     for E_M, lbl, col in [(E_lo,"17 ng/mL","b"),(E_hi,"200 ng/mL","r")]:
-        Fk_alpha = 1 - np.exp(-188e3 * alpha_range * E_M * 1800)
+        Fk_alpha = 1 - np.exp(-67.5e3 * alpha_range * E_M * 1800)
         ax4.plot(alpha_range, Fk_alpha*100, color=col, lw=2, label=lbl)
     ax4.axvline(0.3, color="gray", ls="--", lw=1.5, label="α = 0.3 (nominal, FLAG)")
     ax4.axhspan(5, 90, alpha=0.07, color="green", label="Operating window")

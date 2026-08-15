@@ -1,0 +1,603 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% ---- Section numbering: Roman numerals ---------------------------------
+\renewcommand\thesection{\Roman{section}}
+% ---- Equation numbering: (I.1), (II.2), etc. ---------------------------
+\numberwithin{equation}{section}
+
+% ---- Section formatting ------------------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+% ---- Page headers ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Layer~7: SAM Chemistry}}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+% ---- Macros ------------------------------------------------------------
+\newcommand{\cit}[1]{[#1]}   % inline citation: [1], [7], etc.
+\newcommand{\Mms}{\text{M}^{-1}\text{s}^{-1}}
+\newcommand{\As}{\text{\AA}^{-1}}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Layer 7: SAM Chemistry}\\[0.4em]
+{\large Mixed Probe-Thiol/MCH Monolayer: Deposition, Stability, and Ca$^{2+}$ Artefact}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer 7 of 17-Layer Biosensor Pipeline \quad$|$\quad
+\texttt{sam\_loading.py}, \texttt{sam\_stability.py}, \texttt{calcium\_artefact.py}}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent
+Layer~7 characterises the self-assembled monolayer (SAM) that immobilises the peptide
+probe on the gold electrode surface. Its primary output is the probe surface density
+$\Gamma_p$, which passes to Layer~8 (steric accessibility) and Layer~9 (surface kinetics).
+Secondary outputs are bounds on SAM degradation over the 60-minute assay window and a
+quantitative account of the Ca$^{2+}$ artefact and its ratiometric cancellation.
+
+Every parameter value must be confirmed from a paper physically present in
+\texttt{papers/layer\_07/}; values without a paper source are explicitly flagged throughout.
+
+%=======================================================================
+\section{Mixed SAM Architecture}
+\label{sec:architecture}
+
+\subsection{Molecular components}
+
+The sensor electrode carries a two-component thiol monolayer. The probe-thiol consists
+of a peptide substrate bearing a methylene-blue (MB) redox label, tethered to gold via
+a C$_6$ alkyl spacer and a PEG$_6$ flexible linker
+(HS--(CH$_2$)$_6$--PEG$_6$--SGKIPRTLTA--MB). MMP-9 (or HNE on the secondary
+channel) cleaves the peptide, releasing the MB-bearing fragment into solution and
+producing a signal-off decrease in SWV peak current proportional to enzymatic activity
+(Layer~0, Section~V).
+
+The diluent is 6-mercapto-1-hexanol (MCH, HS--(CH$_2$)$_6$--OH). MCH fills gold sites
+not occupied by the probe-thiol, presenting a chemically inert surface to the wound
+fluid and preventing non-specific adsorption of wound proteins to the bare gold.
+
+\subsection{Close-packed monolayer density}
+
+The maximum surface density of a fully close-packed alkanethiol monolayer on gold,
+measured by reductive desorption coulometry, is \cit{6}:
+
+\begin{equation}
+  \Gamma_{\max} = 9.3 \times 10^{-10}\ \text{mol~cm}^{-2} = 930\ \text{pmol~cm}^{-2}
+  \label{eq:gamma_max}
+\end{equation}
+
+Love et al.\ report an independent cross-check of approximately
+750~pmol~cm$^{-2}$ for densely packed alkanethiol monolayers on Au(111) \cit{1}.
+Equation~\eqref{eq:gamma_max} is an upper bound. The probe-thiol cannot approach
+$\Gamma_{\max}$ due to the bulky peptide headgroup; the target probe coverage
+$\Gamma_p = 2$--5~pmol~cm$^{-2}$ is 0.2--0.5\% of the close-packed limit.
+
+The following assumptions underlie this section:
+
+\begin{enumerate}[noitemsep]
+  \item The probe-thiol adsorbs to gold through the thiol--gold bond; MCH backfilling
+    fills the remaining gold surface.
+  \item $\Gamma_{\max} = 930$~pmol~cm$^{-2}$ is an upper bound on MCH packing; the
+    actual MCH density is lower because probe-thiols occupy a fraction of the surface.
+\end{enumerate}
+
+%=======================================================================
+\section{Deposition Protocol and Target Surface Density}
+\label{sec:deposition}
+
+\subsection{DNA-thiol papers: inapplicable to peptide-thiol probe}
+
+The papers in \texttt{papers/layer\_07/} addressing DNA-thiol deposition
+(Herne~1997~\cit{2}, Steel~1998~\cit{3}, Petrovykh~2003~\cit{4}) do not transfer to
+the peptide-thiol probe for the following reasons:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Herne~1997~\cit{2}}: The 1.0~M KH$_2$PO$_4$ buffer and log-time
+    deposition kinetics arise from electrostatic repulsion between the 25 ionisable
+    phosphate groups per ssDNA strand. The SGKIPRTLTA peptide carries far fewer
+    charges and does not require high ionic-strength buffer.
+  \item \textbf{Steel~1998~\cit{3}}: The functional coverage limit
+    ($4 \times 10^{12}$~molecules~cm$^{-2}$) was set by hybridisation steric hindrance.
+    The relevant limit for enzyme cleavage is set by MMP-9 access, which is more
+    stringent (Section~\ref{sec:deposition}, below).
+  \item \textbf{Petrovykh~2003~\cit{4}}: Non-Langmuir adsorption kinetics apply to
+    HS-ssDNA; peptide-thiol adsorption is not covered.
+\end{itemize}
+
+\subsection{Confirmed deposition protocol}
+
+Wcis{\l}o et~al.\ (2021)~\cit{11} describe immobilisation of a cysteine-terminated
+peptide substrate (SH--(CH$_2$)$_{10}$--CO--Arg-Val-Arg-Arg) on gold by the
+two-step procedure applicable to this device:
+
+\begin{enumerate}[noitemsep]
+  \item Immerse polished gold electrode in 5~mM degassed ethanolic solution of the
+    peptide-thiol for 20~h at room temperature.
+  \item Rinse with ethanol and deionised water; dry under N$_2$.
+  \item Backfill with 2~mM ethanolic 1-octanethiol (analogous to MCH) for 60~min,
+    to eliminate pinholes and block non-specific adsorption.
+  \item Optional protein block (BSA, 1\% in PBS, 60~min at 4$^\circ$C) if wound-matrix
+    fouling is anticipated.
+\end{enumerate}
+
+For this device, 1-octanethiol is replaced by MCH (6-mercapto-1-hexanol, HS--(CH$_2$)$_6$--OH)
+to match the C$_6$ alkyl chain length of the probe-thiol spacer. The target deposition
+concentration (5~mM) and time (20~h) are adopted from Wcis{\l}o~2021~\cit{11}; exact
+optimisation for the specific SGKIPRTLTA--MB probe must be confirmed by measuring
+$\Gamma_p$ on the fabricated electrode.
+
+\subsection{Confirmed functional coverage limits}
+
+Adj\'{e}mian et~al.\ (2010)~\cit{12} characterised the relationship between surface
+coverage $\Gamma_0$ and cleavage efficiency for a ferrocene (Fc)-labelled tetrapeptide
+end-grafted on gold via a PEG$_7$ linker, using MCH backfill (architecture directly
+analogous to the MB-SGKIPRTLTA--PEG$_6$ probe). Their key finding (Fig.~2 and text):
+
+\begin{itemize}[noitemsep]
+  \item At saturated undiluted layers ($\Gamma_0 \approx 6 \times 10^{-11}$~mol~cm$^{-2}
+    = 60\ \text{pmol~cm}^{-2}$), cleavage yield drops to $\sim$50\% because chains form
+    compact domains inaccessible to the enzyme.
+  \item For $\Gamma_0 \leq 10^{-11}$~mol~cm$^{-2} = 10\ \text{pmol~cm}^{-2}$ with MCH
+    backfill, cleavage yield exceeds 80\%.
+  \item The working coverage used throughout Adj\'{e}mian~2010 is
+    $(0.5\text{--}1) \times 10^{-11}$~mol~cm$^{-2} = 5\text{--}10\ \text{pmol~cm}^{-2}$.
+\end{itemize}
+
+The device target $\Gamma_p = 2$--5~pmol~cm$^{-2}$ therefore sits within the confirmed
+functional regime. Adj\'{e}mian~2010 also confirms that surface kinetics follow the
+Michaelis--Menten two-step mechanism (Layer~9), with enzymatic constants measurable
+directly from the electrode response.
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}p{4.5cm}p{5.0cm}p{4.0cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Status} & \textbf{Source} \\
+\midrule
+Deposition protocol & Confirmed (5~mM EtOH, 20~h, MCH backfill) & Wcis\l{}o~2021~\cit{11} \\
+Functional $\Gamma_p$ limit & Confirmed ($\leq 10\ \text{pmol~cm}^{-2}$) & Adj\'{e}mian~2010~\cit{12} \\
+$k_{\text{cat}}$, $K_m$ for SGKIPRTLTA & Confirmed (86.4~s$^{-1}$, 1.3~mM) & Kridel~2001~\cit{10} \\
+Absolute $\Gamma_p$ on fabricated electrode & \textbf{Unconfirmed}: must be measured & Coulometric integration \\
+Surface $k_{\text{eff,surf}}$ & \textbf{Unconfirmed}: must be measured on device & Layer~9 \\
+\bottomrule
+\end{tabular}
+\caption{Status of probe-loading parameters. The two unconfirmed items require measurements
+  on the fabricated electrode; they cannot be borrowed from solution or analogous probes.}
+\label{tab:params_status}
+\end{table}
+
+\subsection{Probe spacing constraint from enzyme size}
+
+Once $\Gamma_p$ is established from the literature, the average probe spacing is:
+
+\begin{align}
+  \ell &= (\Gamma_p \cdot N_A)^{-1/2} \label{eq:spacing}
+\end{align}
+
+For the sensor to function, MMP-9 (molecular weight 92~kDa, hydrodynamic radius
+$\approx 3$--4~nm) must approach and bind each surface-immobilised peptide. This
+imposes the requirement $\ell \gtrsim 2 \times r_{\text{MMP-9}} \approx 6$--8~nm,
+corresponding to $\Gamma_p \lesssim 3$~pmol~cm$^{-2}$. At higher probe densities,
+neighbouring probe molecules sterically block enzyme access, reducing the effective
+cleavage rate and underestimating free MMP-9 activity. This constraint is more
+stringent than the hybridisation limit in Steel~1998 and must be confirmed with a
+cleavage-efficiency vs.\ coverage measurement.
+
+The following assumptions underlie this section:
+
+\begin{enumerate}[noitemsep]
+  \item Probe-thiol adsorbs to gold via the thiol--gold bond; MCH backfilling fills
+    remaining surface sites.
+  \item A target of $\Gamma_p \lesssim 3$~pmol~cm$^{-2}$ is adopted on steric grounds
+    (enzyme-access requirement); this value is not confirmed from any paper in
+    \texttt{papers/layer\_07/} and is flagged as Limitation~1.
+\end{enumerate}
+
+%=======================================================================
+\section{SAM Stability over the Assay Window}
+\label{sec:stability}
+
+Three mechanisms can degrade the SAM during the 60-minute assay: oxidative desorption
+by H$_2$O$_2$, thiol exchange with free thiols in the wound matrix, and electrochemical
+desorption by the SWV scan potential.
+
+\subsection{Oxidative desorption}
+
+Schoenfisch and Pemberton characterised alkanethiol SAM oxidation under ambient conditions
+\cit{5}. Their central finding is that ozone (O$_3$), not O$_2$ or UV, is the primary
+oxidant in air, converting Au--SR to Au$^0$ + RSO$_x$H. Under ambient O$_3$ at 28--60~ppb,
+a C$_{12}$ SAM on gold lost 36.9\% of its total sulphur in 1~h (Table~5 of \cit{5}).
+
+In the present device, the oxidant is H$_2$O$_2$ at 10--100~$\mu$M in aqueous wound fluid;
+ozone is absent from the aqueous phase. The relative oxidising power of the two species
+is reflected in their standard reduction potentials:
+
+\begin{equation}
+  E^\circ(\text{O}_3/\text{O}_2) = +2.07\ \text{V},
+  \qquad
+  E^\circ(\text{H}_2\text{O}_2/\text{H}_2\text{O}) = +1.76\ \text{V}
+  \label{eq:redox}
+\end{equation}
+
+The 310~mV thermodynamic advantage of O$_3$ corresponds to a rate advantage of several
+orders of magnitude for thiolate oxidation. The Schoenfisch data therefore provide a
+conservative upper bound: even under the harshest oxidative conditions tested (ambient O$_3$
+in air), SAM loss is approximately 37\% in 1~h for a C$_{12}$ chain. Aqueous H$_2$O$_2$
+at wound-fluid concentrations is a substantially weaker oxidant; oxidative SAM loss over
+the 60-minute assay is not expected to approach this bound.
+
+No quantitative rate constant $k_{\mathrm{ox}}$ for H$_2$O$_2$ oxidation of thiol SAMs
+in solution is available in \texttt{papers/layer\_07/}. The argument above is comparative
+only; see Limitation~2.
+
+\subsection{Thiol exchange}
+
+Schlenoff et al.\ investigated the exchange of adsorbed alkanethiols on gold by free
+thiol in solution \cit{7}. The key finding is that the exchange rate shows ``very little
+dependence of rate on thiol concentration,'' meaning the process is not bimolecular but
+involves a rate-limiting surface step. In hexane, the pseudo-first-order exchange rate
+constant is \cit{7}:
+
+\begin{equation}
+  k_1 = 1.7 \times 10^{-5}\ \text{s}^{-1} \quad (\text{hexane,}\ 22^\circ\text{C})
+  \label{eq:k1}
+\end{equation}
+
+The fraction exchanged at time $t$ is $f = 1 - \exp(-k_1 t)$. At $t = 3600$~s (60~min):
+
+\begin{equation}
+  f = 1 - \exp(-1.7 \times 10^{-5} \times 3600)
+    = 1 - e^{-0.061}
+    \approx 5.9\%
+  \label{eq:f_exchange}
+\end{equation}
+
+Equation~\eqref{eq:f_exchange} is a strict upper bound: Schlenoff et al.\ further show
+that exchange in aqueous conditions is negligible, with essentially no exchange detected
+even after 125~h in water (Figures~3--6 of \cit{7}). They conclude that desorption is
+``least pronounced in aqueous systems.'' Wound fluid is an aqueous matrix; thiol exchange
+does not contribute meaningfully to SAM loss over the assay window.
+
+\subsection{Electrochemical desorption}
+
+Reductive desorption of alkanethiol SAMs on gold occurs via:
+
+\begin{equation}
+  \text{Au--SR} + e^- \longrightarrow \text{Au}^0 + \text{RS}^-
+  \label{eq:red_des}
+\end{equation}
+
+and is only possible when the electrode potential reaches or exceeds the desorption
+potential $E_{\mathrm{des}}$. Widrig et al.\ measured $E_{\mathrm{des}}$ for a series of
+$\omega$-alkanethiol SAMs on gold by cyclic voltammetry in 0.5~M KOH, finding a linear
+dependence on carbon chain length $n$ \cit{6}:
+
+\begin{equation}
+  E_{\mathrm{des}} = (-0.83 - 0.020\,n)\ \text{V vs Ag/AgCl}
+    \quad (0.5\ \text{M KOH})
+  \label{eq:edes}
+\end{equation}
+
+For MCH ($n = 6$):
+
+\begin{equation}
+  E_{\mathrm{des}} = -0.83 - 0.020 \times 6 = -0.83 - 0.12 = -0.95\ \text{V}
+  \label{eq:edes_mch}
+\end{equation}
+
+Love et al.\ report that desorption of alkanethiol SAMs from gold typically occurs in the
+range $-1.0 \pm 0.25$~V vs Ag/AgCl \cit{1}, giving a conservative lower bound of
+$-0.75$~V. The SWV scan window runs from $-0.65$~V to $+0.1$~V (Layer~6). The margin
+between the scan minimum and the conservative lower bound is:
+
+\begin{equation}
+  \Delta E = E_{\mathrm{des,min}} - E_{\mathrm{scan,min}}
+           = -0.75\ \text{V} - (-0.65\ \text{V})
+           = -0.10\ \text{V}
+  \label{eq:margin}
+\end{equation}
+
+The scan potential is 100~mV more positive than the most conservative desorption
+estimate; the Widrig value for MCH is 300~mV more negative than the scan limit.
+Electrochemical desorption does not occur during the assay.
+
+The following assumptions underlie this section:
+
+\begin{enumerate}[noitemsep]
+  \item The oxidative stability argument uses the Schoenfisch O$_3$/air benchmark as an
+    upper bound; no quantitative H$_2$O$_2$ rate constant is claimed (Limitation~2).
+  \item Equation~\eqref{eq:k1} and the 5.9\% bound apply in organic solvent; aqueous
+    exchange is negligible per Schlenoff \cit{7} (Limitation~3).
+  \item The Love range \cit{1} is used as the primary reference for device-condition
+    $E_{\mathrm{des}}$; the Widrig formula (equation~\ref{eq:edes}) is supporting data
+    measured specifically in alkaline electrolyte (Limitation~4).
+\end{enumerate}
+
+%=======================================================================
+\section{Ca$^{2+}$ Artefact and Ratiometric Cancellation}
+\label{sec:calcium}
+
+\subsection{Mechanism}
+
+Wound fluid contains ionised Ca$^{2+}$ at approximately 1.0--1.3~mM (similar to serum).
+If the probe-thiol architecture includes a PEG spacer between the alkyl chain and the
+peptide, Ca$^{2+}$ can coordinate the polyether oxygen atoms in a crown-ether-like
+interaction, contracting the spacer and decreasing the probe-to-gold bridge length by
+$\Delta d$. Electron transfer (ET) from MB to gold through the bridge follows a
+tunnelling mechanism, so a decrease in bridge length raises the apparent ET rate
+constant $k_{\mathrm{ET}}$ and increases the SWV peak current of \emph{uncleaved}
+probes.
+
+For the peptide cleavage sensor (signal-off: MB released on cleavage), this
+Ca$^{2+}$-induced increase in $k_{\mathrm{ET}}$ acts on the uncleaved probe population
+equally before ($I_0$) and after ($I(t)$) the assay. The measured quantity is:
+
+\begin{equation}
+  \frac{\Delta I}{I_0} = \frac{I_0 - I(t)}{I_0}
+  \label{eq:signal_off_ca}
+\end{equation}
+
+If Ca$^{2+}$ multiplies $k_{\mathrm{ET}}$ by a factor $R$ for all uncleaved probes
+identically, then $I_0 \to R\,I_0$ and $I(t) \to R\,(1-f)\,I_0$ where $f$ is the
+fraction cleaved. Substituting:
+
+\begin{equation}
+  \frac{\Delta I}{I_0} = \frac{R\,I_0 - R(1-f)\,I_0}{R\,I_0} = f
+  \label{eq:ca_cancel}
+\end{equation}
+
+The Ca$^{2+}$ factor $R$ cancels exactly in the signal-off ratio, provided both $I_0$
+and $I(t)$ are measured in the same buffer (same Ca$^{2+}$ concentration). The signal
+is inherently self-normalising against Ca$^{2+}$-induced changes in electron transfer
+rate, as long as the measurement protocol does not change the buffer between baseline
+and post-incubation reads.
+
+\subsection{Tunnelling decay constant}
+
+The ET rate constant through a molecular bridge of length $d$ is:
+
+\begin{equation}
+  k_{\mathrm{ET}} = k_{\mathrm{ET}}^0\,\exp(-\beta\,d)
+  \label{eq:tunnel}
+\end{equation}
+
+where $\beta$ is the tunnelling decay constant. Smalley et al.\ measured $\beta$ for
+ferrocene-terminated (Fc) alkanethiol chains tethered to gold in 1.0~M HClO$_4$, by
+fitting the chain-length dependence of the standard rate constant $k^\circ$ \cit{8}:
+
+\begin{equation}
+  \beta = 0.94 \pm 0.06\ \As
+        = (9.4 \pm 0.6) \times 10^9\ \text{m}^{-1}
+  \label{eq:beta}
+\end{equation}
+
+This measurement used ferrocene (Fc) as the redox probe, while the present device uses
+methylene blue (MB). The value of $\beta$ is adopted here because $\beta$ is a property
+of the alkyl bridge that electrons tunnel through, not of the terminal redox group.
+Smalley et al.\ note that $\beta \approx 1.0\ \As$ is consistent across multiple redox
+probes studied through the same alkyl bridge \cit{8}. The Fc-derived value therefore
+transfers directly to the MB system.
+
+\subsection{Sensitivity of $k_{\mathrm{ET}}$ to bridge contraction}
+
+If Ca$^{2+}$ coordination contracts the PEG spacer by $\Delta d$, the fold increase in
+$k_{\mathrm{ET}}$ follows from equation~\eqref{eq:tunnel}:
+
+\begin{equation}
+  \frac{k_{\mathrm{ET}}^{\mathrm{Ca}}}{k_{\mathrm{ET}}^0}
+    = \exp(\beta\,\Delta d)
+  \label{eq:kfold}
+\end{equation}
+
+For a representative contraction of $\Delta d = 0.2$~nm (one carbon--carbon bond
+displacement, used as a sensitivity bound since $\Delta d$ is not measured for this
+architecture; see Limitation~5):
+
+\begin{align}
+  \frac{k_{\mathrm{ET}}^{\mathrm{Ca}}}{k_{\mathrm{ET}}^0}
+    &= \exp(9.4 \times 10^9\ \text{m}^{-1}
+             \times 0.2 \times 10^{-9}\ \text{m}) \label{eq:kfold_plug} \\
+    &= \exp(1.88) \approx 6.5 \notag
+\end{align}
+
+Both the active and control electrodes carry the same probe-thiol/MCH SAM and are
+exposed simultaneously to the same wound fluid, so this fold increase applies identically
+to both.
+
+\subsection{Residual error from probe density change after cleavage}
+
+Equation~\eqref{eq:ca_cancel} assumes that Ca$^{2+}$ affects uncleaved probes with the
+same $k_{\mathrm{ET}}$ before and after the assay. This holds exactly if the cleaved
+probe stub (the fragment remaining on the electrode after MB release) has negligible
+electron transfer compared with the intact probe. If the stub retains some residual MB
+(partial cleavage) or if cleavage changes the spacer geometry in a way that modifies
+the Ca$^{2+}$ response of neighbouring probes, a second-order residual arises. The
+magnitude of this residual depends on the specific peptide architecture and is not
+quantifiable without a calibration measurement. It is expected to be small (second-order
+in $f$ and in $\delta k_{\mathrm{ET,stub}}$), but experimental confirmation that
+$\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
+
+\subsection{Limitations of this model}
+
+\begin{enumerate}[noitemsep]
+
+  \item \textbf{The deposition protocol and functional coverage limit are now confirmed;
+    the absolute $\Gamma_p$ on the fabricated electrode must still be measured.}
+    Wcis\l{}o~2021~\cit{11} provides a confirmed peptide-thiol deposition protocol
+    (5~mM ethanolic solution, 20~h, MCH backfill). Adj\'{e}mian~2010~\cit{12} confirms
+    the functional coverage regime ($\Gamma_0 \leq 10\ \text{pmol~cm}^{-2}$ for
+    $>$80\% cleavage yield with MCH backfill). The device target of 2--5~pmol~cm$^{-2}$
+    is within this regime. What remains unconfirmed is the \emph{actual} $\Gamma_p$
+    achieved on the fabricated SGKIPRTLTA--MB electrode under the adopted deposition
+    conditions. This must be measured directly by reductive desorption coulometry
+    (method: Widrig~\cit{6}) or equivalent before Layer~8 and Layer~9 outputs can be
+    quantified.
+
+  \item \textbf{No quantitative $k_{\mathrm{ox}}$ for H$_2$O$_2$ oxidation of thiol SAMs.}
+    Schoenfisch and Pemberton \cit{5} measure SAM oxidation by O$_3$ in air, not by
+    H$_2$O$_2$ in solution. No paper in \texttt{papers/layer\_07/} provides $k_{\mathrm{ox}}$
+    for aqueous H$_2$O$_2$. The oxidative stability argument is comparative only;
+    experimental confirmation of SAM integrity after 60~min in wound-fluid H$_2$O$_2$ is
+    required before the assay window can be certified.
+
+  \item \textbf{Thiol exchange rate confirmed in hexane only.}
+    Schlenoff et al.\ \cit{7} measure $k_1 = 1.7 \times 10^{-5}$~s$^{-1}$ in hexane
+    and demonstrate negligible aqueous exchange qualitatively; a quantitative rate constant
+    for exchange by Cys or GSH in phosphate-buffered wound fluid at pH~7.4 is not available.
+
+  \item \textbf{$E_{\mathrm{des}}$ measured in 0.5~M KOH; wound-fluid conditions differ.}
+    The Widrig formula (equation~\ref{eq:edes}) was determined at pH~$\approx 13.7$ \cit{6}.
+    At wound-fluid pH~7.4 the Nernst equation predicts that $E_{\mathrm{des}}$ shifts
+    approximately $+(13.7 - 7.4) \times 0.059 \approx +0.37$~V toward positive values
+    (because RS$^-$ is protonated at pH~7.4), placing $E_{\mathrm{des}}$ near
+    $-0.95 + 0.37 = -0.58$~V. This is only 70~mV positive of the scan minimum of
+    $-0.65$~V, compared with the 300~mV margin in alkaline electrolyte.
+    The Love range \cit{1} ($-1.0 \pm 0.25$~V, conditions unspecified) is used as the
+    primary working reference, but experimental confirmation of $E_{\mathrm{des}}$ in
+    the assay buffer is recommended before the scan window is finalised.
+
+  \item \textbf{Ca$^{2+}$ self-cancellation in $\Delta I/I_0$ is conditional on the
+    measurement protocol.}
+    Equation~\eqref{eq:ca_cancel} shows that the Ca$^{2+}$ artefact cancels in
+    $\Delta I/I_0$ only if $I_0$ and $I(t)$ are measured in the same buffer (same
+    Ca$^{2+}$ concentration). If the baseline $I_0$ is measured before adding wound
+    fluid (in calibration buffer without Ca$^{2+}$) and $I(t)$ is measured in wound
+    fluid (with Ca$^{2+}$), the cancellation fails and a spurious signal arises.
+    Protocol design must ensure that both measurements are in the same ionic environment.
+    Whether a PEG spacer is present and its Ca$^{2+}$ affinity are also unconfirmed for
+    this probe architecture.
+
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_07/}.
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+
+\item Love JC, Estroff LA, Kriebel JK, Nuzzo RG, Whitesides GM (2005). Self-assembled
+  monolayers of thiolates on metals as a form of nanotechnology.
+  \textit{Chem Rev} 105(4):1103--1169.
+  \textbf{love2005.pdf} -- $\Gamma_{\max}$ cross-check
+  ($\approx 750$~pmol~cm$^{-2}$, p.~1108), $E_{\mathrm{des}} = -1.0 \pm 0.25$~V
+  (p.~1122) confirmed from text.
+
+\item Herne TM, Tarlov MJ (1997). Characterization of DNA probes immobilized on gold surfaces.
+  \textit{J Am Chem Soc} 119(38):8916--8920.
+  \textbf{herne1997.pdf} -- \textit{DNA-thiol specific. KH$_2$PO$_4$ buffer requirement,
+  log-time deposition kinetics, and MCH displacement of non-thiolated DNA all pertain to
+  HS-ssDNA with 25 charged phosphate groups per strand. These results do not transfer to
+  the peptide-thiol probe and are not used for deposition protocol in this layer.}
+
+\item Steel AB, Herne TM, Tarlov MJ (1998). Electrochemical quantitation of DNA immobilized
+  on gold.
+  \textit{Anal Chem} 70(22):4670--4677.
+  \textbf{steel1998.pdf} -- \textit{DNA-thiol specific. The functional coverage limit
+  ($4 \times 10^{12}$~molecules~cm$^{-2}$) was determined by hybridisation steric
+  hindrance. Enzyme-cleavage steric limits for MMP-9 are different and not covered
+  by this paper.}
+
+\item Petrovykh DY, Kimura-Suda H, Whitman LJ, Tarlov MJ (2003). Quantitative analysis and
+  characterization of DNA immobilized on gold.
+  \textit{J Am Chem Soc} 125(17):5219--5226.
+  \textbf{petrovykh2003.pdf} -- \textit{DNA-thiol specific. Log-linear adsorption kinetics
+  and the non-Langmuir conclusion apply to HS-ssDNA. Peptide-thiol adsorption kinetics are
+  not covered by this paper.}
+
+\item Schoenfisch MH, Pemberton JE (1998). Air stability of alkanethiol self-assembled
+  monolayers on silver and gold surfaces.
+  \textit{J Am Chem Soc} 120(18):4502--4513.
+  \textbf{schoenfisch1998.pdf} -- O$_3$ as primary oxidant confirmed from text; C$_{12}$
+  SAM 36.9\% sulphur loss in 1~h confirmed from Table~5. Paper does not give $k_{\mathrm{ox}}$
+  for aqueous H$_2$O$_2$; value attributed to this paper in \texttt{sam\_stability.py} is not
+  confirmed and has been removed.
+
+\item Widrig CA, Chung C, Porter MD (1991). The electrochemical desorption of
+  $n$-alkanethiol monolayers from polycrystalline Au and Ag electrodes.
+  \textit{J Electroanal Chem} 310(1--2):335--359.
+  \textbf{widrig1991.pdf} -- $\Gamma_{\max} = 9.3 \times 10^{-10}$~mol~cm$^{-2}$
+  (p.~351) confirmed; $E_{\mathrm{des}}$ formula (equation~\ref{eq:edes}) confirmed from
+  text. Measured in 0.5~M KOH; pH correction noted in Limitation~4.
+
+\item Schlenoff JB, Li M, Ly H (1995). Stability and self-exchange in alkanethiol
+  monolayers.
+  \textit{J Am Chem Soc} 117(50):12528--12536.
+  \textbf{schlenoff1995.pdf} -- $k_1 = 1.7 \times 10^{-5}$~s$^{-1}$ in hexane confirmed
+  from Table~3; concentration-independence of exchange rate confirmed from text; negligible
+  aqueous exchange confirmed from Figures~3--6. Bimolecular rate model in
+  \texttt{sam\_stability.py} is not supported by this paper and has been removed.
+
+\item Smalley JF, Feldberg SW, Chidsey CED, Linford MR, Newton MD, Liu Y-P (2003). The
+  kinetics of electron transfer through ferrocene-terminated alkanethiol monolayers on gold.
+  \textit{J Am Chem Soc} 125(7):2004--2013.
+  \textbf{smalley2003.pdf} -- $\beta = 0.94 \pm 0.06\ \As$ confirmed from text (p.~2009).
+  Measured using ferrocene (Fc) redox probe; value transfers to methylene-blue system because
+  $\beta$ is a property of the alkyl bridge, confirmed from discussion in \cit{8}.
+
+\item Becka AM, Miller CJ (1993). Electrochemistry at $\omega$-hydroxy thiol coated
+  electrodes. 3. Voltage independence of the electron tunneling barrier and measurements
+  of redox kinetics at large overpotentials.
+  \textit{J Phys Chem} 97(23):6233--6239.
+  \textbf{becka1993.pdf} -- provides context for tunnelling through alkanethiol SAMs;
+  the $\beta = 0.94\ \As$ value used in this layer is from Smalley~2003~\cit{8}, not
+  Becka~1993.
+
+\item Kridel SJ, Chen E, Kotra LP, Howard EW, Mobashery S, Smith JW (2001). Substrate
+  hydrolysis by matrix metalloproteinase-9.
+  \textit{J Biol Chem} 276(23):20572--20578. DOI:~10.1074/jbc.M100900200.
+  \textbf{PIIS0021925819405115.pdf} -- $k_{\text{cat}} = 86.4\ \text{s}^{-1}$,
+  $K_m = 1.3\ \text{mM}$, $k_{\text{cat}}/K_m = 67{,}500\ \Mms$ for peptide A11
+  (SGKIPRTLTA) confirmed from Table~II. These solution-phase values are an upper bound
+  for the surface $k_{\text{eff,surf}}$.
+
+\item Wcis\l{}o A, Ma{\l}uch I, Niedzia{\l}kowski P, Ossowski T, Prahl A (2021).
+  Label-free electrochemical test of protease interaction with a peptide substrate
+  modified gold electrode.
+  \textit{Chemosensors} 9(8):199. DOI:~10.3390/chemosensors9080199.
+  \textbf{10.3390@chemosensors9080199.pdf} -- deposition protocol for peptide-thiol
+  on gold (5~mM EtOH, 20~h, backfill with alkanethiol, BSA block) confirmed from
+  Section~2.3.
+
+\item Adj\'{e}mian J, Anne A, Cauet G, Demaille C (2010). Cleavage-sensing redox peptide
+  monolayers for the rapid measurement of the proteolytic activity of trypsin and
+  $\alpha$-thrombin enzymes.
+  \textit{Langmuir} 26(12):10347--10356. DOI:~10.1021/la100397g.
+  \textbf{10.1021@la100397g.pdf} -- cleavage yield $>$80\% for $\Gamma_0 \leq
+  10\ \text{pmol~cm}^{-2}$ with MCH backfill confirmed from Fig.~2 and text (p.~10351);
+  working coverage $(0.5\text{--}1) \times 10^{-11}$~mol~cm$^{-2}$ confirmed. Architecture
+  (Fc-peptide-PEG tethered on Au, MCH backfill) is directly analogous to this device.
+
+\item Sfragano PS, Moro G, Polo F, Palchetti I (2021). The role of peptides in the
+  design of electrochemical biosensors for clinical diagnostics.
+  \textit{Biosensors} 11(8):246. DOI:~10.3390/bios11080246.
+  \textbf{sfragano2021.pdf} -- review of peptide-based electrochemical biosensors;
+  confirms PEG linker strategies, cysteine-gold anchoring, and protease cleavage
+  signal-off mechanisms consistent with this device architecture.
+
+\end{enumerate}
+
+\end{document}

@@ -26,7 +26,7 @@ They must be measured on the fabricated electrode, not borrowed from solution.
 ANALYTIC LIMITS
 ---------------
 At clinical [E] (0.19-2.17 nM) and any physically reasonable k1 (<1e8 M-1s-1):
-  k1 * [E_max] < 0.22 s-1  <<  kcat_sol = 703 s-1
+  k1 * [E_max] < 0.22 s-1  <<  kcat_sol = 86.4 s-1
 
 Gamma_ES therefore accumulates negligibly. Both kinetic limits reduce to:
 
@@ -35,13 +35,13 @@ Gamma_ES therefore accumulates negligibly. Both kinetic limits reduce to:
   Steady-state limit (k_m1 >> kcat):  keff = kcat / Km  (Km = (k_m1+kcat)/k1)
   Irreversible limit  (k_m1 << kcat): keff = k1
 
-The solution value kcat/Km_sol = 188,000 M-1 s-1 is an UPPER BOUND for keff_surf.
+The solution value kcat/Km_sol = 67,500 M-1 s-1 is an UPPER BOUND for keff_surf.
 The actual surface value must be measured on the fabricated electrode.
 
-From Max Li's solution assay (C15 peptide, MMP-9, pH 7.4, 37 C):
-  kcat_sol    = 703  s-1
-  kcat_Km_sol = 188,000  M-1 s-1
-  Km_sol      = kcat_sol / kcat_Km_sol = 3.74 mM
+From Kridel et al. 2001 (J Biol Chem 276:20572), Table II, peptide A11 (SGKIPRTLTA):
+  kcat_sol    = 86.4  s-1
+  kcat_Km_sol = 67,500  M-1 s-1
+  Km_sol      = kcat_sol / kcat_Km_sol = 1.28 mM
 """
 
 import numpy as np
@@ -53,10 +53,10 @@ from pathlib import Path
 
 FIGURES = Path(__file__).parents[2] / "reports" / "figures"
 
-# ── Known solution parameters (Max Li's assay) ───────────────────────────────
-kcat_sol    = 703.0
-kcat_Km_sol = 188e3          # M-1s-1 (upper bound for surface keff)
-Km_sol      = kcat_sol / kcat_Km_sol   # 3.74e-3 M
+# ── Known solution parameters (Kridel 2001, Table II, peptide A11 SGKIPRTLTA) ──
+kcat_sol    = 86.4
+kcat_Km_sol = 67.5e3         # M-1s-1 (upper bound for surface keff)
+Km_sol      = kcat_sol / kcat_Km_sol   # 1.28e-3 M
 
 MW_MMP9 = 92e3
 E_lo_M  = 17e-6  / MW_MMP9  # 0.185 nM
@@ -162,9 +162,9 @@ def plot_surface_kinetics(save=True):
 
     # Panel D: sensitivity to unknown surface keff
     ax = axes[1, 1]
-    keff_vals = [2000, 10000, 30000, 56400, 100000, 188000]
-    keff_labs = ["2,000", "10,000", "30,000",
-                 "56,400 (prev. est.)", "100,000", "188,000 (sol. UB)"]
+    keff_vals = [2000, 10000, 20250, 30000, 67500]
+    keff_labs = ["2,000", "10,000", "20,250 (alpha=0.3 est.)",
+                 "30,000", "67,500 (sol. UB)"]
     t_120 = np.linspace(0, 7200, 3000)
     colors_d = plt.cm.plasma(np.linspace(0.05, 0.85, len(keff_vals)))
     for keff, lbl, col in zip(keff_vals, keff_labs, colors_d):
@@ -180,9 +180,9 @@ def plot_surface_kinetics(save=True):
 
     fig.suptitle(
         "Layer 9: Surface kinetics (Anne, Demaille, Moiroux 2001)\n"
-        "$k_{cat,sol}$ = 703 s$^{-1}$,  $K_{m,sol}$ = 3.74 mM,  "
-        "$(k_{cat}/K_m)_{sol}$ = 188,000 M$^{-1}$s$^{-1}$  "
-        "[surface keff must be measured]",
+        "$k_{cat,sol}$ = 86.4 s$^{-1}$,  $K_{m,sol}$ = 1.28 mM,  "
+        "$(k_{cat}/K_m)_{sol}$ = 67,500 M$^{-1}$s$^{-1}$  "
+        "(Kridel 2001, A11/SGKIPRTLTA)  [surface keff must be measured]",
         fontsize=10
     )
     plt.tight_layout()

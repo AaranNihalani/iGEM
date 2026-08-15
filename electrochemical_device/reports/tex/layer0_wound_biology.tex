@@ -54,11 +54,17 @@ Layer 0 of 17-Layer Biosensor Pipeline \quad$|$\quad
 \noindent
 Layer~0 predicts the \textbf{free protease concentrations in wound fluid at the
 time of swab sampling}. Its two key outputs, $[\text{MMP-9}]_{\text{free}}(t)$
-and $[\text{HNE}]_{\text{free}}(t)$, are in-situ wound fluid concentrations.
-Layer~1 (sample collection) applies a swab dilution factor $D_f$ to convert
-these to the concentrations entering the electrochemical device; the sensor
-detection range (17--200~ng/mL MMP-9, equivalent to 0.185--2.17~nM) is reached
-only after that dilution.
+and $[\text{HNE}]_{\text{free}}(t)$, are in-situ wound fluid concentrations that
+pass to Layer~1 (sample collection) via a swab dilution factor $D_f$.
+
+The electrochemical device measures these concentrations \emph{indirectly} via peptide
+substrate cleavage. MMP-9 and HNE each cleave a surface-immobilised peptide probe
+bearing a methylene-blue (MB) redox label; cleavage releases MB into solution,
+producing a signal-off decrease in SWV peak current proportional to enzymatic activity.
+The sensor therefore reports \emph{activity}, not protein concentration directly.
+Layer~0 provides the free enzyme concentration that drives this activity; the kinetic
+link between $[\text{MMP-9}]_{\text{free}}$ and cleavage rate requires $k_{\text{cat}}$
+and $K_m$ for the specific peptide substrate (Section~\ref{sec:output}, Limitation~5).
 
 The model tracks nine coupled species through a system of ordinary differential
 equations (Section~\ref{sec:ode}), solved numerically with a stiff implicit integrator.
@@ -563,57 +569,198 @@ of A1AT status. HNE is not a reliable primary discriminant; MMP-9 ($5\times$
 discrimination, grounded in confirmed kinetics) is the preferred target. The second
 electrode targeting HNE serves as an internal reference rather than a primary channel.
 
-\subsection{Layer~1 dilution and sensor range}
+\subsection{Cleavage kinetics and sensor signal}
 
-The sensor detection range (17--200 ng/mL MMP-9 $= 0.185$--2.17 nM) is reached only
-after Layer~1 dilution. The required dilution factor $D_f$ is:
+The sensor signal is the fractional SWV current decrease:
 
 \begin{equation}
-D_f = \frac{[\text{MMP-9}]_{\text{free,\,in-situ}}}{[\text{MMP-9}]_{\text{device}}}
-= \frac{32\;\text{nM}}{0.185\text{--}2.17\;\text{nM}}
-\approx 15\text{--}173
+  \frac{\Delta I}{I_0} = \frac{I_0 - I(t)}{I_0} = f_{\text{cleaved}}(t)
+  \label{eq:signal_off}
 \end{equation}
 
-With $D_f = 50$: chronic device entry $= 32/50 = 0.64$ nM $= 59$ ng/mL (within range);
-healing device entry $= 6.2/50 = 0.12$ nM $= 11$ ng/mL (near the lower LOD).
-The healing signal approaching the LOD under large $D_f$ is a risk to quantify in Layer~1.
+where $I_0$ is the pre-incubation baseline current (all MB tethered) and $I(t)$ is the
+current at assay time $t$ after wound fluid exposure. Both measurements are made in the
+same buffer, so any Ca$^{2+}$-induced change in MB-electrode electron transfer rate
+applies equally to $I_0$ and $I(t)$ and cancels in the ratio (Layer~7).
+
+The cleavage velocity per unit electrode area at the start of the assay is:
+
+\begin{equation}
+  v = k_{\text{cat}} \cdot [\text{MMP-9}]_{\text{free}} \cdot
+      \frac{\Gamma_p}{K_m^{\text{eff}} + \Gamma_p}
+  \label{eq:mm}
+\end{equation}
+
+where $\Gamma_p$ is the probe surface density (from Layer~7) and $K_m^{\text{eff}}$ is
+the apparent Michaelis constant for surface-immobilised substrate. In the linear regime
+($\Gamma_p \ll K_m^{\text{eff}}$):
+
+\begin{equation}
+  v \approx \frac{k_{\text{cat}}}{K_m} \cdot [\text{MMP-9}]_{\text{free}} \cdot \Gamma_p
+  \label{eq:mm_linear}
+\end{equation}
+
+The wound-state discrimination ratio for sensor signal equals the ratio of cleavage
+velocities. In the linear regime, $k_{\text{cat}}$, $K_m$, and $\Gamma_p$ cancel:
+
+\begin{equation}
+  \frac{v_{\text{chronic}}}{v_{\text{healing}}}
+  = \frac{[\text{MMP-9}]_{\text{free,chronic}}}{[\text{MMP-9}]_{\text{free,healing}}}
+  \approx \frac{30\ \text{nM}}{6\ \text{nM}}
+  \approx 5\times
+  \label{eq:activity_ratio}
+\end{equation}
+
+If TIMP-1 inhibition is competitive with the peptide substrate, the apparent inhibition
+constant is modified by substrate occupancy:
+
+\begin{equation}
+  K_{i,\text{app}} = K_i\!\left(1 + \frac{[S]}{K_m}\right)
+  \label{eq:kiapp}
+\end{equation}
+
+where $[S]/K_m$ is the fractional saturation of the enzyme by substrate. In the linear
+regime ($[S] \ll K_m$), $K_{i,\text{app}} \approx K_i = 8.5$~nM and the ODE
+equilibrium is self-consistent. At higher substrate occupancy, TIMP-1 inhibition weakens
+($K_{i,\text{app}} > K_i$), which would increase free MMP-9 in healing wounds relative
+to the ODE prediction and potentially reduce the discrimination ratio below $5\times$.
+
+Kridel et~al.\ (2001)~\cit{9} (Table~II) measured kinetic parameters for MMP-9 cleaving
+peptide A11 (SGKIPRTLTA), the device substrate sequence (50~mM Tris, pH~7.5, 10~mM
+CaCl$_2$, 37$^\circ$C):
+\begin{equation}
+  k_{\text{cat}} = 86.4\ \text{s}^{-1},\quad K_m = 1.3\ \text{mM},\quad
+  \frac{k_{\text{cat}}}{K_m} = 67{,}500\ \Mms
+  \label{eq:kinetics_a11}
+\end{equation}
+The substrate competition correction at the electrode surface is discussed in Limitation~5.
+
+\subsection{Layer~1 dilution}
+
+The required dilution factor for the device entry concentration to fall within the
+enzyme activity detection window is established in Layer~1 using $k_{\text{cat}}$,
+$K_m$, and the signal sensitivity (LOD in terms of $\Delta I/I_0$). These depend on
+peptide substrate kinetics and cannot be completed until Limitation~5 is resolved.
+The in-situ free MMP-9 concentrations from Table~\ref{tab:outputs} (30~nM chronic,
+6~nM healing) are the inputs to that calculation.
 
 \subsection{Limitations of this model}
 
-\begin{enumerate}[noitemsep]
-  \item \textbf{Healing wound initial conditions not text-confirmed.} The healing MMP-9
-    estimate (5,400 ng/mL) is read from Ladwig~2002 Figure~8; the healing TIMP-1
-    (1,104 ng/mL) has no paper source. The $\sim$5$\times$ discrimination ratio should
-    be treated as a working estimate until a joint VLU ELISA (MMP-9 and TIMP-1 in the
-    same cohort at chronic and healing time points) is available.
-  \item \textbf{SLPI kinetics are unconfirmed placeholders.} The chronic wound HNE
-    prediction ($\approx 30$ nM) is sensitive to the unconfirmed SLPI concentration
-    and binding kinetics. Wound-fluid SLPI ELISA would substantially reduce this
-    uncertainty.
+Each limitation below states what is simplified, explains why the simplification does not
+invalidate the model's primary output (the MMP-9 wound-state discrimination ratio), and
+identifies what experiment would resolve it.
+
+\begin{enumerate}[leftmargin=*]
+
+  \item \textbf{Healing wound initial conditions are not text-confirmed.}
+    The chronic wound values are the primary output of this model: active MMP-9 = 52~nM
+    and TIMP-1 = 28~nM are both text-confirmed from Ladwig~2002 (p.~31)~\cit{2}, and
+    all kinetic parameters ($K_i$, $\kon^T$, $\koff^T$) are text-confirmed from
+    Olson~1997 Table~IV~\cit{4}. The healing MMP-9 estimate (5,400~ng/mL) is read from
+    Ladwig~2002 Figure~8; the healing TIMP-1 (1,104~ng/mL) has no paper source.
+    These estimates are used only to compute a comparison point, not to determine the
+    chronic wound output. The model's structural conclusion, that any wound state in
+    which active MMP-9 exceeds TIMP-1 will yield elevated free MMP-9 (from the sign
+    of Eq.~\eqref{eq:Mfree}), is independent of the healing estimates. The 5$\times$
+    ratio should be treated as a working figure. Resolution requires a joint VLU dataset
+    reporting both MMP-9 and TIMP-1 from the same patients at chronic and healing
+    time points.
+
+  \item \textbf{SLPI kinetics are unconfirmed placeholders and do not affect MMP-9.}
+    The SLPI sub-system (Eqs.~\ref{eq:dS}--\ref{eq:dC3}) is completely decoupled from
+    the MMP-9/TIMP-1 sub-system: SLPI does not bind MMP-9 or TIMP-1 and cannot
+    alter the MMP-9 partition calculated in Section~\ref{sec:mmp9}. SLPI uncertainty
+    propagates exclusively to the HNE secondary channel, which is already acknowledged
+    as a limited discriminant (Limitation~4 below). The SLPI concentration and kinetics
+    ($\kon^S = 10^5\;\Mms$, $\koff^S = 10^{-4}$~s$^{-1}$) are order-of-magnitude
+    placeholders; Ashcroft~2000~\cit{6} confirms SLPI's role in wound healing from
+    knockout mice but provides no quantitative wound-fluid SLPI concentration.
+    Wound-fluid SLPI ELISA would resolve this for the HNE channel.
+
   \item \textbf{Pro-MMP-9 activation is negligible at current parameter values.}
-    The activation kinetics (via MMP-3 and plasmin) use order-of-magnitude placeholders;
-    $<1\%$ of pro-MMP-9 activates in 120 min. These parameters become important only
-    if wound-fluid MMP-3 or plasmin concentrations prove substantially higher than assumed.
+    The active MMP-9 initial condition (52~nM, chronic; 22~nM, healing) is taken
+    directly from Ladwig~2002~\cit{2} and does not depend on the activation sub-model.
+    The activation kinetics (via MMP-3 and plasmin; Eq.~\ref{eq:dP}) use
+    order-of-magnitude placeholders, and with these values less than 1\% of pro-MMP-9
+    converts in 120~min. This means the active MMP-9 pool is effectively constant over
+    the 30-minute read window, consistent with using the Ladwig ELISA snapshot as the
+    initial condition. These activation parameters become important only if wound-fluid
+    MMP-3 or plasmin concentrations prove substantially higher than assumed, which would
+    require a separate measurement.
+
   \item \textbf{HNE elevation is inconsistent across chronic wound samples.}
-    With elevated HNE in only 50\% of chronic VLU cases, the HNE channel has limited
-    diagnostic utility regardless of the kinetic model accuracy.
-  \item \textbf{Substrate competition with TIMP-1 and A1AT is not modelled.}
-    The ODE treats inhibitor binding as an isolated equilibrium, without Michaelis--Menten
-    substrate terms. In a full competitive system, the apparent inhibition constant would
-    become $K_{i,\text{app}} = K_i(1 + [S]/K_m)$. This simplification is justified here
-    because (a)~the sensor detects free MMP-9 \emph{protein} via aptamer binding, not
-    enzymatic activity, so the relevant quantity is the partition between free and
-    TIMP-1-bound MMP-9, not substrate turnover; (b)~TIMP-1 is a slow-tight inhibitor
-    whose complex half-life ($t_{1/2} \approx 5.5$ min) greatly exceeds substrate
-    catalytic cycle times (ms), so TIMP-1 wins the competition thermodynamically;
-    and (c)~the $K_i = 8.5$ nM from Olson~1997~\cit{4} was measured in enzyme
-    inhibition assays conducted in the presence of a fluorogenic substrate, so
-    some substrate competition is already implicit in the reported value.
-    For HNE, the serpin trapping mechanism means A1AT is not a classical competitive
-    inhibitor, and the half-life conclusion is insensitive to a 10-fold change in $\kon^A$.
-    If future layers require modelling MMP-9 \emph{activity} rather than concentration,
-    substrate terms would need to be added with wound-fluid substrate concentrations
-    currently unavailable in any paper in the folder.
+    Elevated free HNE was detected in only 6 of 13 chronic VLU samples in
+    Trengove~1999~\cit{1}: 50\% of chronic wounds are HNE-low regardless of A1AT
+    status. The HNE channel therefore has limited diagnostic utility and is not the
+    primary discriminant. This limitation does not affect MMP-9, which shows elevated
+    free concentration in all chronic wound samples by the TIMP-1/MMP-9 excess
+    mechanism (Section~\ref{sec:mmp9}). The HNE electrode is treated as a secondary
+    reference channel, not a primary diagnostic output.
+
+  \item \textbf{$k_{\text{cat}}$ and $K_m$ for SGKIPRTLTA are now confirmed from
+    Kridel et~al.\ (2001)~\cit{9}; the substrate competition correction at the electrode
+    surface must be quantified.}
+
+    Kridel et~al.\ (2001)~\cit{9} Table~II reports solution-phase kinetics for MMP-9
+    cleaving peptide A11 (SGKIPRTLTA):
+    \begin{equation*}
+      k_{\text{cat}} = 86.4\ \text{s}^{-1},\quad K_m = 1.3\ \text{mM},\quad
+      k_{\text{cat}}/K_m = 67{,}500\ \Mms
+    \end{equation*}
+    measured by fluorescamine incorporation assay at pH~7.5, 10~mM CaCl$_2$, 37$^\circ$C.
+    These are solution-phase values; surface immobilisation systematically reduces
+    $k_{\text{cat}}/K_m$ (Layer~9), so they serve as an upper bound for the surface
+    effective rate constant $k_{\text{eff,surf}}$.
+
+    \textbf{Wound fluid equilibrium.} The Layer~0 ODE models the TIMP-1/MMP-9 partition
+    in \emph{wound fluid}, not at the electrode. TIMP-1 equilibrates with MMP-9 in the
+    wound fluid bulk, where the relevant competing substrates are endogenous (collagen,
+    gelatin) at concentrations that do not enter the ODE. The electrode peptide at
+    $\Gamma_p \sim 3\ \text{pmol~cm}^{-2}$ represents sub-nanomolar total moles in the
+    assay volume and is a negligible perturbation on the wound fluid equilibrium. The
+    ODE $K_i = 8.5$~nM (Olson~1997~\cit{4}) therefore remains valid for the wound
+    fluid partition.
+
+    \textbf{Electrode surface correction.} At the electrode surface the effective local
+    substrate concentration depends on probe density and probe-layer thickness. For
+    $\Gamma_p = 3\ \text{pmol~cm}^{-2}$ and effective layer thickness
+    $d_{\text{eff}} \approx 8\ \text{nm}$ (Layer~8):
+    \begin{equation}
+      [S]_{\text{eff}} = \frac{\Gamma_p}{d_{\text{eff}}}
+      = \frac{3 \times 10^{-12}\ \text{mol~cm}^{-2}}{8 \times 10^{-7}\ \text{cm}}
+      \approx 3.75\ \text{mM}
+      \label{eq:Seff}
+    \end{equation}
+    Since $[S]_{\text{eff}}/K_m \approx 3.75/1.3 \approx 2.9$, the electrode surface
+    is not in the linear regime. The Michaelis--Menten velocity is:
+    \begin{equation}
+      v = k_{\text{cat}} \cdot [\text{MMP-9}]_{\text{free}} \cdot
+          \frac{\Gamma_p}{K_m + [S]_{\text{eff}}}
+      \label{eq:mm_nonlinear}
+    \end{equation}
+    The wound-state discrimination ratio $v_{\text{chronic}}/v_{\text{healing}}$ still
+    reduces to $[\text{MMP-9}]_{\text{chronic}}/[\text{MMP-9}]_{\text{healing}} \approx
+    5\times$ because $K_m$ and $[S]_{\text{eff}}$ cancel identically in the ratio.
+    The non-linear regime therefore does not reduce the discrimination ratio but does
+    affect the absolute signal magnitude and the apparent TIMP-1 inhibition. If TIMP-1
+    inhibition is competitive with the surface peptide, the apparent inhibition constant
+    at the electrode is:
+    \begin{equation}
+      K_{i,\text{app}} = K_i\!\left(1 + \frac{[S]_{\text{eff}}}{K_m}\right)
+      \approx 8.5 \times (1 + 2.9) \approx 33\ \text{nM}
+      \label{eq:kiapp_calc}
+    \end{equation}
+    This weakens apparent TIMP-1 inhibition at the electrode surface, increasing the
+    fraction of MMP-9 available for cleavage relative to the wound fluid ODE prediction.
+    The surface $k_{\text{cat}}/K_m$ must be measured directly on the fabricated
+    electrode (Layer~9) before the absolute signal magnitude can be specified.
+
+    For HNE: A1AT inhibition is a serpin acyl-enzyme mechanism, not competitive inhibition.
+    There is no $K_{i,\text{app}}$ correction. The half-life conclusion is insensitive to a
+    10-fold change in $\kon^A$ (Eq.~\ref{eq:thalf_lo}). The $k_{\text{cat}}$ and $K_m$
+    for HNE cleaving the HNE peptide substrate are not yet confirmed from any paper in
+    \texttt{papers/layer\_00/} and remain an outstanding parameter for the HNE channel.
+
 \end{enumerate}
 
 %=======================================================================
@@ -671,6 +818,14 @@ The healing signal approaching the LOD under large $D_f$ is a risk to quantify i
   \textit{J Surg Res} 81(2):189--195.
   \textbf{nwomeh1999.pdf} -- TIMP-1 ``very low or not detected'' in chronic ulcer fluid
   confirmed from text (p.~193). Units not convertible to ng/mL without protein content.
+
+\item Kridel SJ, Chen E, Kotra LP, Howard EW, Mobashery S, Smith JW (2001). Substrate
+  hydrolysis by matrix metalloproteinase-9.
+  \textit{J Biol Chem} 276(23):20572--20578. DOI:~10.1074/jbc.M100900200.
+  \textbf{kridel2001.pdf} -- $k_{\text{cat}} = 86.4\ \text{s}^{-1}$,
+  $K_m = 1.3\ \text{mM}$, $k_{\text{cat}}/K_m = 67{,}500\ \Mms$ for peptide A11
+  (SGKIPRTLTA) by MMP-9 confirmed from Table~II. Measured by fluorescamine assay,
+  pH~7.5, 10~mM CaCl$_2$, 37$^\circ$C.
 
 \end{enumerate}
 

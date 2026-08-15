@@ -45,8 +45,8 @@ Gamma_steric_max_pmol = Gamma_steric_max * 1e12   # pmol/cm²
 # FLAG: alpha should be measured empirically by comparing solution vs surface kobs
 alpha_base = 0.3    # ← FLAG
 
-# Solution kcat/Km for C15 (MMP-9 channel) from Max's data:
-kcat_Km_sol = 188e3   # M-1 s-1
+# Solution kcat/Km for A11/SGKIPRTLTA (Kridel 2001, Table II):
+kcat_Km_sol = 67.5e3  # M-1 s-1
 
 def f_steric(Gamma_p_pmol):
     """Steric accessibility factor [0,1]."""

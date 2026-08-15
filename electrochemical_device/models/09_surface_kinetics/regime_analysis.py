@@ -9,7 +9,7 @@ Since both the steady-state and irreversible limits reduce to:
 at clinical concentrations, keff_surf is the single parameter that
 must be measured on the fabricated electrode.
 
-The solution value kcat/Km_sol = 188,000 M-1 s-1 is an upper bound.
+The solution value kcat/Km_sol = 67,500 M-1 s-1 (Kridel 2001, A11/SGKIPRTLTA) is an upper bound.
 """
 
 import numpy as np
@@ -21,12 +21,12 @@ from pathlib import Path
 FIGURES = Path(__file__).parents[2] / "reports" / "figures"
 
 MW_MMP9     = 92e3
-kcat_Km_sol = 188e3          # M-1s-1, solution upper bound
+kcat_Km_sol = 67.5e3         # M-1s-1, solution upper bound (Kridel 2001, A11)
 E_lo_M      = 17e-6  / MW_MMP9
 E_hi_M      = 200e-6 / MW_MMP9
 
 # Range of plausible surface keff values
-keff_vals = [2000, 5000, 10000, 20000, 56400, 100000, 188000]
+keff_vals = [2000, 5000, 10000, 20250, 30000, 67500]
 keff_labs = ["2,000", "5,000", "10,000", "20,000",
              "56,400 (prev.)", "100,000", "188,000 (sol. UB)"]
 colors    = plt.cm.plasma(np.linspace(0.05, 0.85, len(keff_vals)))

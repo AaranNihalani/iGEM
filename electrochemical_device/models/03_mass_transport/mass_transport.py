@@ -51,9 +51,9 @@ D_HNE  = stokes_einstein(30e3)    # ~7.2e-11 m²/s
 h    = 100e-6       # m  (100 µm diffusion layer height — channel half-height)
 
 # ── Cleavage parameters (first-order surface kinetics) ───────────────────────
-# From Layer 9 / substrate selection: C15, kcat/Km = 188,000 M-1s-1
+# From Layer 9 / Kridel 2001: A11/SGKIPRTLTA, kcat/Km = 67,500 M-1s-1
 # Surface correction alpha = 1.0 (best case); [E] = 2.17 nM (upper clinical)
-kcat_Km_surf = 188e3 * 1.0          # M-1 s-1
+kcat_Km_surf = 67.5e3 * 1.0         # M-1 s-1 (solution UB; surface value to be measured)
 Gamma_0      = 3e-12 * 1e4         # mol/m²  (3 pmol/cm² → 3e-8 mol/m²)
 # k_obs = (kcat/Km_surf) * [E]; at [E]=2.17 nM → k_obs ≈ 4.1e-4 s-1
 
@@ -117,7 +117,7 @@ def compute_Da(kcat_Km, E_bulk, h_m, D, Gamma):
 
 
 def plot_transport(save=True):
-    # Run for MMP-9 / C15 at upper clinical concentration
+    # Run for MMP-9 / A11 (SGKIPRTLTA) at upper clinical concentration
     k_obs = kcat_Km_surf * E_bulk_nM * 1e-3   # convert E from mol/L to mol/m³? No—
     # kcat_Km is M-1s-1, E in mol/L; k_obs = kcat_Km * E [s-1]
     k_obs = kcat_Km_surf * E_bulk_nM           # s-1 (E in mol/L is fine for kcat_Km in M-1s-1)
