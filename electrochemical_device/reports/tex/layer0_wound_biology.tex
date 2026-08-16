@@ -639,10 +639,13 @@ The substrate competition correction at the electrode surface is discussed in Li
 
 The required dilution factor for the device entry concentration to fall within the
 enzyme activity detection window is established in Layer~1 using $k_{\text{cat}}$,
-$K_m$, and the signal sensitivity (LOD in terms of $\Delta I/I_0$). These depend on
-peptide substrate kinetics and cannot be completed until Limitation~5 is resolved.
+$K_m$, and the signal sensitivity (LOD in terms of $\Delta I/I_0$). The solution-phase
+kinetic constants ($k_{\text{cat}} = 86.4\ \text{s}^{-1}$, $K_m = 1.3\ \text{mM}$)
+are now confirmed from Kridel~2001~\cit{9}. The remaining blocker is the surface
+effective rate constant $k_{\text{eff,surf}}$, which must be measured on the fabricated
+electrode (Layer~9) before the LOD and dilution factor can be specified quantitatively.
 The in-situ free MMP-9 concentrations from Table~\ref{tab:outputs} (30~nM chronic,
-6~nM healing) are the inputs to that calculation.
+6~nM healing) are the inputs to the Layer~1 calculation.
 
 \subsection{Limitations of this model}
 
@@ -720,6 +723,22 @@ identifies what experiment would resolve it.
     assay volume and is a negligible perturbation on the wound fluid equilibrium. The
     ODE $K_i = 8.5$~nM (Olson~1997~\cit{4}) therefore remains valid for the wound
     fluid partition.
+
+    \textbf{Justification for sequential treatment.} A fully coupled competitive-inhibition
+    scheme would require solving TIMP-1 inhibition and surface Michaelis--Menten kinetics
+    simultaneously, since TIMP-1 and the surface peptide compete for the MMP-9 active site.
+    The sequential approach used here, in which the wound fluid ODE is solved first to obtain
+    $[\text{MMP-9}]_{\text{free}}$ and that value is then used as a constant input to the
+    surface MM velocity, is valid under two conditions that are both satisfied.
+    First, the wound fluid bulk contains no surface peptide substrate
+    ($[S]_{\text{bulk}} \approx 0$), so the ODE inhibition equilibrium uses $K_i = 8.5$~nM
+    without any substrate competition term, and the result is internally self-consistent.
+    Second, the $[\text{MMP-9}]_{\text{free}}$ obtained from the wound fluid ODE is a
+    \emph{conservative lower bound} on electrode-accessible enzyme: at the electrode surface
+    $K_{i,\text{app}} \approx 33$~nM (Eq.~\ref{eq:kiapp_calc}), meaning TIMP-1 inhibition
+    is weaker at the electrode than in the wound fluid. The sequential treatment therefore
+    under-predicts, not over-predicts, the enzyme available for surface cleavage, and the
+    discrimination ratio of $5\times$ is conservatively estimated.
 
     \textbf{Electrode surface correction.} At the electrode surface the effective local
     substrate concentration depends on probe density and probe-layer thickness. For

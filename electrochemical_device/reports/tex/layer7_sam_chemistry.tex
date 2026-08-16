@@ -43,7 +43,7 @@
 %=======================================================================
 \begin{center}
 {\LARGE\bfseries Layer 7: SAM Chemistry}\\[0.4em]
-{\large Mixed Probe-Thiol/MCH Monolayer: Deposition, Stability, and Ca$^{2+}$ Artefact}\\[0.25em]
+{\large Three-Component Probe-Thiol/C6FC/MCH Monolayer: Deposition, Stability, and Ca$^{2+}$ Artefact}\\[0.25em]
 {\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
 Layer 7 of 17-Layer Biosensor Pipeline \quad$|$\quad
 \texttt{sam\_loading.py}, \texttt{sam\_stability.py}, \texttt{calcium\_artefact.py}}
@@ -66,7 +66,7 @@ Every parameter value must be confirmed from a paper physically present in
 
 \subsection{Molecular components}
 
-The sensor electrode carries a two-component thiol monolayer. The probe-thiol consists
+The sensor electrode carries a three-component thiol monolayer. The probe-thiol consists
 of a peptide substrate bearing a methylene-blue (MB) redox label, tethered to gold via
 a C$_6$ alkyl spacer and a PEG$_6$ flexible linker
 (HS--(CH$_2$)$_6$--PEG$_6$--SGKIPRTLTA--MB). MMP-9 (or HNE on the secondary
@@ -74,9 +74,19 @@ channel) cleaves the peptide, releasing the MB-bearing fragment into solution an
 producing a signal-off decrease in SWV peak current proportional to enzymatic activity
 (Layer~0, Section~V).
 
+A co-immobilised reference reporter, 6-ferrocenylhexanethiol (C6FC,
+Fc--(CH$_2$)$_6$--SH), provides an internal electrochemical standard. C6FC shares the
+same C$_6$ alkyl chain as the probe-thiol spacer, ensuring compatible packing geometry
+in the SAM. The ferrocene (Fc) headgroup gives a reversible one-electron redox signal at a formal
+potential well positive of the MB reduction peak; the two signals are resolved in a
+single SWV scan without additional switching (Section~\ref{sec:c6fc}). The exact formal
+potentials of both Fc and MB in the assay buffer are not confirmed from any paper in
+\texttt{papers/layer\_07/} and must be determined by cyclic voltammetry on the
+fabricated electrode.
+
 The diluent is 6-mercapto-1-hexanol (MCH, HS--(CH$_2$)$_6$--OH). MCH fills gold sites
-not occupied by the probe-thiol, presenting a chemically inert surface to the wound
-fluid and preventing non-specific adsorption of wound proteins to the bare gold.
+not occupied by the probe-thiol or C6FC, presenting a chemically inert surface to the
+wound fluid and preventing non-specific adsorption of wound proteins to the bare gold.
 
 \subsection{Close-packed monolayer density}
 
@@ -103,28 +113,54 @@ The following assumptions underlie this section:
     actual MCH density is lower because probe-thiols occupy a fraction of the surface.
 \end{enumerate}
 
+\subsection{C6FC reference reporter and ratiometric signal}
+\label{sec:c6fc}
+
+C6FC (Fc--(CH$_2$)$_6$--SH) is co-immobilised with the probe-thiol at a molar ratio
+that is to be optimised on the fabricated electrode. Its function is threefold.
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Internal area reference.} The Fc signal $I_{\text{Fc}}$ is proportional
+    to the number of C6FC molecules on the electrode and is insensitive to MMP-9 activity,
+    because C6FC contains no peptide substrate. $I_{\text{Fc}}$ therefore tracks
+    electrode area and surface loading, providing a normalisation factor that cancels
+    run-to-run variation in electrode geometry or deposition yield.
+  \item \textbf{Fouling correction.} Non-specific protein adsorption attenuates both
+    the MB and Fc signals by approximately the same factor (fouling layer acts as a
+    diffusion barrier). Taking the ratio $I_{\text{MB}}/I_{\text{Fc}}$ suppresses this
+    common-mode attenuation.
+  \item \textbf{Ratiometric readout.} The device signal is the ratio:
+    \begin{equation}
+      R(t) = \frac{I_{\text{MB}}(t)}{I_{\text{Fc}}}
+      \label{eq:ratio}
+    \end{equation}
+    where $I_{\text{Fc}}$ is measured simultaneously with $I_{\text{MB}}(t)$ in the
+    same SWV scan. The normalised fractional cleavage is:
+    \begin{equation}
+      \frac{\Delta R}{R_0} = \frac{R_0 - R(t)}{R_0} = f_{\text{cleaved}}(t)
+      \label{eq:ratio_signal}
+    \end{equation}
+    provided $I_{\text{Fc}}$ is stable over the assay window (see assumption below).
+\end{enumerate}
+
+The electron-transfer kinetics of Fc-terminated alkanethiol chains on gold are
+characterised in Smalley et~al.\ (2003)~\cit{8}: the tunnelling decay constant through
+the alkyl bridge is $\beta = 0.94 \pm 0.06\ \text{\AA}^{-1}$, confirming that ET from
+Fc to gold through the C$_6$ chain is fast relative to the SWV timescale and produces
+a sharp, well-defined peak. The same $\beta$ value applies to the MB probe-thiol chain
+(Section~\ref{sec:calcium}).
+
+The following assumption underlies this subsection. MMP-9 cleaves SGKIPRTLTA but has no
+known activity against the Fc--(CH$_2$)$_6$--SH molecule, which carries no peptide
+substrate; $I_{\text{Fc}}$ is therefore expected to be stable over the 60-minute assay
+window. This has not been confirmed by a control experiment on the fabricated electrode
+and should be verified before ratiometric calibration is finalised. The target C6FC
+surface density relative to probe-thiol density is not confirmed from any paper in
+\texttt{papers/layer\_07/} and must be optimised empirically.
+
 %=======================================================================
 \section{Deposition Protocol and Target Surface Density}
 \label{sec:deposition}
-
-\subsection{DNA-thiol papers: inapplicable to peptide-thiol probe}
-
-The papers in \texttt{papers/layer\_07/} addressing DNA-thiol deposition
-(Herne~1997~\cit{2}, Steel~1998~\cit{3}, Petrovykh~2003~\cit{4}) do not transfer to
-the peptide-thiol probe for the following reasons:
-
-\begin{itemize}[noitemsep]
-  \item \textbf{Herne~1997~\cit{2}}: The 1.0~M KH$_2$PO$_4$ buffer and log-time
-    deposition kinetics arise from electrostatic repulsion between the 25 ionisable
-    phosphate groups per ssDNA strand. The SGKIPRTLTA peptide carries far fewer
-    charges and does not require high ionic-strength buffer.
-  \item \textbf{Steel~1998~\cit{3}}: The functional coverage limit
-    ($4 \times 10^{12}$~molecules~cm$^{-2}$) was set by hybridisation steric hindrance.
-    The relevant limit for enzyme cleavage is set by MMP-9 access, which is more
-    stringent (Section~\ref{sec:deposition}, below).
-  \item \textbf{Petrovykh~2003~\cit{4}}: Non-Langmuir adsorption kinetics apply to
-    HS-ssDNA; peptide-thiol adsorption is not covered.
-\end{itemize}
 
 \subsection{Confirmed deposition protocol}
 
@@ -202,9 +238,8 @@ $\approx 3$--4~nm) must approach and bind each surface-immobilised peptide. This
 imposes the requirement $\ell \gtrsim 2 \times r_{\text{MMP-9}} \approx 6$--8~nm,
 corresponding to $\Gamma_p \lesssim 3$~pmol~cm$^{-2}$. At higher probe densities,
 neighbouring probe molecules sterically block enzyme access, reducing the effective
-cleavage rate and underestimating free MMP-9 activity. This constraint is more
-stringent than the hybridisation limit in Steel~1998 and must be confirmed with a
-cleavage-efficiency vs.\ coverage measurement.
+cleavage rate and underestimating free MMP-9 activity. This constraint must be confirmed
+with a cleavage-efficiency vs.\ coverage measurement on the fabricated electrode.
 
 The following assumptions underlie this section:
 
@@ -223,6 +258,18 @@ The following assumptions underlie this section:
 Three mechanisms can degrade the SAM during the 60-minute assay: oxidative desorption
 by H$_2$O$_2$, thiol exchange with free thiols in the wound matrix, and electrochemical
 desorption by the SWV scan potential.
+
+\textbf{Applicability of alkanethiol literature.} All three subsections draw on papers
+that measured simple $n$-alkanethiol SAMs: hydrophobic chains with no polar headgroups,
+minimal solvent exposure, and compact crystalline packing on gold. The probe-thiol in
+this device is not a simple alkanethiol: it carries a PEG$_6$ polyether linker and a
+10-residue charged peptide headgroup, both hydrophilic and solvent-swollen at pH~7.4.
+The MCH diluent (HS--(CH$_2$)$_6$--OH, $n = 6$) is structurally closer to the literature
+systems but is interdigitated with the bulky probe-thiol at 2--5~pmol~cm$^{-2}$, which
+disrupts the close-packed alkanethiol geometry on which published rate constants and
+desorption potentials were measured. The alkanethiol data below provide
+order-of-magnitude bounds only and are not quantitatively applicable to this mixed
+peptide-thiol/MCH monolayer without experimental confirmation on the fabricated electrode.
 
 \subsection{Oxidative desorption}
 
@@ -324,6 +371,17 @@ The scan potential is 100~mV more positive than the most conservative desorption
 estimate; the Widrig value for MCH is 300~mV more negative than the scan limit.
 Electrochemical desorption does not occur during the assay.
 
+The foregoing analysis uses Widrig's formula and Love's range, both derived for
+simple $n$-alkanethiol SAMs whose hydrophobic chains have minimal solvent penetration
+and desorb as a sharp stripping peak from a well-ordered layer. The probe-thiol
+(HS--(CH$_2$)$_6$--PEG$_6$--SGKIPRTLTA--MB) and MCH have significant hydrophilic
+character: the PEG$_6$ block is a polyether that binds water, and the peptide headgroup
+bears partial charges at pH~7.4. A solvated, structurally disordered layer has different
+desorption thermodynamics: the departing thiolate is stabilised by water, lowering
+the thermodynamic barrier relative to a hydrophobic chain. The actual $E_{\text{des}}$
+for the probe-thiol/MCH monolayer may therefore be less negative than the Widrig and
+Love values indicate. This is an unconfirmed transferability issue; see Limitation~4.
+
 The following assumptions underlie this section:
 
 \begin{enumerate}[noitemsep]
@@ -342,7 +400,10 @@ The following assumptions underlie this section:
 
 \subsection{Mechanism}
 
-Wound fluid contains ionised Ca$^{2+}$ at approximately 1.0--1.3~mM (similar to serum).
+Wound fluid contains ionised Ca$^{2+}$ at a concentration comparable to serum
+($\sim$1--2~mM; no paper in \texttt{papers/layer\_07/} reports a quantitative
+wound-fluid Ca$^{2+}$ value: this is an unconfirmed estimate used for the sensitivity
+calculation below).
 If the probe-thiol architecture includes a PEG spacer between the alkyl chain and the
 peptide, Ca$^{2+}$ can coordinate the polyether oxygen atoms in a crown-ether-like
 interaction, contracting the spacer and decreasing the probe-to-gold bridge length by
@@ -468,7 +529,8 @@ $\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
     and demonstrate negligible aqueous exchange qualitatively; a quantitative rate constant
     for exchange by Cys or GSH in phosphate-buffered wound fluid at pH~7.4 is not available.
 
-  \item \textbf{$E_{\mathrm{des}}$ measured in 0.5~M KOH; wound-fluid conditions differ.}
+  \item \textbf{$E_{\mathrm{des}}$ measured in 0.5~M KOH on hydrophobic alkanethiols;
+    both conditions differ from this device.}
     The Widrig formula (equation~\ref{eq:edes}) was determined at pH~$\approx 13.7$ \cit{6}.
     At wound-fluid pH~7.4 the Nernst equation predicts that $E_{\mathrm{des}}$ shifts
     approximately $+(13.7 - 7.4) \times 0.059 \approx +0.37$~V toward positive values
@@ -476,8 +538,17 @@ $\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
     $-0.95 + 0.37 = -0.58$~V. This is only 70~mV positive of the scan minimum of
     $-0.65$~V, compared with the 300~mV margin in alkaline electrolyte.
     The Love range \cit{1} ($-1.0 \pm 0.25$~V, conditions unspecified) is used as the
-    primary working reference, but experimental confirmation of $E_{\mathrm{des}}$ in
-    the assay buffer is recommended before the scan window is finalised.
+    primary working reference.
+    A second applicability concern arises from molecular structure: Widrig's formula was
+    measured on hydrophobic $n$-alkanethiols with no polar headgroups and no solvent
+    penetration into the SAM interior. The probe-thiol and MCH in this device have
+    substantial hydrophilic character (PEG$_6$ polyether, peptide headgroup, hydroxyl
+    terminus of MCH). Greater water exposure and structural disorder lower the
+    thermodynamic barrier to desorption and may shift $E_{\text{des}}$ toward less
+    negative values relative to the Widrig formula. The formula is not transferable to
+    this mixed peptide-thiol/MCH monolayer; experimental determination of
+    $E_{\text{des}}$ in the assay buffer on the fabricated electrode is required before
+    the scan window is certified safe.
 
   \item \textbf{Ca$^{2+}$ self-cancellation in $\Delta I/I_0$ is conditional on the
     measurement protocol.}
