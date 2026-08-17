@@ -66,18 +66,30 @@ Every parameter value must be confirmed from a paper physically present in
 
 \subsection{Molecular components}
 
-The sensor electrode carries a three-component thiol monolayer. The probe-thiol consists
-of a peptide substrate bearing a methylene-blue (MB) redox label, tethered to gold via
-a C$_6$ alkyl spacer and a PEG$_6$ flexible linker
-(HS--(CH$_2$)$_6$--PEG$_6$--SGKIPRTLTA--MB). MMP-9 (or HNE on the secondary
-channel) cleaves the peptide, releasing the MB-bearing fragment into solution and
-producing a signal-off decrease in SWV peak current proportional to enzymatic activity
-(Layer~0, Section~V).
+The sensor electrode carries a three-component thiol monolayer. The probe-thiol is
+a 10-residue peptide substrate conjugated at its N-terminus to a cysteine residue
+that anchors the molecule to gold, and at its C-terminal lysine to a methylene-blue
+(MB) redox label:
+\[
+  \underbrace{\text{Ac-Cys}}_{\text{gold anchor}} \text{-PEG}_6\text{-}
+  \underbrace{\text{SGKIPRTLTA}}_{\text{substrate}} \text{-PEG}_2\text{-}
+  \underbrace{\text{Lys(MB)}}_{\text{signal label}}
+\]
+Gold attachment is through the thiol of the cysteine residue (Cys-SH $\to$ Au-S-Cys).
+The N-terminal acetyl cap (Ac) prevents non-specific gold binding via the free amine.
+The PEG$_6$ block provides a flexible hydrophilic spacer between the electrode surface
+and the substrate; the PEG$_2$ linker conjugates MB to the Lys $\varepsilon$-amine.
+MMP-9 (or HNE on the secondary channel) cleaves within SGKIPRTLTA, releasing the
+MB-bearing C-terminal fragment into solution and producing a signal-off decrease in
+SWV peak current proportional to enzymatic activity (Layer~0, Section~V).
 
 A co-immobilised reference reporter, 6-ferrocenylhexanethiol (C6FC,
-Fc--(CH$_2$)$_6$--SH), provides an internal electrochemical standard. C6FC shares the
-same C$_6$ alkyl chain as the probe-thiol spacer, ensuring compatible packing geometry
-in the SAM. The ferrocene (Fc) headgroup gives a reversible one-electron redox signal.
+Fc--(CH$_2$)$_6$--SH), provides an internal electrochemical standard. C6FC and MCH
+(HS--(CH$_2$)$_6$--OH) both present a C$_6$ alkanethiol anchor to the gold surface
+and pack together with uniform chain geometry; the probe-thiol anchors via the shorter
+Cys residue and extends a bulky PEG$_6$-peptide chain into solution above them.
+Packing compatibility of all three components in a mixed SAM must be verified
+on the fabricated electrode. The ferrocene (Fc) headgroup gives a reversible one-electron redox signal.
 Adj\'{e}mian et~al.\ (2010)~\cit{12} report a formal potential of
 $\sim$150--155~mV vs.\ SCE ($\approx +0.20$~V vs.\ Ag/AgCl) for an alkyl-ferrocene
 label on an analogous Fc-peptide-PEG monolayer on gold (p.~10350 of \cit{12});
@@ -149,10 +161,13 @@ that is to be optimised on the fabricated electrode. Its function is threefold.
 
 The electron-transfer kinetics of Fc-terminated alkanethiol chains on gold are
 characterised in Smalley et~al.\ (2003)~\cit{8}: the tunnelling decay constant through
-the alkyl bridge is $\beta = 0.94 \pm 0.06\ \text{\AA}^{-1}$, confirming that ET from
-Fc to gold through the C$_6$ chain is fast relative to the SWV timescale and produces
-a sharp, well-defined peak. The same $\beta$ value applies to the MB probe-thiol chain
-(Section~\ref{sec:calcium}).
+the C$_6$ alkyl bridge is $\beta = 0.94 \pm 0.06\ \text{\AA}^{-1}$, confirming that
+ET from Fc to gold through the C$_6$ chain of C6FC is fast relative to the SWV
+timescale and produces a sharp, well-defined peak. The probe-thiol bridge from Au
+to MB runs through Cys and the PEG$_6$ spacer (not through a C$_6$ alkyl chain);
+the tunnelling decay constant through PEG chains is different from alkyl chains and
+is not confirmed from any paper in \texttt{papers/layer\_07/}
+(see Section~\ref{sec:calcium} and Limitation~5).
 
 The following assumption underlies this subsection. MMP-9 cleaves SGKIPRTLTA but has no
 known activity against the Fc--(CH$_2$)$_6$--SH molecule, which carries no peptide
@@ -168,8 +183,8 @@ surface density relative to probe-thiol density is not confirmed from any paper 
 
 \subsection{Confirmed deposition protocol}
 
-Wcis{\l}o et~al.\ (2021)~\cit{11} describe immobilisation of a cysteine-terminated
-peptide substrate (SH--(CH$_2$)$_{10}$--CO--Arg-Val-Arg-Arg) on gold by the
+Wcis{\l}o et~al.\ (2021)~\cit{11} describe immobilisation of a peptide-thiol substrate
+(SH--(CH$_2$)$_{10}$--CO--Arg-Val-Arg-Arg) on gold by the
 two-step procedure applicable to this device:
 
 \begin{enumerate}[noitemsep]
@@ -182,8 +197,9 @@ two-step procedure applicable to this device:
     fouling is anticipated.
 \end{enumerate}
 
-For this device, 1-octanethiol is replaced by MCH (6-mercapto-1-hexanol, HS--(CH$_2$)$_6$--OH)
-to match the C$_6$ alkyl chain length of the probe-thiol spacer. The target deposition
+For this device, 1-octanethiol is replaced by MCH (6-mercapto-1-hexanol, HS--(CH$_2$)$_6$--OH),
+which matches the C$_6$ chain length of C6FC and presents a hydroxyl-terminated surface
+that resists non-specific protein adsorption. The target deposition
 concentration (5~mM) and time (20~h) are adopted from Wcis{\l}o~2021~\cit{11}; exact
 optimisation for the specific SGKIPRTLTA--MB probe must be confirmed by measuring
 $\Gamma_p$ on the fabricated electrode.
@@ -202,14 +218,17 @@ is described by the Langmuir isotherm:
 where $K_L = k_{\text{ads}}/k_{\text{des}}$ (M$^{-1}$) is the Langmuir adsorption
 constant and $\Gamma_{\max}$ is the monolayer saturation coverage.
 
-\textbf{Saturation coverage.} For the directly analogous Fc-tetrapeptide-PEG$_7$ system
-on gold (PEG spacer, short peptide sequence, Fc label, MCH backfill), Adj\'{e}mian~2010
-\cit{12} report saturation at $\Gamma_{\max} \approx 6 \times 10^{-11}\ \text{mol~cm}^{-2}
-= 60\ \text{pmol~cm}^{-2}$ (Experimental Section, p.~10349 of \cit{12}). This is
-substantially lower than the alkanethiol limit ($930\ \text{pmol~cm}^{-2}$,
-Eq.~\eqref{eq:gamma_max}) because the bulky PEG--peptide headgroup sterically limits
-packing. This value is used as an estimate of $\Gamma_{\max}$ for the SGKIPRTLTA--MB
-probe, pending direct coulometric measurement on the fabricated electrode.
+\textbf{Saturation coverage.} For an analogous Fc-tetrapeptide-PEG$_7$ system on gold
+(short peptide on PEG spacer, Fc label, MCH backfill), Adj\'{e}mian~2010 \cit{12}
+report saturation at $\Gamma_{\max} \approx 6 \times 10^{-11}\ \text{mol~cm}^{-2}
+= 60\ \text{pmol~cm}^{-2}$ (Experimental Section, p.~10349 of \cit{12}). The
+Adj\'{e}mian probe attaches via a disulfide bond (two Au-S contacts) rather than a
+single Cys-SH; both present a PEG-spacered peptide headgroup that sterically limits
+packing to well below the alkanethiol limit ($930\ \text{pmol~cm}^{-2}$,
+Eq.~\eqref{eq:gamma_max}). The $\Gamma_{\max}$ estimate transfers because it is
+controlled by the steric footprint of the PEG-peptide headgroup, not by the
+anchor chemistry. Direct coulometric confirmation on the fabricated electrode is
+required.
 
 \textbf{Effectively irreversible adsorption.} Thiol adsorption on gold is effectively
 irreversible under typical deposition conditions: the desorption rate constant
@@ -237,8 +256,8 @@ $\Gamma_{\max}$; working coverage well below saturation must therefore be achiev
 controlling immersion time, not by relying on equilibrium partitioning.
 
 \textbf{Working coverage selection.} The device requires
-$\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$ (enzyme-access constraint,
-Section~\ref{sec:deposition}), substantially below $\Gamma_{\max} = 60\ \text{pmol~cm}^{-2}$.
+$\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$ (steric enzyme-access constraint,
+probe spacing subsection below), substantially below $\Gamma_{\max} = 60\ \text{pmol~cm}^{-2}$.
 Equation~\eqref{eq:langmuir_kin} implies this is reached at short exposure times
 (or very dilute probe concentration), consistent with the Adj\'{e}mian~2010 approach.
 The exact immersion time that yields $\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$
@@ -270,8 +289,11 @@ and Fc in the same post-deposition scan.
 
 Adj\'{e}mian et~al.\ (2010)~\cit{12} characterised the relationship between surface
 coverage $\Gamma_0$ and cleavage efficiency for a ferrocene (Fc)-labelled tetrapeptide
-end-grafted on gold via a PEG$_7$ linker, using MCH backfill (architecture directly
-analogous to the MB-SGKIPRTLTA--PEG$_6$ probe). Their key finding (Fig.~2 and text):
+end-grafted on gold via a PEG$_7$ linker, using MCH backfill. The Adj\'{e}mian probe
+attaches via a disulfide bond (two Au-S contacts) whereas the device probe attaches
+via a single Cys-SH; both present a short peptide on a PEG spacer above the MCH
+backfill, making the coverage--cleavage relationship transferable. Their key finding
+(Fig.~2 and text):
 
 \begin{itemize}[noitemsep]
   \item At saturated undiluted layers ($\Gamma_0 \approx 6 \times 10^{-11}$~mol~cm$^{-2}
@@ -342,16 +364,26 @@ by H$_2$O$_2$, thiol exchange with free thiols in the wound matrix, and electroc
 desorption by the SWV scan potential.
 
 \textbf{Applicability of alkanethiol literature.} All three subsections draw on papers
-that measured simple $n$-alkanethiol SAMs: hydrophobic chains with no polar headgroups,
-minimal solvent exposure, and compact crystalline packing on gold. The probe-thiol in
-this device is not a simple alkanethiol: it carries a PEG$_6$ polyether linker and a
-10-residue charged peptide headgroup, both hydrophilic and solvent-swollen at pH~7.4.
-The MCH diluent (HS--(CH$_2$)$_6$--OH, $n = 6$) is structurally closer to the literature
-systems but is interdigitated with the bulky probe-thiol at 2--5~pmol~cm$^{-2}$, which
-disrupts the close-packed alkanethiol geometry on which published rate constants and
-desorption potentials were measured. The alkanethiol data below provide
-order-of-magnitude bounds only and are not quantitatively applicable to this mixed
-peptide-thiol/MCH monolayer without experimental confirmation on the fabricated electrode.
+that measured simple $n$-alkanethiol SAMs. To assess what transfers to the present
+device, two properties must be distinguished.
+
+\emph{Au-S bond thermodynamics} (desorption potential, bond energy) are governed by the
+gold--sulphur bond itself, which is identical for a cysteine-thiol (Cys-SH) and an
+alkanethiol anchor. The thermodynamic desorption potential and the observation that
+aqueous exchange is negligible are therefore applicable to the Cys-anchored probe and
+MCH components of this SAM.
+
+\emph{Kinetic rate constants} (oxidation rate, exchange rate, desorption peak shape)
+depend on the SAM packing geometry, chain ordering, and solvent penetration. The
+probe-thiol here attaches via Cys and extends a PEG$_6$-peptide chain into solution;
+MCH ($n = 6$) is structurally closer to the alkanethiol literature but packs alongside
+the bulky probe rather than in a uniform close-packed layer. Published kinetic rate
+constants are not quantitatively transferable to this mixed monolayer without
+experimental confirmation on the fabricated electrode.
+
+The three subsections below use alkanethiol data to establish thermodynamic bounds and
+qualitative stability arguments, and explicitly flag where only kinetic data would be
+needed for quantitative prediction.
 
 \subsection{Oxidative desorption}
 
@@ -453,16 +485,16 @@ The scan potential is 100~mV more positive than the most conservative desorption
 estimate; the Widrig value for MCH is 300~mV more negative than the scan limit.
 Electrochemical desorption does not occur during the assay.
 
-The foregoing analysis uses Widrig's formula and Love's range, both derived for
-simple $n$-alkanethiol SAMs whose hydrophobic chains have minimal solvent penetration
-and desorb as a sharp stripping peak from a well-ordered layer. The probe-thiol
-(HS--(CH$_2$)$_6$--PEG$_6$--SGKIPRTLTA--MB) and MCH have significant hydrophilic
-character: the PEG$_6$ block is a polyether that binds water, and the peptide headgroup
-bears partial charges at pH~7.4. A solvated, structurally disordered layer has different
-desorption thermodynamics: the departing thiolate is stabilised by water, lowering
-the thermodynamic barrier relative to a hydrophobic chain. The actual $E_{\text{des}}$
-for the probe-thiol/MCH monolayer may therefore be less negative than the Widrig and
-Love values indicate. This is an unconfirmed transferability issue; see Limitation~4.
+The thermodynamic argument (Au-S bond governs desorption potential) applies to both
+the Cys-anchored probe-thiol (Ac-Cys-PEG$_6$--SGKIPRTLTA--PEG$_2$--Lys(MB)) and
+MCH: both anchor via the Au-S bond with similar bond energies, placing $E_{\text{des}}$
+in the same thermodynamic range. However, the probe-thiol and MCH both carry substantial
+hydrophilic character (PEG$_6$ polyether, charged peptide headgroup, hydroxyl terminus),
+and a solvated or disordered SAM has different desorption kinetics than a compact
+hydrophobic layer: the departing thiolate is stabilised by water, which may lower the
+effective energy barrier and shift $E_{\text{des}}$ toward less negative values relative
+to the Widrig formula. The actual $E_{\text{des}}$ for this mixed monolayer must be
+confirmed by cyclic voltammetry on the fabricated electrode; see Limitation~4.
 
 The following assumptions underlie this section:
 
@@ -486,10 +518,10 @@ Wound fluid contains ionised Ca$^{2+}$ at a concentration comparable to serum
 ($\sim$1--2~mM; no paper in \texttt{papers/layer\_07/} reports a quantitative
 wound-fluid Ca$^{2+}$ value: this is an unconfirmed estimate used for the sensitivity
 calculation below).
-If the probe-thiol architecture includes a PEG spacer between the alkyl chain and the
-peptide, Ca$^{2+}$ can coordinate the polyether oxygen atoms in a crown-ether-like
-interaction, contracting the spacer and decreasing the probe-to-gold bridge length by
-$\Delta d$. Electron transfer (ET) from MB to gold through the bridge follows a
+The probe-thiol (Ac-Cys-PEG$_6$--SGKIPRTLTA--PEG$_2$--Lys(MB)) places a PEG$_6$
+block between the Cys anchor and the peptide substrate. Ca$^{2+}$ can coordinate the
+polyether oxygen atoms of PEG$_6$ in a crown-ether-like interaction, contracting the
+spacer and decreasing the average probe-to-gold bridge length by $\Delta d$. Electron transfer (ET) from MB to gold through the bridge follows a
 tunnelling mechanism, so a decrease in bridge length raises the apparent ET rate
 constant $k_{\mathrm{ET}}$ and increases the SWV peak current of \emph{uncleaved}
 probes.
@@ -537,12 +569,17 @@ fitting the chain-length dependence of the standard rate constant $k^\circ$ \cit
   \label{eq:beta}
 \end{equation}
 
-This measurement used ferrocene (Fc) as the redox probe, while the present device uses
-methylene blue (MB). The value of $\beta$ is adopted here because $\beta$ is a property
-of the alkyl bridge that electrons tunnel through, not of the terminal redox group.
-Smalley et al.\ note that $\beta \approx 1.0\ \As$ is consistent across multiple redox
-probes studied through the same alkyl bridge \cit{8}. The Fc-derived value therefore
-transfers directly to the MB system.
+This measurement was performed on Fc-terminated C$_6$-to-C$_{16}$ alkanethiol chains;
+$\beta$ is a property of the bridge, not of the terminal redox group \cit{8}.
+For C6FC (Fc--(CH$_2$)$_6$--SH), the bridge is a C$_6$ alkyl chain: the Smalley value
+applies directly. For the probe-thiol (Ac-Cys-PEG$_6$--SGKIPRTLTA--PEG$_2$--Lys(MB)),
+the bridge from Au to MB runs through the Cys residue and the PEG$_6$ spacer.
+Tunnelling through polyethylene-glycol chains has a different decay constant from alkyl
+chains ($\beta_{\mathrm{PEG}} < \beta_{\mathrm{alkyl}}$ in general), and no paper in
+\texttt{papers/layer\_07/} reports $\beta$ for PEG-based molecular bridges.
+The value $\beta = 0.94\ \As$ is used here as a provisional upper bound for the
+Ca$^{2+}$ sensitivity calculation below; the actual fold change in $k_{\mathrm{ET}}$
+is unconfirmed and is flagged as Limitation~5.
 
 \subsection{Sensitivity of $k_{\mathrm{ET}}$ to bridge contraction}
 
@@ -632,16 +669,25 @@ $\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
     $E_{\text{des}}$ in the assay buffer on the fabricated electrode is required before
     the scan window is certified safe.
 
-  \item \textbf{Ca$^{2+}$ self-cancellation in $\Delta I/I_0$ is conditional on the
-    measurement protocol.}
-    Equation~\eqref{eq:ca_cancel} shows that the Ca$^{2+}$ artefact cancels in
-    $\Delta I/I_0$ only if $I_0$ and $I(t)$ are measured in the same buffer (same
-    Ca$^{2+}$ concentration). If the baseline $I_0$ is measured before adding wound
-    fluid (in calibration buffer without Ca$^{2+}$) and $I(t)$ is measured in wound
-    fluid (with Ca$^{2+}$), the cancellation fails and a spurious signal arises.
-    Protocol design must ensure that both measurements are in the same ionic environment.
-    Whether a PEG spacer is present and its Ca$^{2+}$ affinity are also unconfirmed for
-    this probe architecture.
+  \item \textbf{Ca$^{2+}$ artefact model has three unconfirmed inputs.}
+    \begin{enumerate}[label=(\alph*),noitemsep]
+      \item \textit{Protocol.} Equation~\eqref{eq:ca_cancel} shows that the Ca$^{2+}$
+        artefact cancels in $\Delta I/I_0$ only if $I_0$ and $I(t)$ are measured in
+        the same buffer. If $I_0$ is taken in calibration buffer (no Ca$^{2+}$) and
+        $I(t)$ in wound fluid (with Ca$^{2+}$), the cancellation fails. Protocol design
+        must ensure both measurements are in the same ionic environment.
+      \item \textit{PEG spacer Ca$^{2+}$ affinity.} The Ca$^{2+}$-coordination
+        mechanism assumes the PEG$_6$ block contracts upon Ca$^{2+}$ binding. Whether
+        a PEG$_6$ spacer of this length binds Ca$^{2+}$ with meaningful affinity in
+        the wound-fluid ionic background is not confirmed from any paper in
+        \texttt{papers/layer\_07/}; $\Delta d$ is unconfirmed.
+      \item \textit{Tunnelling decay constant for PEG bridge.} Smalley~2003~\cit{8}
+        measures $\beta = 0.94\ \As$ for C$_6$--C$_{16}$ alkyl chains. The probe-thiol
+        bridge from Au to MB runs through Cys and PEG$_6$; the $\beta$ for PEG chains
+        is smaller than for alkyl chains and is not confirmed in \texttt{papers/layer\_07/}.
+        The fold change in $k_{\mathrm{ET}}$ estimated in equation~\eqref{eq:kfold_plug}
+        is therefore an upper bound.
+    \end{enumerate}
 
 \end{enumerate}
 
@@ -741,8 +787,11 @@ $\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
   \textit{Langmuir} 26(12):10347--10356. DOI:~10.1021/la100397g.
   \textbf{10.1021@la100397g.pdf} -- cleavage yield $>$80\% for $\Gamma_0 \leq
   10\ \text{pmol~cm}^{-2}$ with MCH backfill confirmed from Fig.~2 and text (p.~10351);
-  working coverage $(0.5\text{--}1) \times 10^{-11}$~mol~cm$^{-2}$ confirmed. Architecture
-  (Fc-peptide-PEG tethered on Au, MCH backfill) is directly analogous to this device.
+  working coverage $(0.5\text{--}1) \times 10^{-11}$~mol~cm$^{-2}$ confirmed; saturation
+  $\Gamma_{\max} \approx 60\ \text{pmol~cm}^{-2}$ confirmed from Experimental Section
+  (p.~10349); Fc formal potential 150--155~mV vs.\ SCE confirmed from p.~10350.
+  Architecture (Fc-peptide-PEG tethered on Au, MCH backfill) is analogous to this device;
+  anchor is disulfide (two Au-S contacts) versus Cys-SH (single Au-S) in this device.
 
 \item Sfragano PS, Moro G, Polo F, Palchetti I (2021). The role of peptides in the
   design of electrochemical biosensors for clinical diagnostics.
