@@ -77,12 +77,16 @@ producing a signal-off decrease in SWV peak current proportional to enzymatic ac
 A co-immobilised reference reporter, 6-ferrocenylhexanethiol (C6FC,
 Fc--(CH$_2$)$_6$--SH), provides an internal electrochemical standard. C6FC shares the
 same C$_6$ alkyl chain as the probe-thiol spacer, ensuring compatible packing geometry
-in the SAM. The ferrocene (Fc) headgroup gives a reversible one-electron redox signal at a formal
-potential well positive of the MB reduction peak; the two signals are resolved in a
-single SWV scan without additional switching (Section~\ref{sec:c6fc}). The exact formal
-potentials of both Fc and MB in the assay buffer are not confirmed from any paper in
-\texttt{papers/layer\_07/} and must be determined by cyclic voltammetry on the
-fabricated electrode.
+in the SAM. The ferrocene (Fc) headgroup gives a reversible one-electron redox signal.
+Adj\'{e}mian et~al.\ (2010)~\cit{12} report a formal potential of
+$\sim$150--155~mV vs.\ SCE ($\approx +0.20$~V vs.\ Ag/AgCl) for an alkyl-ferrocene
+label on an analogous Fc-peptide-PEG monolayer on gold (p.~10350 of \cit{12});
+this value is expected to be close to the C6FC formal potential but must be confirmed
+directly on the fabricated device. The Fc signal is well positive of the MB reduction
+peak; the two peaks are resolved in a single SWV scan without additional switching
+(Section~\ref{sec:c6fc}). The MB formal potential in the assay buffer is not confirmed
+from any paper in \texttt{papers/layer\_07/} and must be determined by cyclic
+voltammetry on the fabricated electrode.
 
 The diluent is 6-mercapto-1-hexanol (MCH, HS--(CH$_2$)$_6$--OH). MCH fills gold sites
 not occupied by the probe-thiol or C6FC, presenting a chemically inert surface to the
@@ -183,6 +187,84 @@ to match the C$_6$ alkyl chain length of the probe-thiol spacer. The target depo
 concentration (5~mM) and time (20~h) are adopted from Wcis{\l}o~2021~\cit{11}; exact
 optimisation for the specific SGKIPRTLTA--MB probe must be confirmed by measuring
 $\Gamma_p$ on the fabricated electrode.
+
+\subsection{Langmuir adsorption framework}
+\label{sec:langmuir}
+
+The equilibrium coverage of a thiol on gold from a solution of molar concentration $c$
+is described by the Langmuir isotherm:
+
+\begin{equation}
+  \Gamma_p = \Gamma_{\max} \cdot \frac{K_L\,c}{1 + K_L\,c}
+  \label{eq:langmuir}
+\end{equation}
+
+where $K_L = k_{\text{ads}}/k_{\text{des}}$ (M$^{-1}$) is the Langmuir adsorption
+constant and $\Gamma_{\max}$ is the monolayer saturation coverage.
+
+\textbf{Saturation coverage.} For the directly analogous Fc-tetrapeptide-PEG$_7$ system
+on gold (PEG spacer, short peptide sequence, Fc label, MCH backfill), Adj\'{e}mian~2010
+\cit{12} report saturation at $\Gamma_{\max} \approx 6 \times 10^{-11}\ \text{mol~cm}^{-2}
+= 60\ \text{pmol~cm}^{-2}$ (Experimental Section, p.~10349 of \cit{12}). This is
+substantially lower than the alkanethiol limit ($930\ \text{pmol~cm}^{-2}$,
+Eq.~\eqref{eq:gamma_max}) because the bulky PEG--peptide headgroup sterically limits
+packing. This value is used as an estimate of $\Gamma_{\max}$ for the SGKIPRTLTA--MB
+probe, pending direct coulometric measurement on the fabricated electrode.
+
+\textbf{Effectively irreversible adsorption.} Thiol adsorption on gold is effectively
+irreversible under typical deposition conditions: the desorption rate constant
+$k_{\text{des}}$ is negligible on the timescale of SAM preparation, giving
+$K_L \gg 1/c$ at any practical concentration. The Langmuir isotherm
+(Eq.~\eqref{eq:langmuir}) therefore sits on its saturating plateau
+($\Gamma_p \approx \Gamma_{\max}$) at both the micromolar concentrations used in
+Adj\'{e}mian~2010 \cit{12} and the 5~mM concentration adopted from Wcis{\l}o~2021
+\cit{11}. Coverage is consequently governed by \emph{kinetic} Langmuir rather than
+equilibrium concentration:
+
+\begin{equation}
+  \frac{d\Gamma_p}{dt} = k_{\text{ads}}\,c\,(\Gamma_{\max} - \Gamma_p)
+  \label{eq:langmuir_kin}
+\end{equation}
+
+The solution is $\Gamma_p(t) = \Gamma_{\max}(1 - e^{-k_{\text{ads}}ct})$: coverage
+increases toward $\Gamma_{\max}$ at a rate set by exposure time, not by the position
+of the equilibrium isotherm. This is precisely the regime exploited by Adj\'{e}mian~2010,
+who achieve controlled sub-saturating coverages
+($\Gamma_p \approx 0.4\text{--}2 \times 10^{-11}\ \text{mol~cm}^{-2}$) by limiting
+the immersion time to 30--120~s at 2--5~µM \cit{12}, rather than by adjusting
+concentration. The Wcis{\l}o 20~h protocol at 5~mM drives the system fully to
+$\Gamma_{\max}$; working coverage well below saturation must therefore be achieved by
+controlling immersion time, not by relying on equilibrium partitioning.
+
+\textbf{Working coverage selection.} The device requires
+$\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$ (enzyme-access constraint,
+Section~\ref{sec:deposition}), substantially below $\Gamma_{\max} = 60\ \text{pmol~cm}^{-2}$.
+Equation~\eqref{eq:langmuir_kin} implies this is reached at short exposure times
+(or very dilute probe concentration), consistent with the Adj\'{e}mian~2010 approach.
+The exact immersion time that yields $\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$
+for the SGKIPRTLTA--MB probe must be calibrated on the fabricated electrode by
+coulometric integration of the reductive desorption charge \cit{6}.
+
+\textbf{Three-component competitive Langmuir.} With probe-thiol, C6FC, and MCH all
+present in the deposition solution, the three species compete for gold sites.
+The competitive Langmuir isotherm for component $i$ is:
+
+\begin{equation}
+  \theta_i = \frac{K_{L,i}\,c_i}{1 + K_{L,\text{probe}}\,c_{\text{probe}}
+                                    + K_{L,\text{C6FC}}\,c_{\text{C6FC}}
+                                    + K_{L,\text{MCH}}\,c_{\text{MCH}}}
+  \label{eq:langmuir_comp}
+\end{equation}
+
+The coverage ratio $\Gamma_{\text{probe}}/\Gamma_{\text{C6FC}}$ therefore depends on
+$K_{L,\text{probe}}\,c_{\text{probe}}\,/\,K_{L,\text{C6FC}}\,c_{\text{C6FC}}$.
+The individual Langmuir constants $K_{L,\text{probe}}$, $K_{L,\text{C6FC}}$, and
+$K_{L,\text{MCH}}$ for the specific thiols used here are not confirmed from any paper in
+\texttt{papers/layer\_07/}; the deposition solution molar ratios must therefore be
+optimised empirically. Once deposited, the individual surface densities
+$\Gamma_{\text{probe}}$ and $\Gamma_{\text{C6FC}}$ should be verified by reductive
+desorption coulometry (Widrig~\cit{6}) or by integrating the separate CV peaks of MB
+and Fc in the same post-deposition scan.
 
 \subsection{Confirmed functional coverage limits}
 
