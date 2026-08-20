@@ -100,9 +100,11 @@ peak; the two peaks are resolved in a single SWV scan without additional switchi
 from any paper in \texttt{papers/layer\_07/} and must be determined by cyclic
 voltammetry on the fabricated electrode.
 
-The diluent is 6-mercapto-1-hexanol (MCH, HS--(CH$_2$)$_6$--OH). MCH fills gold sites
-not occupied by the probe-thiol or C6FC, presenting a chemically inert surface to the
-wound fluid and preventing non-specific adsorption of wound proteins to the bare gold.
+The diluent is 6-mercapto-1-hexanol (MCH, HS--(CH$_2$)$_6$--OH). All three components
+are co-deposited simultaneously from a single mixed solution (one-pot deposition); MCH
+occupies gold sites not taken up by probe-thiol or C6FC, presenting a chemically inert
+surface to the wound fluid and preventing non-specific adsorption of wound proteins to
+the bare gold.
 
 \subsection{Close-packed monolayer density}
 
@@ -123,10 +125,11 @@ $\Gamma_p = 2$--5~pmol~cm$^{-2}$ is 0.2--0.5\% of the close-packed limit.
 The following assumptions underlie this section:
 
 \begin{enumerate}[noitemsep]
-  \item The probe-thiol adsorbs to gold through the thiol--gold bond; MCH backfilling
-    fills the remaining gold surface.
-  \item $\Gamma_{\max} = 930$~pmol~cm$^{-2}$ is an upper bound on MCH packing; the
-    actual MCH density is lower because probe-thiols occupy a fraction of the surface.
+  \item Probe-thiol, C6FC, and MCH are co-deposited from a single mixed solution;
+    their relative surface coverages are governed by competitive Langmuir adsorption.
+  \item $\Gamma_{\max} = 930$~pmol~cm$^{-2}$ is an upper bound on total SAM packing;
+    the actual MCH density is lower because probe-thiol and C6FC occupy a fraction of
+    the surface.
 \end{enumerate}
 
 \subsection{C6FC reference reporter and ratiometric signal}
@@ -156,7 +159,12 @@ that is to be optimised on the fabricated electrode. Its function is threefold.
       \frac{\Delta R}{R_0} = \frac{R_0 - R(t)}{R_0} = f_{\text{cleaved}}(t)
       \label{eq:ratio_signal}
     \end{equation}
-    provided $I_{\text{Fc}}$ is stable over the assay window (see assumption below).
+    This equality holds \emph{because} C6FC is the non-cleavable internal control:
+    C6FC carries no peptide substrate, so MMP-9 and HNE cannot reduce $I_{\text{Fc}}$,
+    making $I_{\text{Fc}}$ constant over the assay. Without a non-cleavable internal
+    reference, $\Delta R/R_0$ would reflect both cleavage and any drift in electrode
+    response, and the equality $\Delta R/R_0 = f_{\text{cleaved}}$ would not hold in
+    general (see assumption below).
 \end{enumerate}
 
 The electron-transfer kinetics of Fc-terminated alkanethiol chains on gold are
@@ -184,24 +192,28 @@ surface density relative to probe-thiol density is not confirmed from any paper 
 \subsection{Confirmed deposition protocol}
 
 Wcis{\l}o et~al.\ (2021)~\cit{11} describe immobilisation of a peptide-thiol substrate
-(SH--(CH$_2$)$_{10}$--CO--Arg-Val-Arg-Arg) on gold by the
-two-step procedure applicable to this device:
+(SH--(CH$_2$)$_{10}$--CO--Arg-Val-Arg-Arg) on gold by a two-step sequential procedure:
+first immerse in the thiol solution, then backfill with 1-octanethiol. This device
+uses a different approach: all three components (probe-thiol, C6FC, MCH) are
+co-deposited simultaneously from a single mixed solution (\emph{one-pot deposition}).
+The two-step protocol of Wcis{\l}o~2021 is not directly applicable; only the
+deposition parameters (concentration, time) are adopted as a starting point.
+
+The one-pot steps are:
 
 \begin{enumerate}[noitemsep]
-  \item Immerse polished gold electrode in 5~mM degassed ethanolic solution of the
-    peptide-thiol for 20~h at room temperature.
+  \item Immerse polished gold electrode in a mixed ethanolic solution containing
+    probe-thiol, C6FC, and MCH at a total thiol concentration of $\sim$5~mM for
+    20~h at room temperature. The molar ratios of the three components must be
+    optimised empirically to achieve the target probe coverage.
   \item Rinse with ethanol and deionised water; dry under N$_2$.
-  \item Backfill with 2~mM ethanolic 1-octanethiol (analogous to MCH) for 60~min,
-    to eliminate pinholes and block non-specific adsorption.
   \item Optional protein block (BSA, 1\% in PBS, 60~min at 4$^\circ$C) if wound-matrix
     fouling is anticipated.
 \end{enumerate}
 
-For this device, 1-octanethiol is replaced by MCH (6-mercapto-1-hexanol, HS--(CH$_2$)$_6$--OH),
-which matches the C$_6$ chain length of C6FC and presents a hydroxyl-terminated surface
-that resists non-specific protein adsorption. The target deposition
-concentration (5~mM) and time (20~h) are adopted from Wcis{\l}o~2021~\cit{11}; exact
-optimisation for the specific SGKIPRTLTA--MB probe must be confirmed by measuring
+The total deposition concentration ($\sim$5~mM) and time (20~h) are adopted from
+Wcis{\l}o~2021~\cit{11} as a starting point; exact optimisation for the
+SGKIPRTLTA--MB probe at the correct molar ratio must be confirmed by measuring
 $\Gamma_p$ on the fabricated electrode.
 
 \subsection{Langmuir adsorption framework}
@@ -232,37 +244,43 @@ required.
 
 \textbf{Effectively irreversible adsorption.} Thiol adsorption on gold is effectively
 irreversible under typical deposition conditions: the desorption rate constant
-$k_{\text{des}}$ is negligible on the timescale of SAM preparation, giving
-$K_L \gg 1/c$ at any practical concentration. The Langmuir isotherm
-(Eq.~\eqref{eq:langmuir}) therefore sits on its saturating plateau
-($\Gamma_p \approx \Gamma_{\max}$) at both the micromolar concentrations used in
-Adj\'{e}mian~2010 \cit{12} and the 5~mM concentration adopted from Wcis{\l}o~2021
-\cit{11}. Coverage is consequently governed by \emph{kinetic} Langmuir rather than
-equilibrium concentration:
+$k_{\text{des}}$ is negligible on the timescale of SAM preparation. Coverage is
+consequently governed by \emph{kinetic} Langmuir rather than equilibrium concentration.
+For a single thiol species in isolation, the kinetic Langmuir equation is:
 
 \begin{equation}
-  \frac{d\Gamma_p}{dt} = k_{\text{ads}}\,c\,(\Gamma_{\max} - \Gamma_p)
+  \frac{d\Gamma_i}{dt} = k_{\text{ads},i}\,c_i\,(\Gamma_{\max} - \Gamma_i)
   \label{eq:langmuir_kin}
 \end{equation}
 
-The solution is $\Gamma_p(t) = \Gamma_{\max}(1 - e^{-k_{\text{ads}}ct})$: coverage
-increases toward $\Gamma_{\max}$ at a rate set by exposure time, not by the position
-of the equilibrium isotherm. This is precisely the regime exploited by Adj\'{e}mian~2010,
-who achieve controlled sub-saturating coverages
+with solution $\Gamma_i(t) = \Gamma_{\max}(1 - e^{-k_{\text{ads},i}c_i t})$, showing
+that coverage rises toward $\Gamma_{\max}$ at a rate set by exposure time. This is the
+regime exploited by Adj\'{e}mian~2010 \cit{12}, who deposit a single probe-thiol from a
+dilute solution and achieve controlled sub-saturating coverages
 ($\Gamma_p \approx 0.4\text{--}2 \times 10^{-11}\ \text{mol~cm}^{-2}$) by limiting
-the immersion time to 30--120~s at 2--5~µM \cit{12}, rather than by adjusting
-concentration. The Wcis{\l}o 20~h protocol at 5~mM drives the system fully to
-$\Gamma_{\max}$; working coverage well below saturation must therefore be achieved by
-controlling immersion time, not by relying on equilibrium partitioning.
+the immersion time to 30--120~s at 2--5~µM.
+
+For one-pot co-deposition of three competing thiols (probe-thiol, C6FC, MCH), the
+three equations are coupled: each species competes for the same available sites. The
+kinetically correct form replaces $(\Gamma_{\max} - \Gamma_i)$ with
+$(\Gamma_{\max} - \sum_j \Gamma_j)$ for each species $i$ simultaneously. At long
+times, the coupled kinetic Langmuir converges to the competitive equilibrium isotherm
+(Eq.~\eqref{eq:langmuir_comp}). The single-component equation~\eqref{eq:langmuir_kin}
+is therefore not appropriate on its own for describing probe coverage in the one-pot
+case; the competitive Langmuir framework (Eq.~\eqref{eq:langmuir_comp}) is the
+primary deposition model for this device.
 
 \textbf{Working coverage selection.} The device requires
 $\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$ (steric enzyme-access constraint,
 probe spacing subsection below), substantially below $\Gamma_{\max} = 60\ \text{pmol~cm}^{-2}$.
-Equation~\eqref{eq:langmuir_kin} implies this is reached at short exposure times
-(or very dilute probe concentration), consistent with the Adj\'{e}mian~2010 approach.
-The exact immersion time that yields $\Gamma_p = 2\text{--}5\ \text{pmol~cm}^{-2}$
-for the SGKIPRTLTA--MB probe must be calibrated on the fabricated electrode by
-coulometric integration of the reductive desorption charge \cit{6}.
+In the one-pot regime, the probe fraction $\Gamma_{\text{probe}} /
+(\Gamma_{\text{probe}} + \Gamma_{\text{C6FC}} + \Gamma_{\text{MCH}})$ is set
+primarily by the molar ratios of the three thiols in the deposition solution (via
+Eq.~\eqref{eq:langmuir_comp}), while total surface loading approaches saturation with
+immersion time. Target probe coverage is therefore achieved by selecting the correct
+input molar ratio, not by time-limiting the exposure as in the single-component Adj\'{e}mian
+approach. Both the molar ratios and the immersion time must be calibrated on the
+fabricated electrode by coulometric integration of the reductive desorption charge \cit{6}.
 
 \textbf{Three-component competitive Langmuir.} With probe-thiol, C6FC, and MCH all
 present in the deposition solution, the three species compete for gold sites.
@@ -289,24 +307,28 @@ and Fc in the same post-deposition scan.
 
 Adj\'{e}mian et~al.\ (2010)~\cit{12} characterised the relationship between surface
 coverage $\Gamma_0$ and cleavage efficiency for a ferrocene (Fc)-labelled tetrapeptide
-end-grafted on gold via a PEG$_7$ linker, using MCH backfill. The Adj\'{e}mian probe
-attaches via a disulfide bond (two Au-S contacts) whereas the device probe attaches
-via a single Cys-SH; both present a short peptide on a PEG spacer above the MCH
-backfill, making the coverage--cleavage relationship transferable. Their key finding
-(Fig.~2 and text):
+end-grafted on gold via a PEG$_7$ linker. The Adj\'{e}mian probe attaches via a
+disulfide bond (two Au-S contacts) and uses a two-step sequential deposition (probe-thiol
+then MCH backfill), whereas this device uses a single Cys-SH anchor and one-pot
+co-deposition of all three thiols. Both present a short peptide on a PEG spacer above the
+diluent layer, so the coverage--cleavage relationship is expected to be broadly
+transferable; however, the one-pot surface structure may differ from the sequential
+backfill, and experimental confirmation of the coverage--cleavage relationship on the
+fabricated device is required. Their key finding (Fig.~2 and text):
 
 \begin{itemize}[noitemsep]
   \item At saturated undiluted layers ($\Gamma_0 \approx 6 \times 10^{-11}$~mol~cm$^{-2}
     = 60\ \text{pmol~cm}^{-2}$), cleavage yield drops to $\sim$50\% because chains form
     compact domains inaccessible to the enzyme.
-  \item For $\Gamma_0 \leq 10^{-11}$~mol~cm$^{-2} = 10\ \text{pmol~cm}^{-2}$ with MCH
-    backfill, cleavage yield exceeds 80\%.
+  \item For $\Gamma_0 \leq 10^{-11}$~mol~cm$^{-2} = 10\ \text{pmol~cm}^{-2}$
+    (measured with MCH sequential backfill), cleavage yield exceeds 80\%.
   \item The working coverage used throughout Adj\'{e}mian~2010 is
     $(0.5\text{--}1) \times 10^{-11}$~mol~cm$^{-2} = 5\text{--}10\ \text{pmol~cm}^{-2}$.
 \end{itemize}
 
-The device target $\Gamma_p = 2$--5~pmol~cm$^{-2}$ therefore sits within the confirmed
-functional regime. Adj\'{e}mian~2010 also confirms that surface kinetics follow the
+The device target $\Gamma_p = 2$--5~pmol~cm$^{-2}$ therefore sits within the Adj\'{e}mian
+functional regime; experimental verification on the one-pot fabricated electrode is
+required before the 80\% cleavage yield can be assumed. Adj\'{e}mian~2010 also confirms that surface kinetics follow the
 Michaelis--Menten two-step mechanism (Layer~9), with enzymatic constants measurable
 directly from the electrode response.
 
@@ -317,7 +339,7 @@ directly from the electrode response.
 \toprule
 \textbf{Parameter} & \textbf{Status} & \textbf{Source} \\
 \midrule
-Deposition protocol & Confirmed (5~mM EtOH, 20~h, MCH backfill) & Wcis\l{}o~2021~\cit{11} \\
+Deposition protocol & Confirmed (5~mM total thiol, 20~h); one-pot molar ratios unconfirmed & Wcis\l{}o~2021~\cit{11} \\
 Functional $\Gamma_p$ limit & Confirmed ($\leq 10\ \text{pmol~cm}^{-2}$) & Adj\'{e}mian~2010~\cit{12} \\
 $k_{\text{cat}}$, $K_m$ for SGKIPRTLTA & Confirmed (86.4~s$^{-1}$, 1.3~mM) & Kridel~2001~\cit{10} \\
 Absolute $\Gamma_p$ on fabricated electrode & \textbf{Unconfirmed}: must be measured & Coulometric integration \\
@@ -348,8 +370,9 @@ with a cleavage-efficiency vs.\ coverage measurement on the fabricated electrode
 The following assumptions underlie this section:
 
 \begin{enumerate}[noitemsep]
-  \item Probe-thiol adsorbs to gold via the thiol--gold bond; MCH backfilling fills
-    remaining surface sites.
+  \item Probe-thiol, C6FC, and MCH are co-deposited simultaneously; their relative
+    surface coverages are governed by the competitive Langmuir isotherm
+    (Eq.~\eqref{eq:langmuir_comp}).
   \item A target of $\Gamma_p \lesssim 3$~pmol~cm$^{-2}$ is adopted on steric grounds
     (enzyme-access requirement); this value is not confirmed from any paper in
     \texttt{papers/layer\_07/} and is flagged as Limitation~1.
@@ -603,7 +626,7 @@ architecture; see Limitation~5):
     &= \exp(1.88) \approx 6.5 \notag
 \end{align}
 
-Both the active and control electrodes carry the same probe-thiol/MCH SAM and are
+Both the active and control electrodes carry the same probe-thiol/C6FC/MCH SAM and are
 exposed simultaneously to the same wound fluid, so this fold increase applies identically
 to both.
 
@@ -624,17 +647,19 @@ $\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
 
 \begin{enumerate}[noitemsep]
 
-  \item \textbf{The deposition protocol and functional coverage limit are now confirmed;
-    the absolute $\Gamma_p$ on the fabricated electrode must still be measured.}
-    Wcis\l{}o~2021~\cit{11} provides a confirmed peptide-thiol deposition protocol
-    (5~mM ethanolic solution, 20~h, MCH backfill). Adj\'{e}mian~2010~\cit{12} confirms
-    the functional coverage regime ($\Gamma_0 \leq 10\ \text{pmol~cm}^{-2}$ for
-    $>$80\% cleavage yield with MCH backfill). The device target of 2--5~pmol~cm$^{-2}$
-    is within this regime. What remains unconfirmed is the \emph{actual} $\Gamma_p$
-    achieved on the fabricated SGKIPRTLTA--MB electrode under the adopted deposition
-    conditions. This must be measured directly by reductive desorption coulometry
-    (method: Widrig~\cit{6}) or equivalent before Layer~8 and Layer~9 outputs can be
-    quantified.
+  \item \textbf{Deposition parameters are a starting point; molar ratios and absolute
+    $\Gamma_p$ on the fabricated electrode must be measured.}
+    Wcis\l{}o~2021~\cit{11} provides a confirmed peptide-thiol deposition concentration
+    (5~mM ethanolic solution, 20~h); this device uses one-pot co-deposition of all three
+    thiols rather than the Wcis\l{}o two-step procedure, so the molar ratios of
+    probe-thiol, C6FC, and MCH in the deposition solution are unconfirmed and must be
+    optimised empirically. Adj\'{e}mian~2010~\cit{12} confirms the functional coverage
+    regime ($\Gamma_0 \leq 10\ \text{pmol~cm}^{-2}$ for $>$80\% cleavage yield,
+    measured with sequential MCH backfill); experimental confirmation on the one-pot
+    fabricated electrode is required. What remains unconfirmed is the \emph{actual}
+    $\Gamma_p$ achieved on the fabricated SGKIPRTLTA--MB electrode. This must be measured
+    directly by reductive desorption coulometry (method: Widrig~\cit{6}) or equivalent
+    before Layer~8 and Layer~9 outputs can be quantified.
 
   \item \textbf{No quantitative $k_{\mathrm{ox}}$ for H$_2$O$_2$ oxidation of thiol SAMs.}
     Schoenfisch and Pemberton \cit{5} measure SAM oxidation by O$_3$ in air, not by
