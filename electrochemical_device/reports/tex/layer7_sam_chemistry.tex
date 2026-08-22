@@ -189,21 +189,21 @@ surface density relative to probe-thiol density is not confirmed from any paper 
 \section{Deposition Protocol and Target Surface Density}
 \label{sec:deposition}
 
-\subsection{Confirmed deposition protocol}
+\subsection{Deposition protocol}
 
 Wcis{\l}o et~al.\ (2021)~\cit{11} describe immobilisation of a peptide-thiol substrate
 (SH--(CH$_2$)$_{10}$--CO--Arg-Val-Arg-Arg) on gold by a two-step sequential procedure:
 first immerse in the thiol solution, then backfill with 1-octanethiol. This device
 uses a different approach: all three components (probe-thiol, C6FC, MCH) are
 co-deposited simultaneously from a single mixed solution (\emph{one-pot deposition}).
-The two-step protocol of Wcis{\l}o~2021 is not directly applicable; only the
-deposition parameters (concentration, time) are adopted as a starting point.
+The Wcis{\l}o two-step protocol is not applicable; only the immersion time (20~h)
+and solvent choice (degassed ethanol) are adopted as a starting reference \cit{11}.
 
 The one-pot steps are:
 
 \begin{enumerate}[noitemsep]
   \item Immerse polished gold electrode in a mixed ethanolic solution containing
-    probe-thiol, C6FC, and MCH at a total thiol concentration of $\sim$5~mM for
+    probe-thiol, C6FC, and MCH at a total thiol concentration of 3.5~mM for
     20~h at room temperature. The molar ratios of the three components must be
     optimised empirically to achieve the target probe coverage.
   \item Rinse with ethanol and deionised water; dry under N$_2$.
@@ -211,10 +211,10 @@ The one-pot steps are:
     fouling is anticipated.
 \end{enumerate}
 
-The total deposition concentration ($\sim$5~mM) and time (20~h) are adopted from
-Wcis{\l}o~2021~\cit{11} as a starting point; exact optimisation for the
-SGKIPRTLTA--MB probe at the correct molar ratio must be confirmed by measuring
-$\Gamma_p$ on the fabricated electrode.
+The total deposition concentration (3.5~mM) is the device-planned value and has not
+been sourced from any paper in \texttt{papers/layer\_07/}; it must be optimised by
+measuring $\Gamma_p$ on the fabricated electrode. The immersion time (20~h) is
+adopted from Wcis{\l}o~2021~\cit{11} as a starting point.
 
 \subsection{Langmuir adsorption framework}
 \label{sec:langmuir}
@@ -339,7 +339,7 @@ directly from the electrode response.
 \toprule
 \textbf{Parameter} & \textbf{Status} & \textbf{Source} \\
 \midrule
-Deposition protocol & Confirmed (5~mM total thiol, 20~h); one-pot molar ratios unconfirmed & Wcis\l{}o~2021~\cit{11} \\
+Deposition protocol & 3.5~mM total thiol, 20~h (one-pot); concentration and molar ratios unconfirmed from literature & Device-planned; 20~h from Wcis\l{}o~2021~\cit{11} \\
 Functional $\Gamma_p$ limit & Confirmed ($\leq 10\ \text{pmol~cm}^{-2}$) & Adj\'{e}mian~2010~\cit{12} \\
 $k_{\text{cat}}$, $K_m$ for SGKIPRTLTA & Confirmed (86.4~s$^{-1}$, 1.3~mM) & Kridel~2001~\cit{10} \\
 Absolute $\Gamma_p$ on fabricated electrode & \textbf{Unconfirmed}: must be measured & Coulometric integration \\
@@ -359,8 +359,10 @@ Once $\Gamma_p$ is established from the literature, the average probe spacing is
   \ell &= (\Gamma_p \cdot N_A)^{-1/2} \label{eq:spacing}
 \end{align}
 
-For the sensor to function, MMP-9 (molecular weight 92~kDa, hydrodynamic radius
-$\approx 3$--4~nm) must approach and bind each surface-immobilised peptide. This
+For the sensor to function, MMP-9 (proenzyme molecular weight $\approx$92~kDa and
+hydrodynamic radius $\approx 3$--4~nm, estimated from MW assuming globular geometry;
+neither value confirmed from any paper in \texttt{papers/layer\_07/}) must approach
+and bind each surface-immobilised peptide. This
 imposes the requirement $\ell \gtrsim 2 \times r_{\text{MMP-9}} \approx 6$--8~nm,
 corresponding to $\Gamma_p \lesssim 3$~pmol~cm$^{-2}$. At higher probe densities,
 neighbouring probe molecules sterically block enzyme access, reducing the effective
@@ -393,8 +395,8 @@ device, two properties must be distinguished.
 \emph{Au-S bond thermodynamics} (desorption potential, bond energy) are governed by the
 gold--sulphur bond itself, which is identical for a cysteine-thiol (Cys-SH) and an
 alkanethiol anchor. The thermodynamic desorption potential and the observation that
-aqueous exchange is negligible are therefore applicable to the Cys-anchored probe and
-MCH components of this SAM.
+aqueous exchange is negligible are therefore applicable to the Cys-anchored probe,
+C6FC, and MCH components of this SAM.
 
 \emph{Kinetic rate constants} (oxidation rate, exchange rate, desorption peak shape)
 depend on the SAM packing geometry, chain ordering, and solvent penetration. The
@@ -426,6 +428,8 @@ is reflected in their standard reduction potentials:
   \label{eq:redox}
 \end{equation}
 
+(Standard IUPAC reduction potentials; no primary paper in \texttt{papers/layer\_07/}
+required for these fundamental thermodynamic constants.)
 The 310~mV thermodynamic advantage of O$_3$ corresponds to a rate advantage of several
 orders of magnitude for thiolate oxidation. The Schoenfisch data therefore provide a
 conservative upper bound: even under the harshest oxidative conditions tested (ambient O$_3$
@@ -649,11 +653,11 @@ $\Delta I/I_0$ is Ca$^{2+}$-independent in the assay buffer is recommended.
 
   \item \textbf{Deposition parameters are a starting point; molar ratios and absolute
     $\Gamma_p$ on the fabricated electrode must be measured.}
-    Wcis\l{}o~2021~\cit{11} provides a confirmed peptide-thiol deposition concentration
-    (5~mM ethanolic solution, 20~h); this device uses one-pot co-deposition of all three
-    thiols rather than the Wcis\l{}o two-step procedure, so the molar ratios of
-    probe-thiol, C6FC, and MCH in the deposition solution are unconfirmed and must be
-    optimised empirically. Adj\'{e}mian~2010~\cit{12} confirms the functional coverage
+    This device uses one-pot co-deposition of all three thiols (3.5~mM total thiol,
+    20~h in ethanol) rather than any literature two-step procedure. The 3.5~mM
+    concentration and molar ratios of probe-thiol, C6FC, and MCH are not sourced from
+    any paper in \texttt{papers/layer\_07/} and must be optimised empirically; the 20~h
+    immersion time is adopted from Wcis\l{}o~2021~\cit{11} as a starting reference. Adj\'{e}mian~2010~\cit{12} confirms the functional coverage
     regime ($\Gamma_0 \leq 10\ \text{pmol~cm}^{-2}$ for $>$80\% cleavage yield,
     measured with sequential MCH backfill); experimental confirmation on the one-pot
     fabricated electrode is required. What remains unconfirmed is the \emph{actual}
