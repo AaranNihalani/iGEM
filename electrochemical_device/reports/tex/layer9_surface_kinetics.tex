@@ -1,0 +1,650 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% ---- Section numbering: Roman numerals ---------------------------------
+\renewcommand\thesection{\Roman{section}}
+% ---- Equation numbering: (I.1), (II.2), etc. ---------------------------
+\numberwithin{equation}{section}
+
+% ---- Section formatting ------------------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+% ---- Page headers ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Layer~9: Surface Enzyme Kinetics}}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+% ---- Macros ------------------------------------------------------------
+\newcommand{\Mms}{\text{M}^{-1}\text{s}^{-1}}
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\kcat}{k_{\text{cat}}}
+\newcommand{\keff}{k_{\text{eff}}}
+\newcommand{\GS}{\Gamma_S}
+\newcommand{\GES}{\Gamma_{ES}}
+\newcommand{\GP}{\Gamma_P}
+\newcommand{\Gstar}{\Gamma^{*}}
+\newcommand{\Gz}{\Gamma_0}
+\newcommand{\Da}{\mathrm{Da}}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Layer 9: Surface Enzyme Kinetics}\\[0.4em]
+{\large Cleavage Kinetics of Surface-Immobilised SGKIPRTLTA by MMP-9}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer~9 of 17-Layer Biosensor Pipeline \quad$|$\quad
+\texttt{surface\_kinetics.py}}
+\end{center}
+\vspace{0.6em}
+
+%=======================================================================
+\section{Physical Picture}
+\label{sec:physical}
+
+The biosensor probe SGKIPRTLTA is surface-immobilised on the gold electrode via a
+Cys-thiol anchor and carries a methylene blue (MB) redox label at the C-terminal
+lysine. At surface concentration $\Gz$ (mol~cm$^{-2}$), the intact probe keeps MB
+tethered close to the electrode; MMP-9 cleavage releases the MB-bearing fragment
+into solution, decreasing the SWV peak current. The fractional cleavage $F_k(t)$
+is therefore the central output of this layer and the direct precursor of the
+ratiometric signal $\Delta R/R_0$ (Layer~13).
+
+The governing kinetics are heterogeneous: the enzyme ($E$, MMP-9) diffuses freely
+in solution while the substrate ($S$, probe) is fixed at the surface. Classical
+solution-phase Michaelis--Menten equations, derived under the condition
+$[S] \gg [E]$, do not apply in this configuration because the total molar quantity
+of surface-immobilised peptide ($\Gz \cdot A \sim 10$~fmol) can be comparable to
+or less than the bulk enzyme content. Anne and Demaille~\cit{1} derived exact
+kinetic equations for this heterogeneous surface mechanism without invoking the
+steady-state approximation.
+
+The enzyme input $[E]_t = [\text{MMP-9}]_{\text{free}}$ is taken directly from the
+Layer~0 wound biology ODE output: 30~nM (chronic wound, 30-min equilibration) and
+6~nM (healing wound). TIMP-1 inhibition is fully accounted for in these values;
+no further correction is needed here.
+
+%=======================================================================
+\section{Three-State Surface ODE System}
+\label{sec:ode}
+
+\subsection{Reaction mechanism}
+
+The surface enzyme reaction follows the Michaelis--Menten mechanism with the
+substrate anchored to the surface~\cit{1}:
+\begin{equation}
+  S + E \;\underset{k_{-1}}{\overset{k_1}{\rightleftharpoons}}\; ES
+           \;\xrightarrow{\;\kcat\;}\; P + E
+  \label{eq:mechanism}
+\end{equation}
+where $S$, $ES$, $P$ are surface species with concentrations $\GS$, $\GES$,
+$\GP$ (mol~cm$^{-2}$); $k_1$ (M$^{-1}$s$^{-1}$) is the second-order binding rate
+constant; $k_{-1}$ (s$^{-1}$) is the dissociation rate constant; and $\kcat$
+(s$^{-1}$) is the catalytic rate constant. The enzyme concentration at the
+electrode surface $[E]_t$ (M) is treated as constant throughout (justified in
+Section~\ref{sec:dimensionless}).
+
+\subsection{Governing ODEs}
+
+The time evolution of each surface species is~\cit{1} (Eq.~1):
+\begin{equation}
+  \label{eq:odes}
+  \frac{d\GS}{dt}  = k_{-1}\,\GES - k_1[E]_t\,\GS, \qquad
+  \frac{d\GES}{dt} = k_1[E]_t\,\GS - (k_{-1}+\kcat)\,\GES, \qquad
+  \frac{d\GP}{dt}  = \kcat\,\GES
+\end{equation}
+with surface conservation and initial conditions:
+\begin{equation}
+  \label{eq:conservation}
+  \GS + \GES + \GP = \Gz, \qquad
+  \GS(0) = \Gz,\quad \GES(0) = \GP(0) = 0
+\end{equation}
+Introducing the unconverted substrate $\Gstar = \GS + \GES$ and defining
+$k_1^* = k_1[E]_t$, the system reduces to the two-variable form used by
+Anne and Demaille~\cit{1} for the Laplace analysis:
+\begin{equation}
+  \label{eq:reduced}
+  \frac{d\GES}{dt} = k_1^*\,\Gstar - (k_1^* + k_{-1} + \kcat)\,\GES,
+  \qquad
+  \frac{d\Gstar}{dt} = -\kcat\,\GES
+\end{equation}
+
+%=======================================================================
+\section{Analytic Solutions}
+\label{sec:analytic}
+
+\subsection{Steady-state approximation}
+
+Setting $d\GES/dt = 0$ in Eq.~\eqref{eq:reduced} and substituting the conservation
+constraint yields the steady-state progress curve~\cit{1} (Eq.~3):
+\begin{equation}
+  \label{eq:ss}
+  \theta_P^{\text{ss}} = \frac{\GP}{\Gz} = 1 - \exp(-\keff\,t), \qquad
+  \keff = \frac{\kcat}{1 + K_M/[E]_t}, \quad
+  K_M = \frac{k_{-1} + \kcat}{k_1}
+\end{equation}
+This is the Langmuirian (LG) progress curve. In the linear regime
+($[E]_t \ll K_M$): $\keff \approx (\kcat/K_M)[E]_t \equiv \keff^{\text{surf}}[E]_t$,
+giving a simple pseudo-first-order decay.
+
+\subsection{Exact biexponential solution}
+
+The reduced system Eq.~\eqref{eq:reduced} is linear and solved exactly via Laplace
+transform~\cit{1}. Define the composite parameters:
+\begin{equation}
+  \label{eq:composite}
+  k_1^* = k_1[E]_t, \qquad
+  \sigma = k_1^* + k_{-1} + \kcat, \qquad
+  \Delta = \sigma^2 - 4k_1^*\kcat > 0
+\end{equation}
+The exact solutions are~\cit{1} (Eqs.~4--5):
+\begin{align}
+  \GES(t) &= \frac{k_1^*\,\Gz}{\sqrt{\Delta}}
+    \left[\exp\!\left(-\frac{\sigma-\sqrt{\Delta}}{2}\,t\right)
+         -\exp\!\left(-\frac{\sigma+\sqrt{\Delta}}{2}\,t\right)\right]
+  \label{eq:Ges} \\[0.5em]
+  \Gstar(t) &= \frac{\Gz}{2\sqrt{\Delta}}
+    \left[(\sigma+\sqrt{\Delta})\exp\!\left(-\frac{\sigma-\sqrt{\Delta}}{2}\,t\right)
+         -(\sigma-\sqrt{\Delta})\exp\!\left(-\frac{\sigma+\sqrt{\Delta}}{2}\,t\right)\right]
+  \label{eq:Gstar}
+\end{align}
+The fractional product coverage (fractional cleavage) is then:
+\begin{equation}
+  \label{eq:Fk_biexp}
+  F_k(t) = \theta_P(t) = 1 - \frac{\Gstar(t)}{\Gz}
+\end{equation}
+
+\subsection{$\lambda$ parameter and dimensionless universal form}
+
+Anne and Demaille~\cit{1} introduce the dimensionless kinetic zone parameter:
+\begin{equation}
+  \label{eq:lambda}
+  \lambda = \frac{\sigma}{\sqrt{\Delta}}
+  = \frac{1}{\sqrt{1 - 4k_1^*\kcat/\sigma^2}}
+  = \frac{1}{\sqrt{1 - 4k_1\kcat[E]_t\,/\,(k_1^*+k_{-1}+\kcat)^2}}
+  \geq 1
+\end{equation}
+and the dimensionless time $\tau = \sigma(1 - 1/\lambda)\,t$. In these variables the
+exact progress curve Eq.~\eqref{eq:Fk_biexp} becomes~\cit{1} (Eq.~7):
+\begin{equation}
+  \label{eq:theta_exact}
+  \theta_P(\tau,\lambda) = 1 - \frac{1}{2}\!\left\{
+    (1+\lambda)\exp\!\left[-\frac{\tau}{2}\right]
+    +(1-\lambda)\exp\!\left[-\frac{1}{2}\frac{\lambda+1}{\lambda-1}\,\tau\right]
+  \right\}
+\end{equation}
+This single equation captures the entire range of possible kinetic behaviours
+through the value of $\lambda$ alone~\cit{1}. Two limiting cases are:
+\begin{itemize}[noitemsep]
+  \item \textbf{LG limit} ($\lambda \to 1$): Eq.~\eqref{eq:theta_exact}
+    reduces to $\theta_P = 1 - \exp(-\tau/2)$, a simple monoexponential.
+    The steady-state approximation is exact.
+    Diagnostic: $t_{1/2}/t_{1/4} \to 2.41$~\cit{1}.
+  \item \textbf{FS limit} ($\lambda \gg 1$): Eq.~\eqref{eq:theta_exact}
+    reduces to~\cit{1} (Eq.~8):
+    \begin{equation}
+      \label{eq:fs}
+      \theta_P = 1 - \!\left(1 + \frac{\tau}{2}\right)\exp\!\left(-\frac{\tau}{2}\right)
+    \end{equation}
+    The progress curve is S-shaped (sigmoidal foot at short times).
+    The steady-state approximation overestimates $\theta_P$ and fails here.
+    Diagnostic: $t_{1/2}/t_{1/4} \to 1.75$~\cit{1}.
+\end{itemize}
+The zone diagram~\cit{1} (Fig.~4) maps these regimes in
+$\log(k_{-1}/\kcat) - \log([E]_t/K_M)$ space. The LG zone applies when
+$k_{-1}/\kcat \gg \Phi$, where $\Phi = 4[E]_t/K_M\,/(1+[E]_t/K_M)^2$, or
+unconditionally when $[E]_t/K_M \leq 0.2$ or $[E]_t/K_M \geq 5$.
+
+%=======================================================================
+\section{Kinetic Regime at Clinical MMP-9 Concentrations}
+\label{sec:regime}
+
+\subsection{$\lambda \approx 1$: the Langmuirian limit is guaranteed}
+
+At clinical concentrations $[E]_t \in [0.19,\,2.17]$~nM and any physically
+realisable binding rate constant $k_1 \leq 10^8\ \Mms$ (diffusion limit for
+a 92~kDa enzyme):
+\begin{equation}
+  \label{eq:k1star}
+  k_1^* = k_1[E]_t \leq 10^8 \times 2.17\times10^{-9} = 0.22\ \text{s}^{-1}
+\end{equation}
+The solution-phase value $\kcat^{\text{sol}} = 86.4$~s$^{-1}$~\cit{2} is an upper
+bound for the surface $\kcat$. In the regime $k_1^* \ll \kcat$:
+\begin{equation}
+  \label{eq:lambda_approx}
+  \Delta \approx (k_{-1}+\kcat)^2 + 2k_1^*(k_{-1}-\kcat) \approx (k_{-1}+\kcat)^2,
+  \quad
+  \lambda = \frac{k_1^*+k_{-1}+\kcat}{\sqrt{\Delta}} \approx 1 + O\!\left(\frac{k_1^*}{\kcat}\right)
+\end{equation}
+Since $k_1^*/\kcat^{\text{sol}} \leq 2.5\times10^{-3}$, we have $\lambda - 1 < 3\times10^{-3}$
+regardless of the unknown surface $k_{-1}$. The system is firmly in the LG zone.
+
+\subsection{Collapse to monoexponential}
+
+In the LG limit, the exact biexponential Eq.~\eqref{eq:theta_exact} degenerates
+to the Langmuirian monoexponential irrespective of the $k_{-1}/\kcat$ ratio:
+\begin{equation}
+  \label{eq:monoexp}
+  \boxed{F_k(t) = 1 - \exp\!\left(-\keff^{\text{surf}}\,[E]_t\,t\right)}
+\end{equation}
+where $\keff^{\text{surf}} \equiv \kcat^{\text{surf}}/K_M^{\text{surf}}$ is the single
+measurable surface rate constant. This result is notable: the unknowns $k_1$, $k_{-1}$,
+and $\kcat^{\text{surf}}$ individually are inaccessible at clinical $[E]_t$, but
+the product $\keff^{\text{surf}}[E]_t$ is directly fit from the progress curve. The
+complex accumulates at sub-ppm levels ($\GES/\Gz < 10^{-3}$) and is kinetically invisible.
+
+The solution upper bound is $\keff^{\text{surf}} \leq \kcat^{\text{sol}}/K_m^{\text{sol}}
+= 67{,}500\ \Mms$~\cit{2}. Surface immobilisation reduces this by $2$--$100\times$
+depending on steric accessibility (Layer~8); the surface value must be measured on the
+fabricated electrode.
+
+%=======================================================================
+\section{Dimensionless Analysis}
+\label{sec:dimensionless}
+
+Three dimensionless numbers characterise the device operating regime and validate the
+sequential layer architecture.
+
+\subsection{Kinetic zone parameter $\lambda$}
+
+From Section~\ref{sec:regime}: $\lambda \approx 1$ for all clinical $[E]_t$.
+The monoexponential Eq.~\eqref{eq:monoexp} is the appropriate model.
+The zone parameter provides an experimental diagnostic: if the measured progress
+curve shows $t_{1/2}/t_{1/4}$ significantly below 2.41, the system has left the LG
+zone and the full exact solution Eq.~\eqref{eq:theta_exact} must be used.
+
+\subsection{Damk\"{o}hler number: transport does not limit}
+
+The Damk\"{o}hler number compares the surface reaction rate to the enzyme delivery
+rate by diffusion~\cit{4}:
+\begin{equation}
+  \label{eq:Da}
+  \Da = \frac{\keff^{\text{surf}}\,[E]_t\,h}{D_E}
+\end{equation}
+where $h \approx 100\ \mu$m is the diffusion layer height (Layer~3) and
+$D_E \approx 4.7\times10^{-7}$~cm$^2$s$^{-1}$ is the MMP-9 diffusion coefficient
+(Stokes--Einstein, Layer~3). At the solution upper bound with $[E]_t = 2.17$~nM:
+\begin{equation}
+  \label{eq:Da_eval}
+  \Da^{\text{max}} = \frac{67{,}500 \times 2.17\times10^{-9} \times 10^{-2}}{4.7\times10^{-7}}
+  \approx 3.1\times10^{-3} \ll 1
+\end{equation}
+The electrode surface sees the bulk enzyme concentration to within $<0.4\%$ at all times.
+For any plausible surface $\keff^{\text{surf}} < 67{,}500\ \Mms$, $\Da$ is smaller still.
+The Layer~3 mass-transport correction is negligible; $[E]_t$ in Eq.~\eqref{eq:monoexp}
+is the bulk concentration from Layer~0 throughout.
+
+The Damk\"{o}hler criterion is consistent with the general analysis of Squires
+et~al.~\cit{4}: for $\Da \ll 1$ the sensor operates in the reaction-limited regime
+where signal is proportional to the surface reaction rate, not the diffusion flux,
+and the response is linear in enzyme concentration at short times.
+
+\subsection{Enzyme conservation: $[E]_t$ is constant}
+
+MMP-9 is a true catalyst: it is released intact after each cleavage event
+(Eq.~\eqref{eq:mechanism}). The bulk enzyme concentration $[E]_t$ therefore does
+not decrease as $\GP$ increases. This is distinct from, for example, irreversible
+inhibitors. The constancy of $[E]_t$ is a consequence of the catalytic mechanism,
+not an approximation, and holds for all $t$ regardless of $F_k$.
+
+%=======================================================================
+\section{Coupled PDE--ODE Numerical Treatment}
+\label{sec:coupled}
+
+\subsection{Full coupled system}
+
+For completeness, and to verify the $\Da \ll 1$ approximation, the full coupled
+system -- Layer~3 diffusion PDE and Layer~9 surface ODE -- is solved simultaneously:
+\begin{align}
+  \frac{\partial [E]}{\partial t} &= D_E\,\frac{\partial^2[E]}{\partial z^2},
+    \quad 0 < z < h \label{eq:pde} \\
+  \frac{d\GES}{dt} &= k_1^*\Gstar - (k_1^* + k_{-1} + \kcat)\GES
+    \quad \text{with } k_1^* = k_1[E](z{=}0,t) \label{eq:ode_coupled}
+\end{align}
+with boundary conditions:
+\begin{equation}
+  \left.D_E\,\frac{\partial[E]}{\partial z}\right|_{z=0} = \kcat\,\GES(t)
+  \quad\text{(flux = cleavage consumption)}, \qquad
+  [E](h,t) = [E]_{\text{bulk}}
+  \label{eq:bc}
+\end{equation}
+Solved numerically: Crank--Nicolson finite difference for the PDE, RK4 for the surface
+ODE, coupled at each timestep through the $z=0$ boundary condition.
+
+\subsection{Verification of the decoupled limit}
+
+For $\Da \ll 1$, the PDE solution gives $[E](0,t) \approx [E]_{\text{bulk}}$ to
+within $\Da/(1+\Da) < 0.4\%$. The surface ODE then has a constant-coefficient
+enzyme input and reduces exactly to Eq.~\eqref{eq:monoexp}. The coupled simulation
+(\texttt{surface\_kinetics.py}) confirms this: the full PDE--ODE $F_k(t)$ is
+indistinguishable from the analytic monoexponential at all clinical $[E]_t$ values.
+The decoupled monoexponential is therefore used for all subsequent analysis.
+
+%=======================================================================
+\section{$F_k(t)$ Output and Optimal Readout Time}
+\label{sec:Fk}
+
+\subsection{Progress curves}
+
+From Eq.~\eqref{eq:monoexp}, the fractional cleavage at incubation time $T$:
+\begin{equation}
+  \label{eq:Fk}
+  F_k(T) = 1 - \exp\!\left(-\keff^{\text{surf}}\,[E]_t\,T\right)
+\end{equation}
+In the linear regime ($\keff^{\text{surf}}[E]_t T \ll 1$):
+\begin{equation}
+  \label{eq:Fk_linear}
+  F_k(T) \approx \keff^{\text{surf}}\,[E]_t\,T
+\end{equation}
+The ratio of chronic to healing fractional cleavage is:
+\begin{equation}
+  \label{eq:ratio_linear}
+  \frac{F_k^{\text{chronic}}}{F_k^{\text{healing}}} \approx
+  \frac{[E]_{\text{chronic}}}{[E]_{\text{healing}}} = \frac{30\ \text{nM}}{6\ \text{nM}} = 5\times
+\end{equation}
+independent of $\keff^{\text{surf}}$ and $T$. The 5$\times$ discrimination ratio
+is therefore robust across the entire plausible range of surface rate constants.
+
+\subsection{Optimal readout time $T^*$}
+
+In the linear regime, $F_k \propto [E]_t T$, so the ratio $F_k^c/F_k^h$ is
+always $5\times$ regardless of $T$. The optimal incubation time is then as long as
+possible before signal saturation ($F_k \to 1$).
+
+In the exponential (nonlinear) regime, the \emph{absolute} signal difference
+$\Delta F_k = F_k^{\text{chronic}} - F_k^{\text{healing}}$ varies with $T$.
+Maximising $\Delta F_k$ gives the optimal readout time. Setting
+$d(\Delta F_k)/dT = 0$:
+\begin{align}
+  \keff^{\text{surf}}\,[E]_c\,\exp\!\left(-\keff^{\text{surf}}[E]_c T\right)
+  &= \keff^{\text{surf}}\,[E]_h\,\exp\!\left(-\keff^{\text{surf}}[E]_h T\right) \nonumber\\
+  \Rightarrow\quad
+  T^* &= \frac{\ln([E]_c/[E]_h)}{\keff^{\text{surf}}\,([E]_c - [E]_h)}
+  \label{eq:Tstar}
+\end{align}
+With $[E]_c = 30$~nM, $[E]_h = 6$~nM, and ratio $r = 5$:
+\begin{equation}
+  \label{eq:Tstar_eval}
+  T^* = \frac{\ln 5}{\keff^{\text{surf}} \times 24\ \text{nM}}
+  = \frac{1.609}{\keff^{\text{surf}} \times 2.4\times10^{-8}\ \text{M}}
+\end{equation}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+$\keff^{\text{surf}}$ (M$^{-1}$s$^{-1}$) & $T^*$ (s) & $T^*$ (min) \\
+\midrule
+$2{,}000$    & $33{,}500$ & 558 \\
+$10{,}000$   & $6{,}700$  & 112 \\
+$30{,}000$   & $2{,}230$  &  37 \\
+$67{,}500$ (sol.\ UB) & $990$ & 16 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The target incubation window of 30--60~min corresponds to
+$\keff^{\text{surf}} \approx 13{,}000$--$27{,}000\ \Mms$. If the measured
+$\keff^{\text{surf}}$ falls significantly below this, the incubation time must be
+extended accordingly.
+
+%=======================================================================
+\section{Temperature Dependence}
+\label{sec:temperature}
+
+\subsection{Arrhenius correction}
+
+The surface rate constant follows Arrhenius temperature dependence:
+\begin{equation}
+  \label{eq:arrhenius}
+  \keff^{\text{surf}}(T_{\text{amb}}) = \keff^{\text{surf}}(T_{\text{ref}})\,
+  \exp\!\left[-\frac{E_a}{R}\left(\frac{1}{T_{\text{amb}}} - \frac{1}{T_{\text{ref}}}\right)\right]
+\end{equation}
+where $E_a$ is the activation energy and $T_{\text{ref}} = 310$~K (37$^\circ$C).
+The relative sensitivity to ambient temperature is:
+\begin{equation}
+  \label{eq:arrhenius_sensitivity}
+  \frac{1}{\keff}\frac{d\keff}{dT_{\text{amb}}} = \frac{E_a}{R\,T_{\text{amb}}^2}
+\end{equation}
+\textit{The activation energy $E_a$ for MMP-9 surface cleavage of SGKIPRTLTA is not
+confirmed from any paper in \texttt{papers/layer\_09/}.} Using a typical
+metalloproteinase value $E_a \approx 45$~kJ~mol$^{-1}$ (unconfirmed placeholder):
+\begin{equation}
+  \left.\frac{d\ln\keff}{dT}\right|_{310\,\text{K}}
+  \approx \frac{45{,}000}{8.314 \times 310^2} \approx 5.6\%\ \text{per}\ {}^\circ\text{C}
+  \label{eq:temp_sensitivity}
+\end{equation}
+
+\subsection{Propagation to $F_k$}
+
+Let $x = \keff^{\text{surf}}[E]_t T$. The temperature sensitivity of $F_k$ is:
+\begin{equation}
+  \label{eq:dFdT}
+  \frac{\partial F_k}{\partial T_{\text{amb}}} = (1-F_k)\,x\,\frac{E_a}{R\,T_{\text{amb}}^2}
+  = (1-F_k)\,\left|\ln(1-F_k)\right|\,\frac{E_a}{R\,T_{\text{amb}}^2}
+\end{equation}
+At $F_k = 0.1$ (early signal, $x = 0.105$) and $\pm 1^\circ$C uncertainty:
+$\delta F_k \approx 0.1 \times 0.105 \times 0.056 \approx 6\times10^{-4}$,
+a 0.6\% absolute error on $F_k$. At $F_k = 0.5$ ($x = 0.693$):
+$\delta F_k \approx 0.5 \times 0.693 \times 0.056 \approx 1.9\%$.
+
+Temperature control or measurement is required if absolute $F_k$ accuracy
+$< 2\%$ is needed. The ratiometric signal $\Delta R/R_0$ is similarly affected
+since $F_k$ enters linearly (Layer~13). The discrimination \emph{ratio}
+$F_k^c/F_k^h$ is less sensitive: at short times both $F_k^c$ and $F_k^h$ scale
+with the same $\keff(T)$, so the ratio $[E]_c/[E]_h = 5\times$ is temperature-invariant.
+
+%=======================================================================
+\section{Multi-Protease Competition}
+\label{sec:competition}
+
+\subsection{General competition model}
+
+Wound fluid contains multiple proteases that may cleave SGKIPRTLTA. In the first-order
+(linear) regime, contributions add independently:
+\begin{equation}
+  \label{eq:competition}
+  \frac{dF_k}{dt} = k_{\text{obs,total}} = \sum_j k_{\text{eff},j}^{\text{surf}}\,[E_j]_t
+\end{equation}
+The fractional contribution of interferent $j$ to the observed cleavage signal is:
+\begin{equation}
+  \label{eq:interferent}
+  \xi_j = \frac{k_{\text{eff},j}^{\text{surf}}\,[E_j]_t}{k_{\text{obs,total}}}
+\end{equation}
+MMP-9 selectivity requires $\xi_{\text{MMP-9}} \approx 1$, i.e.\
+$k_{\text{eff,MMP-9}}^{\text{surf}}[E_{\text{MMP-9}}] \gg \sum_{j \neq \text{MMP-9}}
+k_{\text{eff},j}^{\text{surf}}[E_j]$.
+
+\subsection{Known interferents and status}
+
+\begin{tabular}{llll}
+\toprule
+Interferent & $[E_j]$ source & $k_{\text{eff},j}^{\text{surf}}$ status & Risk \\
+\midrule
+HNE    & 30~nM chronic (Layer~0, Trengove~1999) & Unconfirmed & Moderate \\
+MMP-2  & Wound fluid present, conc.\ unconfirmed & Unconfirmed & Low--moderate \\
+MMP-8  & Wound fluid present, conc.\ unconfirmed & Unconfirmed & Low \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textit{No paper in \texttt{papers/layer\_09/} provides $k_{\text{eff}}^{\text{surf}}$ for any
+interferent protease on SGKIPRTLTA. The competition fractions $\xi_j$ cannot be
+computed until these are measured.} HNE is the highest-priority interferent given its
+confirmed elevated concentration in chronic VLU and its Ser-protease activity
+overlapping with some MMP substrates.
+
+%=======================================================================
+\section{Uncertainty Propagation}
+\label{sec:uncertainty}
+
+\subsection{Analytic uncertainty in $F_k$}
+
+Let $x = \keff^{\text{surf}}[E]_t T$, so $F_k = 1 - e^{-x}$. The partial
+derivatives are:
+\begin{equation}
+  \label{eq:partials}
+  \frac{\partial F_k}{\partial \keff} = \frac{x}{\keff}\,e^{-x}, \qquad
+  \frac{\partial F_k}{\partial [E]_t} = \frac{x}{[E]_t}\,e^{-x}, \qquad
+  \frac{\partial F_k}{\partial T} = \frac{x}{T}\,e^{-x}
+\end{equation}
+By standard propagation:
+\begin{equation}
+  \label{eq:sigma_Fk}
+  \sigma_{F_k} = e^{-x}\,x\;\sqrt{
+    \left(\frac{\sigma_{\keff}}{\keff}\right)^2
+    +\left(\frac{\sigma_{[E]}}{[E]_t}\right)^2
+    +\left(\frac{\sigma_T}{T}\right)^2}
+  = (1-F_k)\,\left|\ln(1-F_k)\right|\,\sigma_{\text{rel,total}}
+\end{equation}
+
+\subsection{Dominant uncertainty sources}
+
+\begin{tabular}{lll}
+\toprule
+Source & Relative uncertainty $\sigma/\mu$ & Status \\
+\midrule
+$\keff^{\text{surf}}$ & Unknown; plausible range $2{,}000$--$67{,}500\ \Mms$ (factor $34\times$) & Dominant until measured \\
+$[E]_t$ & $\sim15$--$20\%$ (Layer~0 ODE; healing estimate approximate) & Secondary \\
+$T$ (incubation) & $\sim1$--$2\%$ (timer precision) & Negligible \\
+$T_{\text{amb}}$ & $\sim0.6\%$ per ${}^\circ$C (Eq.~\ref{eq:temp_sensitivity}) & Tertiary \\
+\bottomrule
+\end{tabular}
+
+\medskip
+The dominant uncertainty is $\keff^{\text{surf}}$, which spans more than an order of
+magnitude before electrode calibration. All $F_k$ predictions are therefore presented
+as parametric sweeps over the plausible $\keff^{\text{surf}}$ range. Once the
+fabricated electrode is measured (Layer~15 calibration), $\keff^{\text{surf}}$ is
+pinned to $\pm 5$--$10\%$ and $\sigma_{F_k}$ is determined by $\sigma_{[E]}$ alone.
+
+%=======================================================================
+\section{Parameter Table and Layer Outputs}
+\label{sec:params}
+
+\rowcolors{2}{gray!8}{white}
+\begin{tabularx}{\linewidth}{lXlll}
+\toprule
+Parameter & Description & Value & Source & Confirmed \\
+\midrule
+$\kcat^{\text{sol}}$ & Solution-phase catalytic rate for SGKIPRTLTA & 86.4~s$^{-1}$ & Kridel~2001~\cit{2} Table~II & Yes \\
+$K_m^{\text{sol}}$ & Solution-phase Michaelis constant & 1.28~mM & Kridel~2001~\cit{2} Table~II & Yes \\
+$(\kcat/K_m)^{\text{sol}}$ & Solution efficiency (UB for surface) & $67{,}500\ \Mms$ & Kridel~2001~\cit{2} Table~II & Yes \\
+$[E]_t^{\text{chronic}}$ & Free MMP-9 at 30-min read, chronic & 30~nM & Layer~0 ODE & Yes \\
+$[E]_t^{\text{healing}}$ & Free MMP-9 at 30-min read, healing & 6~nM & Layer~0 ODE & Yes \\
+$\Gz$ & Initial surface probe density & $\sim$5~pmol~cm$^{-2}$ & Layer~7 (device-planned) & No \\
+$\keff^{\text{surf}}$ & Surface rate constant & To be measured & Layer~15 calibration & No \\
+$K_m^{\text{surf}}$ & Surface Michaelis constant & To be measured & Layer~15 calibration & No \\
+$E_a$ & Activation energy for surface cleavage & $\sim$45~kJ~mol$^{-1}$ placeholder & Not in \texttt{papers/layer\_09/} & No \\
+$A$ & Electrode area & $\sim$0.002~cm$^2$ & Device-planned & No \\
+$k_{\text{eff},j}^{\text{surf}}$ & Surface rate constant for interferents & Unknown & Not in \texttt{papers/layer\_09/} & No \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\noindent\textbf{Layer outputs.}
+\begin{itemize}[noitemsep]
+  \item $F_k(T)$: fractional cleavage as function of incubation time $\to$ Layer~13 (ratiometric signal $\Delta R/R_0$)
+  \item $k_{\text{obs}} = \keff^{\text{surf}}[E]_t$: pseudo-first-order rate $\to$ Layer~14 (noise budget)
+  \item $T^*$: optimal incubation time (Eq.~\eqref{eq:Tstar}) $\to$ device protocol
+  \item $\keff^{\text{surf}}$ (post-calibration) $\to$ Layer~1 (dilution factor), Layer~15 (calibration curve)
+\end{itemize}
+
+%=======================================================================
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{enumerate}[leftmargin=*]
+
+  \item \textbf{$\keff^{\text{surf}}$ is unknown; all $F_k$ predictions are parametric.}
+    The surface rate constant $\keff^{\text{surf}}$ must be measured on the fabricated
+    electrode before any absolute signal or LOD can be specified. The solution upper bound
+    $\kcat^{\text{sol}}/K_m^{\text{sol}} = 67{,}500\ \Mms$~\cit{2} is the starting
+    assumption; surface immobilisation typically reduces this by $2$--$100\times$
+    (Layer~8 steric correction, Adjémian~2010~\cit{3}). Until calibration, the plausible
+    range spans $2{,}000$--$67{,}500\ \Mms$ and $T^*$ spans 16~min to $>9$~h.
+
+  \item \textbf{$K_M^{\text{surf}}$ and the LG zone assumption require experimental
+    verification.} The $\lambda \approx 1$ conclusion holds for any $k_1 \leq 10^8\ \Mms$
+    and $[E]_t \leq 2.17$~nM. However, if the effective surface $K_M^{\text{surf}}$ is
+    pushed above $\sim 100$~nM by steric crowding (putting $[E]_t/K_M^{\text{surf}}$
+    above 0.02), the system could enter a regime where the exact biexponential
+    Eq.~\eqref{eq:theta_exact} is needed for accurate fitting. The diagnostic ratio
+    $t_{1/2}/t_{1/4} \to 2.41$ (LG) vs.\ $\to 1.75$ (FS) should be measured~\cit{1}.
+
+  \item \textbf{Temperature dependence is unconfirmed.}
+    The Arrhenius activation energy $E_a$ for MMP-9 cleavage of SGKIPRTLTA on a
+    surface is not reported in any paper in \texttt{papers/layer\_09/}. The 5.6\%~per
+    ${}^\circ$C figure is a placeholder based on typical metalloproteinase values. A
+    temperature-controlled incubation or in-situ temperature measurement is required
+    for absolute $F_k$ accuracy.
+
+  \item \textbf{Interferent cross-reactivity is unquantified.}
+    The surface rate constants $k_{\text{eff},j}^{\text{surf}}$ for HNE, MMP-2, MMP-8, and
+    other wound-fluid proteases on SGKIPRTLTA are not reported in any paper in
+    \texttt{papers/layer\_09/}. The selectivity fractions $\xi_j$ cannot be computed.
+    HNE is the priority interferent given its confirmed elevated chronic wound
+    concentration (30~nM, Layer~0~\cit{2}) and potential serine-protease activity on
+    the substrate.
+
+  \item \textbf{Solution-to-surface $K_m$ conversion requires $\delta_{\text{eff}}$
+    from Layer~8.}
+    The effective surface Michaelis constant is related to the solution value by
+    $K_M^{\text{surf}} \approx K_m^{\text{sol}}\,\delta_{\text{eff}}$, where
+    $\delta_{\text{eff}}$ is the effective thickness of the accessible probe layer
+    (Layer~8, unconfirmed). Until $\delta_{\text{eff}}$ is established, $K_M^{\text{surf}}$
+    cannot be predicted from $K_m^{\text{sol}}$ alone.
+
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_09/}.
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+
+\item Anne A, Demaille C (2012). Kinetics of enzyme action on surface-attached substrates:
+  a practical guide to progress curve analysis in any kinetic situation.
+  \textit{Langmuir} 28:14665--14671.
+  \textbf{anne\_demaille2012.pdf} -- ODE system (Eq.~1), exact biexponential solution
+  (Eqs.~4--5), $\lambda$ parameter (Eq.~6 region), universal progress curve (Eq.~7),
+  FS limit (Eq.~8), zone diagram (Fig.~4): all confirmed from text.
+
+\item Kridel SJ, Chen E, Howard EW, Bhatt L, Strongin AY (2001). Substrate hydrolysis
+  by matrix metalloproteinase-9.
+  \textit{J Biol Chem} 276:20572--20578.
+  \textbf{kridel2001.pdf} -- $\kcat = 86.4$~s$^{-1}$, $K_m = 1.28$~mM,
+  $\kcat/K_m = 67{,}500\ \Mms$ for SGKIPRTLTA (peptide A11), Table~II confirmed.
+
+\item Adjémian J, Anne A, Cauet G, Demaille C (2010). Cleavage-sensing peptide-enzyme
+  multilayer gold surfaces for the parallel, selective, and sensitive assay of trypsin
+  and plasmin activities by electrochemical methods.
+  \textit{Langmuir} 26:10347--10356.
+  \textbf{adjemian2010.pdf} -- experimental surface cleavage yields and $\Gz$ context.
+
+\item Squires TM, Messinger RJ, Manalis SR (2008). Making it stick: convection,
+  reaction and diffusion in surface-based biosensors.
+  \textit{Nat Biotechnol} 26:417--426.
+  \textbf{squires2008.pdf} -- Damk\"{o}hler number framework for reaction-limited
+  vs.\ transport-limited biosensor regimes.
+
+\end{enumerate}
+
+\end{document}
