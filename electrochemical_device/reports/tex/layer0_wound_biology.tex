@@ -312,6 +312,16 @@ The following assumptions underlie this section:
     over the measurement window.
 \end{enumerate}
 
+\textbf{Independence from surface enzyme kinetics (Layer~9).}
+The TIMP-1/MMP-9 equilibrium modelled in this section is a property of the wound fluid
+bulk. TIMP-1 binds free MMP-9 in solution; the surface-immobilised peptide substrate on
+the electrode is physically absent from this bulk environment ($[\text{surface peptide}]_{\text{bulk}} = 0$).
+The equilibrium therefore depends only on $M_0$, $T_0$, and $K_i$, with no substrate
+competition term. The quantity $[\text{MMP-9}]_{\text{free}}$ output from this model is
+the free, TIMP-1-adjusted enzyme concentration in wound fluid. Layer~9 takes this directly
+as its enzyme input $[E]_t$: no re-solving of TIMP-1 inhibition is required at the
+electrode, because it has already been accounted for here.
+
 %=======================================================================
 \section{HNE Inhibition}
 \label{sec:hne}
@@ -611,20 +621,6 @@ velocities. In the linear regime, $k_{\text{cat}}$, $K_m$, and $\Gamma_p$ cancel
   \label{eq:activity_ratio}
 \end{equation}
 
-If TIMP-1 inhibition is competitive with the peptide substrate, the apparent inhibition
-constant is modified by substrate occupancy:
-
-\begin{equation}
-  K_{i,\text{app}} = K_i\!\left(1 + \frac{[S]}{K_m}\right)
-  \label{eq:kiapp}
-\end{equation}
-
-where $[S]/K_m$ is the fractional saturation of the enzyme by substrate. In the linear
-regime ($[S] \ll K_m$), $K_{i,\text{app}} \approx K_i = 8.5$~nM and the ODE
-equilibrium is self-consistent. At higher substrate occupancy, TIMP-1 inhibition weakens
-($K_{i,\text{app}} > K_i$), which would increase free MMP-9 in healing wounds relative
-to the ODE prediction and potentially reduce the discrimination ratio below $5\times$.
-
 Kridel et~al.\ (2001)~\cit{9} (Table~II) measured kinetic parameters for MMP-9 cleaving
 peptide A11 (SGKIPRTLTA), the device substrate sequence (50~mM Tris, pH~7.5, 10~mM
 CaCl$_2$, 37$^\circ$C):
@@ -633,7 +629,8 @@ CaCl$_2$, 37$^\circ$C):
   \frac{k_{\text{cat}}}{K_m} = 67{,}500\ \Mms
   \label{eq:kinetics_a11}
 \end{equation}
-The substrate competition correction at the electrode surface is discussed in Limitation~5.
+These solution-phase values confirm the efficiency of SGKIPRTLTA as an MMP-9 substrate.
+How surface immobilisation modifies these kinetics is modelled in Layer~9.
 
 \subsection{Layer~1 dilution}
 
@@ -711,80 +708,9 @@ identifies what experiment would resolve it.
       k_{\text{cat}}/K_m = 67{,}500\ \Mms
     \end{equation*}
     measured by fluorescamine incorporation assay at pH~7.5, 10~mM CaCl$_2$, 37$^\circ$C.
-    These are solution-phase values; surface immobilisation systematically reduces
-    $k_{\text{cat}}/K_m$ (Layer~9), so they serve as an upper bound for the surface
-    effective rate constant $k_{\text{eff,surf}}$.
-
-    \textbf{Wound fluid equilibrium.} The Layer~0 ODE models the TIMP-1/MMP-9 partition
-    in \emph{wound fluid}, not at the electrode. TIMP-1 equilibrates with MMP-9 in the
-    wound fluid bulk, where the relevant competing substrates are endogenous (collagen,
-    gelatin) at concentrations that do not enter the ODE. The electrode peptide at
-    $\Gamma_p \sim 3\ \text{pmol~cm}^{-2}$ represents sub-nanomolar total moles in the
-    assay volume and is a negligible perturbation on the wound fluid equilibrium. The
-    ODE $K_i = 8.5$~nM (Olson~1997~\cit{4}) therefore remains valid for the wound
-    fluid partition.
-
-    \textbf{Justification for sequential treatment.} A fully coupled competitive-inhibition
-    scheme would require solving TIMP-1 inhibition and surface Michaelis--Menten kinetics
-    simultaneously, since TIMP-1 and the surface peptide compete for the MMP-9 active site.
-    The sequential approach used here, in which the wound fluid ODE is solved first to obtain
-    $[\text{MMP-9}]_{\text{free}}$ and that value is then used as a constant input to the
-    surface MM velocity, is valid under two conditions that are both satisfied.
-    First, the wound fluid bulk contains no surface peptide substrate
-    ($[S]_{\text{bulk}} \approx 0$), so the ODE inhibition equilibrium uses $K_i = 8.5$~nM
-    without any substrate competition term, and the result is internally self-consistent.
-    Second, the $[\text{MMP-9}]_{\text{free}}$ obtained from the wound fluid ODE is a
-    \emph{conservative lower bound} on electrode-accessible enzyme: at the electrode surface
-    $K_{i,\text{app}} \approx 33$~nM (Eq.~\ref{eq:kiapp_calc}), meaning TIMP-1 inhibition
-    is weaker at the electrode than in the wound fluid. The sequential treatment therefore
-    under-predicts, not over-predicts, the enzyme available for surface cleavage, and the
-    discrimination ratio of $5\times$ is conservatively estimated.
-
-    \textbf{Substrate depletion is negligible.} The total surface-immobilised SGKIPRTLTA on
-    the electrode is $\Gamma_p \times A \approx 5\ \text{pmol~cm}^{-2} \times
-    0.002\ \text{cm}^2 = 10\ \text{fmol}$. The bulk MMP-9 in the assay volume is
-    $\sim\!0.1$--$0.2\ \text{pmol}$ (at 5--10~nM in $\sim\!20\ \mu\text{L}$). Even
-    if all surface substrate were cleaved simultaneously, that represents
-    $<0.1\%$ of the total MMP-9 pool. Substrate depletion at this level cannot perturb
-    the TIMP-1/MMP-9 binding equilibrium ($K_i = 8.5$~nM, Olson~1997~\cit{4}), which
-    requires a $\gtrsim$10\% perturbation in free MMP-9 to shift the partition
-    measurably. Consequently, $[\text{MMP-9}]_{\text{free}}$ from the wound fluid ODE
-    remains accurate throughout the Layer~9 assay window, and no TIMP-1 competitive
-    inhibition correction term is required in the Layer~9 $k_{\text{eff}}$ expression.
-
-    \textbf{Electrode surface correction.} At the electrode surface the effective local
-    substrate concentration depends on probe density and probe-layer thickness. For
-    $\Gamma_p = 3\ \text{pmol~cm}^{-2}$ and effective layer thickness
-    $d_{\text{eff}} \approx 8\ \text{nm}$ (Layer~8):
-    \begin{equation}
-      [S]_{\text{eff}} = \frac{\Gamma_p}{d_{\text{eff}}}
-      = \frac{3 \times 10^{-12}\ \text{mol~cm}^{-2}}{8 \times 10^{-7}\ \text{cm}}
-      \approx 3.75\ \text{mM}
-      \label{eq:Seff}
-    \end{equation}
-    Since $[S]_{\text{eff}}/K_m \approx 3.75/1.3 \approx 2.9$, the electrode surface
-    is not in the linear regime. The Michaelis--Menten velocity is:
-    \begin{equation}
-      v = k_{\text{cat}} \cdot [\text{MMP-9}]_{\text{free}} \cdot
-          \frac{\Gamma_p}{K_m + [S]_{\text{eff}}}
-      \label{eq:mm_nonlinear}
-    \end{equation}
-    The wound-state discrimination ratio $v_{\text{chronic}}/v_{\text{healing}}$ still
-    reduces to $[\text{MMP-9}]_{\text{chronic}}/[\text{MMP-9}]_{\text{healing}} \approx
-    5\times$ because $K_m$ and $[S]_{\text{eff}}$ cancel identically in the ratio.
-    The non-linear regime therefore does not reduce the discrimination ratio but does
-    affect the absolute signal magnitude and the apparent TIMP-1 inhibition. If TIMP-1
-    inhibition is competitive with the surface peptide, the apparent inhibition constant
-    at the electrode is:
-    \begin{equation}
-      K_{i,\text{app}} = K_i\!\left(1 + \frac{[S]_{\text{eff}}}{K_m}\right)
-      \approx 8.5 \times (1 + 2.9) \approx 33\ \text{nM}
-      \label{eq:kiapp_calc}
-    \end{equation}
-    This weakens apparent TIMP-1 inhibition at the electrode surface, increasing the
-    fraction of MMP-9 available for cleavage relative to the wound fluid ODE prediction.
-    The surface $k_{\text{cat}}/K_m$ must be measured directly on the fabricated
-    electrode (Layer~9) before the absolute signal magnitude can be specified.
+    These values confirm that SGKIPRTLTA is an efficient MMP-9 substrate in solution.
+    How surface immobilisation modifies these kinetics is the subject of Layer~9; the
+    solution-phase values serve as an upper bound for the surface effective rate constant.
 
     For HNE: A1AT inhibition is a serpin acyl-enzyme mechanism, not competitive inhibition.
     There is no $K_{i,\text{app}}$ correction. The half-life conclusion is insensitive to a
