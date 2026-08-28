@@ -58,13 +58,11 @@ and $[\text{HNE}]_{\text{free}}(t)$, are in-situ wound fluid concentrations that
 pass to Layer~1 (sample collection) via a swab dilution factor $D_f$.
 
 The electrochemical device measures these concentrations \emph{indirectly} via peptide
-substrate cleavage. MMP-9 and HNE each cleave a surface-immobilised peptide probe
-bearing a methylene-blue (MB) redox label; cleavage releases MB into solution,
-producing a signal-off decrease in SWV peak current proportional to enzymatic activity.
-The sensor therefore reports \emph{activity}, not protein concentration directly.
-Layer~0 provides the free enzyme concentration that drives this activity; the kinetic
-link between $[\text{MMP-9}]_{\text{free}}$ and cleavage rate requires $k_{\text{cat}}$
-and $K_m$ for the specific peptide substrate (Section~\ref{sec:output}, Limitation~5).
+substrate cleavage: the sensor reports \emph{activity}, not protein concentration
+directly. Layer~0 provides the free enzyme concentration that drives this activity;
+the kinetic link between $[\text{MMP-9}]_{\text{free}}$ and cleavage rate is
+established in Layer~9, using the solution-phase kinetics for SGKIPRTLTA confirmed
+from Kridel~2001 (Section~\ref{sec:output}, Limitation~5).
 
 The model tracks nine coupled species through a system of ordinary differential
 equations (Section~\ref{sec:ode}), solved numerically with a stiff implicit integrator.
@@ -579,70 +577,29 @@ of A1AT status. HNE is not a reliable primary discriminant; MMP-9 ($5\times$
 discrimination, grounded in confirmed kinetics) is the preferred target. The second
 electrode targeting HNE serves as an internal reference rather than a primary channel.
 
-\subsection{Cleavage kinetics and sensor signal}
+\subsection{Sensor signal implication}
 
-The sensor signal is the fractional SWV current decrease:
-
+The primary output of this model is the free MMP-9 concentration in wound fluid:
+30~nM (chronic) and 6~nM (healing) at the 30-min read point. Since sensor signal
+$f_{\text{cleaved}}$ is proportional to $[\text{MMP-9}]_{\text{free}}$ in the linear
+cleavage regime (Layer~9), the wound-state discrimination ratio is:
 \begin{equation}
-  \frac{\Delta I}{I_0} = \frac{I_0 - I(t)}{I_0} = f_{\text{cleaved}}(t)
-  \label{eq:signal_off}
-\end{equation}
-
-where $I_0$ is the pre-incubation baseline current (all MB tethered) and $I(t)$ is the
-current at assay time $t$ after wound fluid exposure. Both measurements are made in the
-same buffer, so any Ca$^{2+}$-induced change in MB-electrode electron transfer rate
-applies equally to $I_0$ and $I(t)$ and cancels in the ratio (Layer~7).
-
-The cleavage velocity per unit electrode area at the start of the assay is:
-
-\begin{equation}
-  v = k_{\text{cat}} \cdot [\text{MMP-9}]_{\text{free}} \cdot
-      \frac{\Gamma_p}{K_m^{\text{eff}} + \Gamma_p}
-  \label{eq:mm}
-\end{equation}
-
-where $\Gamma_p$ is the probe surface density (from Layer~7) and $K_m^{\text{eff}}$ is
-the apparent Michaelis constant for surface-immobilised substrate. In the linear regime
-($\Gamma_p \ll K_m^{\text{eff}}$):
-
-\begin{equation}
-  v \approx \frac{k_{\text{cat}}}{K_m} \cdot [\text{MMP-9}]_{\text{free}} \cdot \Gamma_p
-  \label{eq:mm_linear}
-\end{equation}
-
-The wound-state discrimination ratio for sensor signal equals the ratio of cleavage
-velocities. In the linear regime, $k_{\text{cat}}$, $K_m$, and $\Gamma_p$ cancel:
-
-\begin{equation}
-  \frac{v_{\text{chronic}}}{v_{\text{healing}}}
-  = \frac{[\text{MMP-9}]_{\text{free,chronic}}}{[\text{MMP-9}]_{\text{free,healing}}}
-  \approx \frac{30\ \text{nM}}{6\ \text{nM}}
-  \approx 5\times
+  \frac{[\text{MMP-9}]_{\text{free,chronic}}}{[\text{MMP-9}]_{\text{free,healing}}}
+  \approx \frac{30\ \text{nM}}{6\ \text{nM}} = 5\times
   \label{eq:activity_ratio}
 \end{equation}
-
-Kridel et~al.\ (2001)~\cit{9} (Table~II) measured kinetic parameters for MMP-9 cleaving
-peptide A11 (SGKIPRTLTA), the device substrate sequence (50~mM Tris, pH~7.5, 10~mM
-CaCl$_2$, 37$^\circ$C):
-\begin{equation}
-  k_{\text{cat}} = 86.4\ \text{s}^{-1},\quad K_m = 1.3\ \text{mM},\quad
-  \frac{k_{\text{cat}}}{K_m} = 67{,}500\ \Mms
-  \label{eq:kinetics_a11}
-\end{equation}
-These solution-phase values confirm the efficiency of SGKIPRTLTA as an MMP-9 substrate.
-How surface immobilisation modifies these kinetics is modelled in Layer~9.
+How $[\text{MMP-9}]_{\text{free}}$ drives surface cleavage of the electrode probe is
+modelled in Layer~9. The solution-phase kinetic constants for SGKIPRTLTA
+($k_{\text{cat}} = 86.4\ \text{s}^{-1}$, $K_m = 1.28\ \text{mM}$, Kridel~2001~\cit{9})
+are confirmed inputs to that layer.
 
 \subsection{Layer~1 dilution}
 
-The required dilution factor for the device entry concentration to fall within the
-enzyme activity detection window is established in Layer~1 using $k_{\text{cat}}$,
-$K_m$, and the signal sensitivity (LOD in terms of $\Delta I/I_0$). The solution-phase
-kinetic constants ($k_{\text{cat}} = 86.4\ \text{s}^{-1}$, $K_m = 1.3\ \text{mM}$)
-are now confirmed from Kridel~2001~\cit{9}. The remaining blocker is the surface
-effective rate constant $k_{\text{eff,surf}}$, which must be measured on the fabricated
-electrode (Layer~9) before the LOD and dilution factor can be specified quantitatively.
 The in-situ free MMP-9 concentrations from Table~\ref{tab:outputs} (30~nM chronic,
-6~nM healing) are the inputs to the Layer~1 calculation.
+6~nM healing) are the direct inputs to the Layer~1 dilution calculation, which
+determines what sample dilution factor is needed for the device to operate within its
+detection window. The required dilution factor and LOD are specified in Layer~1 once
+the surface kinetics (Layer~9) are characterised.
 
 \subsection{Limitations of this model}
 
@@ -697,14 +654,14 @@ identifies what experiment would resolve it.
     mechanism (Section~\ref{sec:mmp9}). The HNE electrode is treated as a secondary
     reference channel, not a primary diagnostic output.
 
-  \item \textbf{$k_{\text{cat}}$ and $K_m$ for SGKIPRTLTA are now confirmed from
-    Kridel et~al.\ (2001)~\cit{9}; the substrate competition correction at the electrode
-    surface must be quantified.}
+  \item \textbf{Solution-phase kinetics for SGKIPRTLTA are confirmed from
+    Kridel et~al.\ (2001)~\cit{9}; surface immobilisation effects are addressed
+    in Layer~9.}
 
     Kridel et~al.\ (2001)~\cit{9} Table~II reports solution-phase kinetics for MMP-9
     cleaving peptide A11 (SGKIPRTLTA):
     \begin{equation*}
-      k_{\text{cat}} = 86.4\ \text{s}^{-1},\quad K_m = 1.3\ \text{mM},\quad
+      k_{\text{cat}} = 86.4\ \text{s}^{-1},\quad K_m = 1.28\ \text{mM},\quad
       k_{\text{cat}}/K_m = 67{,}500\ \Mms
     \end{equation*}
     measured by fluorescamine incorporation assay at pH~7.5, 10~mM CaCl$_2$, 37$^\circ$C.
@@ -713,8 +670,8 @@ identifies what experiment would resolve it.
     solution-phase values serve as an upper bound for the surface effective rate constant.
 
     For HNE: A1AT inhibition is a serpin acyl-enzyme mechanism, not competitive inhibition.
-    There is no $K_{i,\text{app}}$ correction. The half-life conclusion is insensitive to a
-    10-fold change in $\kon^A$ (Eq.~\ref{eq:thalf_lo}). The $k_{\text{cat}}$ and $K_m$
+    The half-life conclusion is insensitive to a 10-fold change in $\kon^A$
+    (Eq.~\ref{eq:thalf_lo}). The $k_{\text{cat}}$ and $K_m$
     for HNE cleaving the HNE peptide substrate are not yet confirmed from any paper in
     \texttt{papers/layer\_00/} and remain an outstanding parameter for the HNE channel.
 
@@ -780,7 +737,7 @@ identifies what experiment would resolve it.
   hydrolysis by matrix metalloproteinase-9.
   \textit{J Biol Chem} 276(23):20572--20578. DOI:~10.1074/jbc.M100900200.
   \textbf{kridel2001.pdf} -- $k_{\text{cat}} = 86.4\ \text{s}^{-1}$,
-  $K_m = 1.3\ \text{mM}$, $k_{\text{cat}}/K_m = 67{,}500\ \Mms$ for peptide A11
+  $K_m = 1.28\ \text{mM}$, $k_{\text{cat}}/K_m = 67{,}500\ \Mms$ for peptide A11
   (SGKIPRTLTA) by MMP-9 confirmed from Table~II. Measured by fluorescamine assay,
   pH~7.5, 10~mM CaCl$_2$, 37$^\circ$C.
 
