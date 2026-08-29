@@ -31,11 +31,11 @@ Amino acid: peptide bond + sidechain; extended strand: $0.35 \text{ nm/aa}$; typ
 
 Full probe:
     Cys residue (anchored): $l_{\text{Cys}} \approx 0.5 \text{ nm}$ (Cys sidechain + backbone segment to anchor)  
-    PEG4: $4 × 0.36 = 1.44 \text{ nm}$; PEG6: $6 × 0.36 = 2.16 \text{ nm}$  
-    Octapeptide (AAPVSGIG or IPRTLTAA): $8 × 0.35 = 2.80 \text{ nm}$ (extended beta-strand)  
-    PEG2: $2 × 0.36 = 0.72 \text{ nm}$  
+    PEG4: $4 \times 0.36 = 1.44 \text{ nm}$; PEG6: $6 \times 0.36 = 2.16 \text{ nm}$  
+    Octapeptide (AAPVSGIG or IPRTLTAA): $8 \times 0.35 = 2.80 \text{ nm}$ (extended beta-strand)  
+    PEG2: $2 \times 0.36 = 0.72 \text{ nm}$  
     Lys(MB) linker: $\sim 0.5 \text{nm}$ (Lys backbone + epsilon-amine to MB)  
-    Total contour $L_c ≈ 5.5-6.2 \text{ nm}$ (PEG4) or $6.2-7.0 \text{ nm}$ (PEG6)
+    Total contour $L_c ≈ 5.5 \text{ to } 6.2 \text{ nm}$ (PEG4) or $6.2 \text{ to } 7.0 \text{ nm}$ (PEG6)
 
 Note: $L_c$ is the fully extended length. The chain is flexible and thermally fluctuates; the mean end-to-end distance is $\ll L_c$.
 
@@ -45,13 +45,13 @@ The probe is a concatenation of two types of polymer segments: PEG and peptide. 
 
 Worm-like chain mean-squared end-to-end distance:
 
-$$\langle r^2 \rangle = 2 \, l_p \, L_c \left( 1 - \frac{l_p}{L_c}\left( 1 - e^{-L_c/l_p} \right) \right)$$
+$$\langle r^2 \rangle = 2 \\, l_p \\, L_c \left( 1 - \frac{l_p}{L_c}\left( 1 - e^{-L_c/l_p} \right) \right)$$
 
 Persistence lengths:
-    PEG: $l_{p, \, \text{PEG}} = 0.38 \text{ nm}$ (experimental from AFM force spectroscopy, Oesterhelt 1999)  
-    Unstructured peptide: $l_{p, \, \text{PEP}} = 0.4 \text{ to } 1.0 \text{ nm}$ (sequence-dependent; for polyglycine $l_p \approx 0.4 \text{ nm}$; for beta-sheet-forming sequences $l_p$ up to 10 nm)  
-    AAPVSGIG: mixed sequence (Pro has high cis content, adds stiffness); estimate $l_p \approx 0.5-0.8 \text{ nm}$  
-    IPRTLTAA: Arg and Thr may form hydrogen bonds → slightly stiffer; $l_p \approx 0.6-1.0 \text{ nm}$
+    PEG: $l_{p, \\, \text{PEG}} = 0.38 \text{ nm}$ (experimental from AFM force spectroscopy, Oesterhelt 1999)  
+    Unstructured peptide: $l_{p, \\, \text{PEP}} = 0.4 \text{ to } 1.0 \text{ nm}$ (sequence-dependent; for polyglycine $l_p \approx 0.4 \text{ nm}$; for beta-sheet-forming sequences $l_p$ up to 10 nm)  
+    AAPVSGIG: mixed sequence (Pro has high cis content, adds stiffness); estimate $l_p \approx 0.5 \text{ to } 0.8 \text{ nm}$  
+    IPRTLTAA: Arg and Thr may form hydrogen bonds → slightly stiffer; $l_p \approx 0.6 \text{ to } 1.0 \text{ nm}$
 
 For a heterogeneous chain (PEG + peptide segments): use an effective persistence length for the concatenated chain, weighted by each segment's $l_p$ and $L_c$.
 
@@ -69,9 +69,9 @@ The MB is at the **end** of the tether, at distance $r$ from the gold surface (t
 
 Average ET rate:
 
-$$\langle k_{ET} \rangle = k_{ET}^{\max}  \int_0^{L_c} e^{-\beta r} P(r) \:  \mathrm{d}r$$
+$$\langle k_{ET} \rangle = k_{ET}^{\max}  \int_0^{L_c} e^{-\beta r} P(r) \\:  \mathrm{d}r$$
 
-This integral is dominated by the small-r tail of $P(r)$. Even if <r> is large, the small-r excursions (where the chain is momentarily compressed) contribute most to $\langle k_ET \rangle$.
+This integral is dominated by the small-r tail of $P(r)$. Even if <r> is large, the small-r excursions (where the chain is momentarily compressed) contribute most to $\langle k_{ET} \rangle$.
 
 Implementation: Monte Carlo sampling of chain configurations (Freely Jointed Chain or WLC), compute $r$ for each configuration, compute $k_{ET}(r)$, average over all configurations. Alternatively, compute the integral numerically using the WLC $P(r)$.
 
@@ -113,7 +113,8 @@ $$A_{\text{probe}} = \frac{1}{\Gamma_p} > \pi r_{\text{enzyme}}^2$$
 
 $$\Gamma_p < \Gamma_{\text{steric}}^{\max} = \frac{1}{\pi r_{\text{enzyme}}^2}$$
 
-For MMP-9 ($r_{\text{enzyme}} = 2.5 \text{ nm}$): 
+For MMP-9 ($r_{\text{enzyme}} = 2.5 \text{ nm}$):
+
 $$\Gamma_{\text{steric}}^{\max} = \frac{1}{\pi \left( 2.5 \times 10^{-7} \right)^2} \text{ cm}^{-2} \approx 5.1 \text{ pmol} / \text{cm}^2$$
 
 For HNE ($r_{\text{enzyme}} = 1.5 \text{ nm}$): 
@@ -167,21 +168,21 @@ The Arg charge: at cathodic potentials (during MB reduction at -0.25 V), the ele
 | $P(d)$: MB-to-Au distance distribution | WLC model | Layer 10: $\langle k_{ET} \rangle$ |
 | $\langle k_{ET} \rangle$: average ET rate | Integral of $k_{ET}(r) P(r)$ | Layer 10, 11 |
 | $h_{\text{cut}}$: cleavage site height | $1.9 \text{ to } 2.7 \text{ nm}$ from Au | Layer 9: enzyme access geometry |
-| $\Gamma_{\text{steric}}^{\max}$ | $5.1$ (MMP-9) or $14.1$ (HNE) $\text{ pmol}/\text{cm}^2$ | Layer 9: $K_{m, \, \text{surf}}$ correction |
+| $\Gamma_{\text{steric}}^{\max}$ | $5.1$ (MMP-9) or $14.1$ (HNE) $\text{ pmol}/\text{cm}^2$ | Layer 9: $K_{m, \\, \text{surf}}$ correction |
 | $f_{\text{steric}}(\Gamma_p)$ | $0.3 \text{ to } 0.8$ | Layer 9 |
 | $d_{\text{eff}}(\Gamma_p)$ | brush vs mushroom regime | Layer 10 |
 
 ## Key literature to find
 
-- WLC model and P(r) for short chains: Marko & Siggia (Macromolecules, 1995)
+- WLC model and $P(r)$ for short chains: Marko & Siggia (Macromolecules, 1995)
 - PEG persistence length: Oesterhelt et al. (New J Phys, 1999)
 - Peptide persistence lengths: review by Flory or Creighton
-- Probe conformation effect on k_ET: Rant et al. (Nano Letters, 2004) — surface-tethered DNA ET as precedent
+- Probe conformation effect on $k_{ET}$: Rant et al. (Nano Letters, 2004) — surface-tethered DNA ET as precedent
 - Steric exclusion in crowded SAMs: Steel et al. (Biophys J, 2000); Perez et al. (JACS, 2012)
 - Electrostatic bending of probe by electrode charge: Netz & Joanny (Macromolecules, 1999)
 
 ## Files to create
 
-- `probe_conformation.py`: WLC model; Monte Carlo simulation of chain conformations; P(r) distribution
+- `probe_conformation.py`: WLC model; Monte Carlo simulation of chain conformations; $P(r)$ distribution
 - `average_ket.py`: numerical integral of $k_{ET}(r) P(r)$ over $r$; ratio $\langle k_{ET} \rangle : \langle k_{ET} \text{ at } \langle r \rangle \rangle$
-- `steric_gate.py`: Gamma_steric_max computation; $f_{\text{steric}}(\Gamma_p)$; $d_{\text{eff}}(\Gamma_p)$ brush model
+- `steric_gate.py`: $\Gamma_{\text{steric}}^{\max}$ computation; $f_{\text{steric}}(\Gamma_p)$; $d_{\text{eff}}(\Gamma_p)$ brush model
