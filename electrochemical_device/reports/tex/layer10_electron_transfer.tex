@@ -1,0 +1,697 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% ---- Section numbering: Roman numerals ---------------------------------
+\renewcommand\thesection{\Roman{section}}
+% ---- Equation numbering: (I.1), (II.2), etc. ---------------------------
+\numberwithin{equation}{section}
+
+% ---- Section formatting ------------------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+% ---- Page headers ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Layer~10: Marcus-Theory Electron Transfer}}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+% ---- Macros ------------------------------------------------------------
+\newcommand{\kET}{k_{\text{ET}}^{0}}
+\newcommand{\kf}{k_{\text{f}}}
+\newcommand{\kb}{k_{\text{b}}}
+\newcommand{\Mms}{\text{M}^{-1}\text{s}^{-1}}
+\newcommand{\lam}{\lambda}
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\Eo}{E^{\circ\prime}}
+\newcommand{\kB}{k_{\text{B}}}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Layer 10: Marcus-Theory Electron Transfer}\\[0.4em]
+{\large MB Redox Kinetics: From Tether Distance to SWV Rate Constant}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer 10 of 17-Layer Biosensor Pipeline \quad$|$\quad
+\texttt{electron\_transfer.py}}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent
+Layer~10 derives the \textbf{standard electron-transfer rate constant}
+$\kET$ for the methylene-blue (MB) redox label tethered to the gold
+electrode surface. $\kET$ governs the peak current, peak shape, and
+optimal scan frequency in the SWV measurement (Layer~11). Its value
+depends on three physically distinct quantities: the
+\textbf{tunnelling distance} $d$ between MB and the gold surface
+(set by the probe conformation from Layer~8), the
+\textbf{reorganisation energy} $\lambda$, and the
+\textbf{electrode potential} $E$ relative to the MB formal potential
+$\Eo_{\text{MB}}(\text{pH})$.
+
+The model proceeds as follows. Section~\ref{sec:marcus} derives the
+rate constant from the Marcus (1965)~\cit{1} electrode reaction
+framework. Section~\ref{sec:dist} quantifies the distance dependence
+using the tunnelling decay coefficient $\beta$ measured by
+Smalley et~al.\ (1995)~\cit{2}. Section~\ref{sec:lambda} estimates
+$\lambda$ from the Chidsey (1991)~\cit{3} Fc/Au measurements as the
+closest available analogue. Section~\ref{sec:bv} derives the
+Butler-Volmer (BV) approximation; Section~\ref{sec:chidsey} derives
+the full Chidsey-Marcus integral valid at large overpotentials.
+Sections~\ref{sec:formal}--\ref{sec:frumkin} add the pH correction,
+temperature correction, and double-layer (Frumkin) correction.
+Section~\ref{sec:synth} synthesises all contributions into
+$k^{0}_{\text{ET,eff}}$. Section~\ref{sec:limits} states limitations.
+
+%=======================================================================
+\section{The Marcus Electrode Rate Equation}
+\label{sec:marcus}
+
+\subsection{Electrochemical activation energy}
+
+Marcus~(1965)~\cit{1} derived the heterogeneous electron-transfer
+rate constant for an electrode reaction:
+\begin{equation}
+  \text{Ox} + ne^{-} \rightleftharpoons \text{Red}
+  \label{eq:rxn}
+\end{equation}
+The fundamental result (Marcus~1965, Eq.~33, with $\kappa \approx 1$,
+$\rho \approx 1$) is:
+\begin{equation}
+  k_{\text{het}} = Z_{\text{het}}\,\exp\!\left(-\frac{\Delta F^*}{\kB T}\right)
+  \label{eq:marcusrate}
+\end{equation}
+where $Z_{\text{het}} = ({\kB T}/{2\pi m^*})^{1/2} \approx 10^4$
+cm\,s$^{-1}$ is the heterogeneous collision frequency (Marcus 1965,
+Eq.~34), $m^*$ is the reduced mass of the reactant, and
+$\Delta F^*$ is the free energy of activation.
+
+For an electrode reaction with formal overpotential
+$\eta = E - \Eo$ (work terms $w^r \approx w^p \approx 0$ for the
+neutral/uncharged MB surface species), Marcus~1965 Eq.~82 gives:
+
+\begin{equation}
+  \Delta F^* = \frac{\lambda}{4}
+  + \frac{ne(E - \Eo)}{2}
+  + \frac{\bigl[ne(E - \Eo)\bigr]^2}{4\lambda}
+  \label{eq:DFstar}
+\end{equation}
+
+At $E = \Eo$ the overpotential is zero, and Eq.~\eqref{eq:DFstar}
+reduces to:
+\begin{equation}
+  \Delta F^*_0 = \frac{\lambda}{4}
+  \label{eq:DFzero}
+\end{equation}
+giving the standard rate constant:
+\begin{equation}
+  \kET = Z_{\text{het}}\,\exp\!\left(-\frac{\lambda}{4\kB T}\right)
+  \label{eq:kET0}
+\end{equation}
+
+\subsection{Transfer coefficient}
+
+Differentiating $\Delta F^*$ in Eq.~\eqref{eq:DFstar} with respect
+to $ne(E - \Eo)$ at $E = \Eo$ (Marcus~1965, Eq.~87b with work terms
+neglected):
+\begin{equation}
+  \alpha = \frac{1}{2} + \frac{ne(E - \Eo)}{2\lambda}
+  \label{eq:alpha}
+\end{equation}
+At $E = \Eo$, $\alpha = 0.5$, as expected for a symmetric potential
+energy surface intersection. Equation~\eqref{eq:alpha} predicts
+deviations from 0.5 only when the overpotential becomes comparable to
+$\lambda/2$ (the Marcus inverted region boundary).
+
+\subsection{Reorganisation energy additivity}
+
+$\lambda$ is the total reorganisation energy (Marcus~1965, Eq.~83):
+\begin{equation}
+  \lambda = \lambda_i + \lambda_o
+  \label{eq:lambda}
+\end{equation}
+where $\lambda_i$ is the \textit{inner-sphere} contribution (bond
+length and angle changes within MB upon reduction) and $\lambda_o$
+is the \textit{outer-sphere} (solvent/dielectric) contribution.
+For the electrode geometry, Marcus~1965 Eq.~90 gives $\lambda_o$ in
+the dielectric continuum approximation:
+\begin{equation}
+  \lambda_o = \frac{(ne)^2}{2}
+  \!\left(\frac{1}{2a_1} - \frac{1}{R}\right)
+  \!\left(\frac{1}{D_{\text{op}}} - \frac{1}{D_s}\right)
+  \label{eq:lambdao}
+\end{equation}
+where $a_1$ is the effective radius of the reactant (MB,
+$a_1 \approx 4$ \AA), $R$ is twice the distance from the
+MB centre to the electrode surface, $D_{\text{op}} \approx 1.78$ is
+the optical (high-frequency) dielectric constant of water, and
+$D_s \approx 78$ is the static dielectric constant.
+
+%=======================================================================
+\section{Distance Dependence: The Tunnelling Decay Constant}
+\label{sec:dist}
+
+\subsection{Exponential distance law}
+
+The electronic coupling between the MB redox centre and the gold
+electrode decays exponentially with the tunnelling distance $d$.
+Smalley et~al.\ (1995)~\cit{2} characterised this for
+ferrocene-terminated alkanethiol monolayers on gold using the
+indirect laser-induced temperature jump (ILIT) method, which
+accesses rates too fast for conventional chronoamperometry
+($\leq 10^4$ s$^{-1}$). For $5 \leq n \leq 9$ methylene units,
+they report (Smalley~1995, abstract and text):
+\begin{equation}
+  k_{T,s}(n) = k_{T,s,n=0}\,\exp(-\beta_n\,n)
+  \label{eq:kndep}
+\end{equation}
+with confirmed values:
+\begin{align}
+  k_{T,s,n=0} &= 6.0 \times 10^8\;\text{s}^{-1}
+  \label{eq:kn0}\\
+  \beta_n &= 1.21 \pm 0.05\;\text{per CH}_2
+  \label{eq:betan}
+\end{align}
+
+\subsection{Conversion to a per-angstrom decay constant}
+
+Each methylene unit contributes $d_{\text{CH}_2} \approx 1.27$~\AA\
+to the all-\textit{trans} chain length. Converting Eq.~\eqref{eq:betan}:
+\begin{equation}
+  \beta = \frac{\beta_n}{d_{\text{CH}_2}}
+  = \frac{1.21}{1.27\;\text{\AA}}
+  \approx 0.95\;\text{\AA}^{-1}
+  \label{eq:betaA}
+\end{equation}
+so that in terms of physical distance (Smalley~1995, Eq.~2):
+\begin{equation}
+  k^0(d) = k_{T,s,n=0}\,\exp(-\beta\,d)
+  = 6.0 \times 10^8\,\exp(-0.95\,d[\text{\AA}])\;\text{s}^{-1}
+  \label{eq:k0d}
+\end{equation}
+
+\subsection{Numerical evaluation across the clinical tether range}
+
+The effective tunnelling distance $d$ is set by the probe
+conformation distribution $P(d)$ from Layer~8. Pending that
+measurement, Table~\ref{tab:k0d} evaluates Eq.~\eqref{eq:k0d}
+across a physically plausible range.
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}ccc@{}}
+\toprule
+$d$ (nm) & $d$ (\AA) & $k^0$ (s$^{-1}$, Eq.~\ref{eq:k0d}) \\
+\midrule
+1.0 & 10 & $\sim 4.5 \times 10^4$ \\
+1.5 & 15 & $\sim 430$ \\
+2.0 & 20 & $\sim 4.0$ \\
+2.5 & 25 & $\sim 0.037$ \\
+\bottomrule
+\end{tabular}
+\caption{Standard ET rate constant as a function of tunnelling
+distance, from Eq.~\eqref{eq:k0d} (Smalley~1995~\cit{2} parameters).
+The tether peptide contour length is $L_c \approx 5$~nm; $d_{\text{eff}}$
+is shorter because of chain flexibility (Layer~8). Values span
+several orders of magnitude: the SWV-accessible range is
+approximately $1$--$10^4$ s$^{-1}$ (Section~\ref{sec:synth}).}
+\label{tab:k0d}
+\end{table}
+
+\noindent\textbf{Caveat.} Smalley~1995 used rigid ferrocene-terminated
+\textit{alkyl} chains. Our probe uses a PEG-peptide tether, for which
+$\beta_{\text{PEG}}$ has not been measured in this system. Alkyl chains
+are the closest well-characterised analogue; the value $\beta \approx
+0.95$~\AA$^{-1}$ should be treated as an estimate until $k^0$ is
+measured empirically on the fabricated electrode (Limitation~1,
+Section~\ref{sec:limits}).
+
+%=======================================================================
+\section{Reorganisation Energy}
+\label{sec:lambda}
+
+\subsection{Reference measurement: Chidsey (1991)}
+
+Chidsey~(1991)~\cit{3} measured the rate constant and its full energy
+dependence for ferrocene-terminated alkanethiol monolayers on
+polycrystalline gold in 1~M HClO$_4$, over a 46~$^\circ$C temperature
+range and a 1.6~V potential window. The best-fit reorganisation energy
+from the full Marcus-Chidsey integral (Section~\ref{sec:chidsey}) is
+confirmed (Chidsey~1991, abstract and Fig.~4):
+\begin{equation}
+  \lambda_{\text{Fc/Au}} = 0.85\;\text{eV}
+  \label{eq:lambdaFc}
+\end{equation}
+The electronic coupling prefactor (tunnelling attempt frequency) is
+(Chidsey~1991, abstract):
+\begin{equation}
+  \nu_p = 6.73 \times 10^4\;\text{s}^{-1}\text{eV}^{-1}
+  \label{eq:nup}
+\end{equation}
+The standard rate constant for $n = 16$ (C16 chain, $d \approx 20$~\AA)
+is confirmed (Chidsey~1991, p.~920):
+\begin{equation}
+  k^0_{\text{Fc, C16}} = 1.3\;\text{s}^{-1}
+  \label{eq:k0Fc}
+\end{equation}
+
+\subsection{Application to MB}
+
+MB undergoes a two-electron, two-proton reduction:
+\begin{equation}
+  \text{MB}^+ + 2\text{H}^+ + 2e^- \rightleftharpoons \text{LMB}
+  \label{eq:MBredn}
+\end{equation}
+The outer-sphere $\lambda_o$ depends primarily on the gold-electrode
+geometry and the aqueous medium, which are the same as in Chidsey's
+system. The inner-sphere $\lambda_i$ for MB is not characterised in any
+paper in \texttt{papers/layer\_10/}. We therefore apply
+$\lambda \approx 0.85$~eV as the best available estimate, with the
+caveat that $\lambda_i^{\text{MB}}$ may add 0.05--0.15~eV (Limitation~2).
+
+\subsection{Outer-sphere estimate from Marcus continuum theory}
+
+As a consistency check, Eq.~\eqref{eq:lambdao} with $n=1$ (treating
+MB reduction as equivalent to a one-electron process at the
+outer-sphere level, since $\lambda_o$ depends on the charge
+transferred per step), $a_1 = 4$~\AA, $R \approx 2d = 20$~\AA,
+$D_{\text{op}} = 1.78$, $D_s = 78$:
+\begin{align*}
+  \lambda_o &= \frac{(1.6\times10^{-19})^2}{2}
+  \!\left(\frac{1}{2\times4\times10^{-10}} - \frac{1}{20\times10^{-10}}\right)
+  \!\left(\frac{1}{1.78} - \frac{1}{78}\right) \\
+  &= \frac{2.56\times10^{-38}}{2}\;\text{C}^2
+  \times\bigl(1.25\times10^{9} - 5.0\times10^{8}\bigr)\;\text{m}^{-1}
+  \times 0.549\;\text{(F/m)}^{-1}\\
+  &\approx 1.28\times10^{-38} \times 7.5\times10^8 \times 0.549
+  / (8.854\times10^{-12})\;\text{J}\\
+  &\approx 0.60\;\text{eV}
+\end{align*}
+This is consistent with the Chidsey measurement $\lambda = 0.85$~eV,
+since $\lambda_i$ adds to $\lambda_o$ in Eq.~\eqref{eq:lambda}.
+
+%=======================================================================
+\section{Butler-Volmer Approximation}
+\label{sec:bv}
+
+\subsection{Derivation from the Marcus activation energy}
+
+For $|n e(E - \Eo)| \ll \lambda$ (moderate overpotentials),
+Taylor-expanding Eq.~\eqref{eq:DFstar} to first order in $\eta = E - \Eo$:
+\begin{equation}
+  \Delta F^* \approx \frac{\lambda}{4} + \frac{ne\eta}{2}
+  \label{eq:DFlin}
+\end{equation}
+Substituting into Eq.~\eqref{eq:marcusrate} and separating the
+cathodic ($\kf$) and anodic ($\kb$) contributions:
+\begin{align}
+  \kf(\eta) &= \kET\,\exp\!\left(-\frac{\alpha F\eta}{RT}\right)
+  \label{eq:kf}\\
+  \kb(\eta) &= \kET\,\exp\!\left(\frac{(1-\alpha)F\eta}{RT}\right)
+  \label{eq:kb}
+\end{align}
+with $\alpha = 0.5$ at $E = \Eo$, $F = 96{,}485$~C\,mol$^{-1}$,
+$R = 8.314$~J\,mol$^{-1}$\,K$^{-1}$. This is the Butler-Volmer
+expression confirmed in Chidsey~1991, Eq.~3~\cit{3}.
+
+\subsection{Validity range}
+
+The BV approximation is valid when
+$|e\eta |/\lambda \ll 1$. For $\lambda = 0.85$~eV, this requires
+$|\eta| \ll 425$~mV. The SWV scan window for MB extends from
+$-0.65$~V to $+0.1$~V vs Ag/AgCl, giving a maximum overpotential
+$|\eta|_{\max} = 650 - 290 = 360$~mV $< 425$~mV; BV is marginally
+valid across most of the scan, but the Marcus correction at the
+negative scan limit ($\eta \approx -0.36$~V) is not negligible.
+The full Chidsey-Marcus integral (Section~\ref{sec:chidsey}) removes
+this limitation.
+
+\subsection{Numerical evaluation at T = 37$^\circ$C}
+
+At $T = 310$~K, $F/RT = 37.51$~V$^{-1}$. For $\eta = -0.1$~V
+(100~mV cathodic):
+\begin{equation}
+  \kf(-0.1\;\text{V}) = \kET\,\exp(0.5 \times 37.51 \times 0.1)
+  = \kET \times 6.55
+\end{equation}
+For $\eta = -0.3$~V (at the cathodic scan limit near the MB peak):
+\begin{equation}
+  \kf(-0.3\;\text{V}) = \kET\,\exp(0.5 \times 37.51 \times 0.3)
+  = \kET \times 282
+\end{equation}
+
+%=======================================================================
+\section{Full Chidsey-Marcus Integral}
+\label{sec:chidsey}
+
+\subsection{Electronic density of states of the metal}
+
+The Butler-Volmer model treats the metal electrode as having a single
+energy level at the Fermi energy. The Marcus-Chidsey model
+(Chidsey~1991~\cit{3}, Eqs.~4--8) correctly accounts for the
+continuum of metallic electronic states, weighted by the
+Fermi-Dirac distribution:
+\begin{equation}
+  f_{\pm}(\varepsilon_i) = \frac{1}{1 + \exp\!\bigl[\pm e(\varepsilon_i - \bar{\mu})/({\kB T})\bigr]}
+  \label{eq:fermi}
+\end{equation}
+The cathodic ($+$) and anodic ($-$) rate constants are
+(Chidsey~1991, Eqs.~7--8):
+\begin{equation}
+  \kf(E, T) = \nu_p\,P_n
+  \int_{-\infty}^{+\infty}
+  \exp\!\!\left[-\frac{(x - (\lambda^* + E^*))^2}{4\lambda^*}\right]
+  \frac{1}{1+e^x}\;dx
+  \label{eq:chidkf}
+\end{equation}
+\begin{equation}
+  \kb(E, T) = \nu_p\,P_n
+  \int_{-\infty}^{+\infty}
+  \exp\!\!\left[-\frac{(x - (\lambda^* - E^*))^2}{4\lambda^*}\right]
+  \frac{1}{1+e^{-x}}\;dx
+  \label{eq:chidkb}
+\end{equation}
+where $\lambda^* = \lambda/(\kB T)$, $E^* = e\eta/(\kB T)$, and
+$P_n = 2\pi^{3/2}|V_n|^2\rho_m/h$ is a product of the electronic
+coupling $|V_n|$ and the metallic density of states $\rho_m$
+(Chidsey~1991, Eq.~5).
+
+\subsection{Key features of the integral}
+
+At \textbf{zero overpotential} ($E^* = 0$), both expressions give the
+same $\kET$, recovering Eq.~\eqref{eq:kET0}.
+
+At \textbf{large cathodic overpotential} ($E^* \gg \lambda^*$),
+$\kf$ plateaus at $\nu_p P_n \sqrt{\pi\lambda^*}$: the Marcus
+inverted region is suppressed because the Fermi-Dirac distribution
+provides states at all energies. This \textit{plateau} is observed
+experimentally in Chidsey~1991 (Fig.~4A), and is absent in the BV
+model.
+
+At \textbf{moderate overpotentials} ($|E^*| \ll \lambda^*$), the
+integrals reduce to the BV expressions in
+Eqs.~\eqref{eq:kf}--\eqref{eq:kb}.
+
+%=======================================================================
+\section{Formal Potential of Methylene Blue: pH Dependence}
+\label{sec:formal}
+
+\subsection{Nernst equation for the 2e$^-$/2H$^+$ couple}
+
+The MB reduction is (Eq.~\ref{eq:MBredn}): two electrons and two
+protons are consumed. Applying the Nernst equation to this half-reaction:
+\begin{equation}
+  E = \Eo_{\text{MB}} - \frac{RT}{nF}\ln\frac{[\text{LMB}]}{[\text{MB}^+][\text{H}^+]^2}
+  \label{eq:nernst_full}
+\end{equation}
+At equilibrium in acidic media, setting activity quotient to unity
+and expressing $[\text{H}^+] = 10^{-\text{pH}}$:
+\begin{equation}
+  \Eo_{\text{MB}}(\text{pH}) = \Eo_{\text{MB}}(\text{pH}_0)
+  - \frac{n_H}{n_e}\cdot\frac{RT\ln10}{F}\cdot(\text{pH} - \text{pH}_0)
+  \label{eq:Ephcorr}
+\end{equation}
+With $n_H = n_e = 2$, the ratio $n_H/n_e = 1$, so the coefficient
+is exactly $59.2$~mV per pH unit at $25\,^\circ$C and $61.6$~mV per
+pH unit at $37\,^\circ$C.
+
+\subsection{Confirmed reference value}
+
+Pheeney and Barton~(2012)~\cit{4} measured the midpoint potential of
+MB covalently tethered to DNA on gold electrodes in aqueous buffer
+(pH~7). The confirmed value (Pheeney~2012, p.~7065, Fig.~2 and text):
+\begin{equation}
+  \Eo_{\text{MB}}(\text{pH}~7) = -290\;\text{mV vs Ag/AgCl}
+  \label{eq:EoMBpH7}
+\end{equation}
+This is used as the reference in Eq.~\eqref{eq:Ephcorr}:
+\begin{equation}
+  \Eo_{\text{MB}}(\text{pH}) = -290 - 61.6\,(\text{pH} - 7)\;\text{mV vs Ag/AgCl}
+  \label{eq:EoMBpH}
+\end{equation}
+(using the 37~$^\circ$C slope; the difference from the 25~$^\circ$C
+value of 59.2~mV/pH is 4\%).
+
+\subsection{Wound pH range}
+
+Wound fluid pH spans 6.5--8.5 across wound types (chronic wounds are
+slightly acidic). Applying Eq.~\eqref{eq:EoMBpH}:
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ccc@{}}
+\toprule
+pH & $\Eo_{\text{MB}}$ (mV vs Ag/AgCl) & Shift from pH~7 \\
+\midrule
+6.5 & $-290 + 31 = -259$ & $+31$ mV \\
+7.0 & $-290$             & reference \\
+7.5 & $-290 - 31 = -321$ & $-31$ mV \\
+8.0 & $-290 - 62 = -352$ & $-62$ mV \\
+\bottomrule
+\end{tabular}
+\caption{MB formal potential across the wound pH range, from
+Eq.~\eqref{eq:EoMBpH} and Pheeney~2012~\cit{4}. The $\pm62$~mV
+shift across the pH 6.5--8.0 range is well within the MB peak FWHM
+of $\approx 33$~mV (Layer~11); the peak fitting in Layer~12 must
+allow a floating peak position.}
+\label{tab:EopH}
+\end{table}
+
+%=======================================================================
+\section{Temperature Correction to $k^0$}
+\label{sec:temp}
+
+\subsection{Derivation from the Marcus activation energy}
+
+From Eq.~\eqref{eq:kET0}, $\kET \propto \exp(-\lambda/4\kB T)$.
+This gives an Arrhenius activation energy:
+\begin{equation}
+  E_a = \frac{\lambda}{4} = \frac{0.85}{4} = 0.21\;\text{eV}
+  \approx 20.3\;\text{kJ\,mol}^{-1}
+  \label{eq:Ea}
+\end{equation}
+confirmed for the Fc/Au system by the Arrhenius plots in Chidsey~1991
+(Fig.~4B, temperature range 1--47~$^\circ$C). The temperature
+correction factor from $T_{\text{ref}} = 298$~K to $T = 310$~K is:
+\begin{equation}
+  \frac{\kET(310)}{\kET(298)}
+  = \exp\!\left[\frac{\lambda}{4\kB}\left(\frac{1}{298} - \frac{1}{310}\right)\right]
+  = \exp\!\left[2{,}466\,\text{K} \times 1.30 \times 10^{-4}\,\text{K}^{-1}\right]
+  = e^{0.320} \approx 1.38
+  \label{eq:Tcorr}
+\end{equation}
+The rate constant increases by approximately 38\% at wound temperature
+(37~$^\circ$C) relative to the 25~$^\circ$C laboratory reference
+value.
+
+\subsection{Impact on SWV operating point}
+
+Because both the MB and Fc (reference) electrodes are on the same chip
+at the same temperature, the temperature shift of $\kET$ is identical
+for all probes. The ratiometric signal $F_k(T)$ in Layer~13 is thus
+insensitive to uniform temperature changes to first order. However,
+if $\kET(T)$ crosses a regime boundary (e.g., from quasi-reversible
+to reversible as temperature rises), the peak height can change
+non-linearly. This is mitigated by pre-characterising the optimal
+$f_{\text{SWV}}$ at wound temperature (37~$^\circ$C, not 25~$^\circ$C).
+
+%=======================================================================
+\section{Double-Layer (Frumkin) Correction}
+\label{sec:frumkin}
+
+\subsection{Diffuse-layer potential at the SAM-coated electrode}
+
+Becka and Miller~(1993)~\cit{5} showed that self-assembled
+$\omega$-hydroxy thiol monolayers on gold dramatically reduce the
+diffuse-layer potential $\phi_2$ relative to bare gold, because the
+hydrocarbon film drops nearly all of the applied potential
+\textit{inside} the compact film. The double layer is modelled as
+two capacitors in series: the monolayer compact capacitor $C_m$ and
+the Gouy-Chapman diffuse-layer capacitor $C_{gc}$~\cit{5},
+Eqs.~1--4). The effective potential at the outer Helmholtz plane
+(OHP) is:
+\begin{equation}
+  \phi_2 = \frac{C_m}{C_{gc} + C_m}\,V_{\text{app}}
+  \label{eq:phi2}
+\end{equation}
+For our PEG-MCH mixed SAM with a charged peptide probe, $\phi_2$ is
+further reduced by the high ionic strength of wound fluid
+($I \approx 150$~mM), which compresses the Debye layer to
+$\kappa^{-1} \approx 0.77$~nm. At this ionic strength, the Gouy-Chapman
+diffuse-layer capacitance $C_{gc} = 238.2 c^{1/2}$~$\mu$F\,cm$^{-2}$
+(Becka~1993, Eq.~7; $c$ in mol/L) gives:
+\begin{equation}
+  C_{gc}(\text{150 mM}) = 238.2 \times 0.15^{1/2}
+  \approx 92\;\mu\text{F\,cm}^{-2}
+  \label{eq:Cgc}
+\end{equation}
+For a typical monolayer capacitance $C_m \approx 2\;\mu$F\,cm$^{-2}$,
+the ratio $C_m/(C_{gc} + C_m) \approx 0.021$, so $\phi_2$ is only 2\%
+of the applied potential. The Frumkin correction (Becka~1993, Eq.~5):
+\begin{equation}
+  k_{\text{corr}}(E) = k(E)\,\exp\!\left(-\frac{z\,e\,\phi_2(E)}{\kB T}\right)
+  \label{eq:frumkin}
+\end{equation}
+(where $z$ is the charge of the electroactive species at the OHP)
+reduces to a $< 5\%$ correction for surface-confined MB ($z \approx 0$
+near $\Eo_{\text{MB}}$, since MB$^+$ is neutral at its formal
+potential). This correction is included in the model but is
+second-order.
+
+%=======================================================================
+\section{Synthesis: Effective $k_{\text{ET}}^0$}
+\label{sec:synth}
+
+Combining all contributions, the effective standard ET rate constant
+passed to the SWV forward model (Layer~11) is:
+\begin{equation}
+  k^{0}_{\text{ET,eff}} = \underbrace{\kET(d)}_{\text{Section~\ref{sec:dist}}}
+  \times \underbrace{f_T}_{\text{Eq.~\ref{eq:Tcorr}}}
+  \times \underbrace{f_{\phi_2}(E)}_{\text{Eq.~\ref{eq:frumkin}}}
+  \label{eq:kETeff}
+\end{equation}
+where $\kET(d)$ is from Eq.~\eqref{eq:k0d} evaluated at the
+mean effective distance $\langle d\rangle$ from Layer~8, and
+$f_T = 1.38$ for wound-temperature operation. The potential-dependent
+factor $f_{\phi_2}(E)$ is incorporated into the BV/Chidsey-Marcus
+rate expressions directly.
+
+At the expected clinically relevant tether distances, the estimated
+$k^{0}_{\text{ET,eff}}$ range is:
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$\langle d\rangle$ (nm) & $\kET$ at 25$^\circ$C (s$^{-1}$) &
+$f_T \times \kET$ at 37$^\circ$C (s$^{-1}$) & SWV regime (Section~\ref{sec:limits}) \\
+\midrule
+1.0 & $\sim 4.5\times10^4$ & $\sim 6.2\times10^4$ & reversible \\
+1.5 & $\sim 430$           & $\sim 590$            & quasi-reversible \\
+2.0 & $\sim 4.0$           & $\sim 5.5$            & quasi-reversible \\
+2.5 & $\sim 0.04$          & $\sim 0.05$           & irreversible \\
+\bottomrule
+\end{tabular}
+\caption{Estimated $k^{0}_{\text{ET,eff}}$ from Eq.~\eqref{eq:kETeff} using
+$\beta = 0.95$~\AA$^{-1}$ (Smalley~1995~\cit{2}) and $f_T = 1.38$
+(Chidsey~1991~\cit{3}, Eq.~\ref{eq:Tcorr}). The SWV regime column
+assumes $f_{\text{SWV}} = 30$~Hz; Layer~11 selects the optimal
+$f_{\text{SWV}}$ given the measured $\kET$.}
+\label{tab:kETeff}
+\end{table}
+
+The critical design implication: $k^{0}_{\text{ET,eff}}$ spans four orders
+of magnitude across the plausible tether-distance range. The SWV
+parameters (frequency, amplitude) cannot be fixed without first
+measuring $\kET$ on the fabricated electrode.
+
+%=======================================================================
+\section{Limitations}
+\label{sec:limits}
+
+\begin{enumerate}[leftmargin=*]
+
+  \item \textbf{$\kET$ must be measured empirically.}
+    All values in Table~\ref{tab:kETeff} are model-derived estimates,
+    not measurements. The standard approach is to measure $\kET$
+    from the shift in SWV peak position as a function of $f_{\text{SWV}}$
+    (Laviron's method) or from the $f$-dependence of the AC impedance.
+    Until $\kET$ is measured on the fabricated electrode, the SWV
+    operating parameters (Layer~11) remain uncalibrated.
+
+  \item \textbf{$\beta$ for the PEG-peptide tether is unconfirmed.}
+    Smalley~1995~\cit{2} reports $\beta = 0.95$~\AA$^{-1}$ for
+    \textit{alkyl} chains. PEG tethers and flexible peptide chains
+    have a different electronic structure; literature values range
+    from $\beta \approx 0.6$~\AA$^{-1}$ (through-bond PEG) to
+    $\beta \approx 1.1$~\AA$^{-1}$ (alkyl). This introduces a
+    factor of $\exp[0.5 \times 15] \approx 10^3$ uncertainty in
+    $\kET$ for $d = 15$~\AA.
+
+  \item \textbf{$\lambda_{\text{MB}}$ is unconfirmed.}
+    The value $\lambda = 0.85$~eV is taken from Chidsey~1991~\cit{3}
+    for the Fc/alkyl/Au system. MB has a different inner-sphere
+    reorganisation energy ($\lambda_i$) that has not been measured
+    in any paper in \texttt{papers/layer\_10/}. A 0.1~eV uncertainty
+    in $\lambda$ propagates to $\approx 20\%$ uncertainty in $\kET$
+    through $\exp(-\Delta\lambda/4\kB T)$.
+
+  \item \textbf{The formal potential $\Eo_{\text{Fc}}$ is not confirmed
+    from papers in this folder.}
+    Section~\ref{sec:formal} derives $\Eo_{\text{MB}}(\text{pH})$;
+    the corresponding Fc formal potential must be measured on the
+    fabricated chip. Literature reports range from $+0.40$ to
+    $+0.47$~V vs Ag/AgCl (sat.), depending on electrolyte and
+    electrode geometry.
+
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_10/}.
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+
+\item Marcus RA (1965) On the theory of electron-transfer reactions.
+  VI. Unified treatment for homogeneous and electrode reactions.
+  \textit{J Chem Phys} 43:679--701. DOI:~10.1063/1.1696792.
+  \textbf{marcus1965.pdf} -- Eq.~82 (electrochemical $\Delta F^*$),
+  Eqs.~31/33 (rate constant), Eq.~83 ($\lambda = \lambda_i + \lambda_o$),
+  Eq.~90 ($\lambda_o$ continuum), Eq.~87b ($\alpha$) confirmed.
+
+\item Smalley JF, Feldberg SW, Chidsey CED, Linford MR, Newton MD,
+  Liu Y-P (1995) The kinetics of electron transfer through
+  ferrocene-terminated alkanethiol monolayers on gold.
+  \textit{J Phys Chem} 99:13141--13149. DOI:~10.1021/j100035a016.
+  \textbf{smalley1995.pdf} -- $\beta_n = 1.21 \pm 0.05$
+  CH$_2^{-1}$, $k_{T,s,n=0} = 6\times10^8$~s$^{-1}$ confirmed
+  from abstract and text.
+
+\item Chidsey CED (1991) Free energy and temperature dependence of
+  electron transfer at the metal-electrolyte interface.
+  \textit{Science} 251:919--922. DOI:~10.1126/science.251.4996.919.
+  \textbf{chidsey1991.pdf} -- $\lambda = 0.85$~eV,
+  $\nu_p = 6.73\times10^4$~s$^{-1}$eV$^{-1}$, $k^0 = 1.3$~s$^{-1}$
+  (C16), BV Eq.~3, Marcus-Chidsey integral Eqs.~7--8 confirmed.
+
+\item Pheeney CG, Barton JK (2012) DNA electrochemistry with tethered
+  methylene blue. \textit{Langmuir} 28:7063--7070.
+  DOI:~10.1021/la300566x.
+  \textbf{pheeney2012.pdf} -- $\Eo_{\text{MB}} = -290$~mV vs
+  Ag/AgCl at pH~7, $n=2$, surface coverage 1.3--3.2~pmol/cm$^2$
+  confirmed from text (p.~7065).
+
+\item Becka AM, Miller CJ (1993) Electrochemistry at $\omega$-hydroxy
+  thiol coated electrodes. 4. Comparison of the double layer at
+  $\omega$-hydroxy thiol and alkanethiol monolayer coated Au
+  electrodes. \textit{J Phys Chem} 97:6233--6239.
+  DOI:~10.1021/j100125a020.
+  \textbf{becka1993.pdf} -- Frumkin correction Eq.~5, two-capacitor
+  model Eqs.~1--4, $C_{gc} = 238.2c^{1/2}$~$\mu$F\,cm$^{-2}$
+  (Eq.~7) confirmed.
+
+\end{enumerate}
+
+\end{document}

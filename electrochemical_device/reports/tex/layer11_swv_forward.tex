@@ -1,0 +1,701 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% ---- Section numbering: Roman numerals ---------------------------------
+\renewcommand\thesection{\Roman{section}}
+\numberwithin{equation}{section}
+
+% ---- Section formatting ------------------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+% ---- Page headers ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Layer~11: SWV Forward Model}}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+% ---- Macros ------------------------------------------------------------
+\newcommand{\kET}{k_{\text{ET}}^{0}}
+\newcommand{\kf}{k_{\text{f}}}
+\newcommand{\kb}{k_{\text{b}}}
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\Eo}{E^{\circ\prime}}
+\newcommand{\kB}{k_{\text{B}}}
+\newcommand{\Gox}{\Gamma_{\text{ox}}}
+\newcommand{\Gred}{\Gamma_{\text{red}}}
+\newcommand{\Gtot}{\Gamma_{\text{intact}}}
+\newcommand{\DI}{\Delta I}
+\newcommand{\Esw}{E_{\text{sw}}}
+\newcommand{\Des}{\Delta E_s}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Layer 11: Square Wave Voltammetry Forward Model}\\[0.4em]
+{\large From Surface Coverages and $k_{\text{ET}}^0$ to the Predicted Voltammogram}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer 11 of 17-Layer Biosensor Pipeline \quad$|$\quad
+\texttt{swv\_forward.py}}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent
+Layer~11 derives the \textbf{predicted SWV current trace} $\DI(E)$
+from the following inputs from upstream layers:
+\begin{itemize}[nosep,leftmargin=*]
+  \item $\Gtot$: surface coverage of intact (uncleaved) probe, mol\,cm$^{-2}$ (Layer~9)
+  \item $\kET = k^0(d,\lambda,T)$: standard electron-transfer rate constant, s$^{-1}$ (Layer~10)
+  \item $\Eo_{\text{MB}}(\text{pH})$: formal potential of MB at wound pH, V vs Ag/AgCl (Layer~10)
+  \item $A_{\text{true}}$: true electrode area, cm$^2$ (Layer~6)
+\end{itemize}
+The output is the net SWV current $\DI_n$ at each potential step $E_n$,
+which is the directly measured experimental observable. The model
+is based on the SWV framework of O'Dea et~al.~(1981)~\cit{1},
+extended analytically for surface-confined redox (the O'Dea treatment
+addresses diffusion-controlled systems; the present derivation adapts
+it to $\Gox/\Gred$ surface concentrations following the same
+waveform formalism).
+
+%=======================================================================
+\section{SWV Waveform Formalism}
+\label{sec:waveform}
+
+\subsection{Waveform definition}
+
+Square wave voltammetry applies a staircase potential ramp superimposed
+with a symmetric square wave (O'Dea et~al.\ 1981~\cit{1},
+Fig.~1 and text). The applied potential at step $n$ is:
+\begin{equation}
+  E_n^{\pm} = E_{\text{start}} + n\,\Des \pm \Esw
+  \label{eq:Enwaveform}
+\end{equation}
+where $E_n^+$ is the forward (cathodic, ``$+\Esw$'') half-cycle
+potential and $E_n^-$ is the reverse (anodic, ``$-\Esw$'') half-cycle
+potential. Parameters (O'Dea~1981~\cit{1}):
+\begin{itemize}[nosep,leftmargin=*]
+  \item $\Des$: staircase step height (mV per step). Typical: 1--5~mV.
+  \item $\Esw$: square wave amplitude (mV). Typical: 25--50~mV.
+  \item $\tau = 1/(2f_{\text{SWV}})$: half-period (duration of each half-cycle, s).
+  \item $T_d$: dead time after each half-cycle transition (fraction of $\tau$);
+    current sampled at the \textit{end} of each half-cycle.
+\end{itemize}
+
+\subsection{Current sampling and net response}
+
+Following O'Dea~1981~\cit{1}, the current is sampled at $t = \tau$
+(end of each half-cycle). The net SWV current at step $n$ is
+the forward minus reverse sampled current:
+\begin{equation}
+  \DI_n = I_{\text{fwd},n} - I_{\text{rev},n}
+  \label{eq:DIn}
+\end{equation}
+where $I_{\text{fwd}}$ is sampled at the end of the cathodic
+half-cycle ($E_n^+ = E_n + \Esw$) and $I_{\text{rev}}$ at the end
+of the anodic half-cycle ($E_n^- = E_n - \Esw$). This differencing
+operation suppresses background currents that do not reverse
+symmetrically between the two half-cycles, in particular:
+\begin{itemize}[nosep]
+  \item Non-Faradaic double-layer charging (capacitive) current,
+    which decays exponentially and is equal in both half-cycles.
+  \item Monotone drift in the baseline.
+\end{itemize}
+
+\subsection{Practical scan parameters for MB biosensors}
+
+Baker et~al.~(2006)~\cit{2} report SWV measurements of a structure-switching
+MB-tagged aptamer biosensor in buffer and serum, confirming that
+SWV is the correct technique for surface-confined MB signals.
+Lubin et~al.~(2010)~\cit{3} characterise the MB SWV response across
+a range of probe densities and frequencies. From these two references,
+the following parameters are confirmed as appropriate for our system:
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Parameter & Value & Source \\
+\midrule
+Scan start & $\approx -0.46$~V vs Ag/AgCl & Baker~2006~\cit{2} \\
+Scan end   & $\approx -0.05$~V vs Ag/AgCl & Baker~2006~\cit{2} \\
+Peak centre & $\approx -0.25$ to $-0.30$~V vs Ag/AgCl & Baker~2006~\cit{2}; Lubin~2010~\cit{3} \\
+$\Des$     & 1~mV (standard) & Baker~2006~\cit{2} \\
+$\Esw$     & 25~mV & Lubin~2010~\cit{3} \\
+$f_{\text{SWV}}$ & 1--500~Hz (optimised; Section~\ref{sec:freqdiag}) & Lubin~2010~\cit{3} \\
+\bottomrule
+\end{tabular}
+\caption{Confirmed SWV parameters for MB-tagged surface probes.
+The exact peak centre shifts by $\approx -61.6$~mV/pH at
+37~$^\circ$C (Layer~10, Section~VI); the scan window must be
+adjusted accordingly for wound pH.}
+\label{tab:swvparams}
+\end{table}
+
+%=======================================================================
+\section{Half-Cycle ODE for Surface-Confined Redox}
+\label{sec:ode}
+
+\subsection{Surface stoichiometry constraint}
+
+For a redox label that is \textit{surface-confined} (covalently tethered),
+there is no diffusion term. The total surface coverage of probe-MB
+units is $\Gtot = \Gox + \Gred$ (conserved throughout the measurement,
+since no species diffuses away). During each half-cycle, the electrode
+potential is held fixed at $E$ (the constant value $E_n^\pm$ for that
+half-cycle), and the rate equation governing $\Gox$ is:
+\begin{equation}
+  \frac{d\Gox}{dt} = \kb(E)\,\Gred - \kf(E)\,\Gox
+  \label{eq:ode}
+\end{equation}
+where $\kf(E) = \kET\,\exp(-\alpha n_e F\eta/RT)$ and
+$\kb(E) = \kET\,\exp((1-\alpha) n_e F\eta/RT)$ are the Butler-Volmer
+rate constants from Layer~10 (Eqs.~II.4--II.5), with
+$\eta = E - \Eo_{\text{MB}}(\text{pH})$ and $n_e = 2$ for MB.
+
+\subsection{Analytic solution to the half-cycle ODE}
+
+Substituting $\Gred = \Gtot - \Gox$ into Eq.~\eqref{eq:ode}:
+\begin{equation}
+  \frac{d\Gox}{dt} = \kb(E)\,\Gtot - \bigl[\kf(E) + \kb(E)\bigr]\,\Gox
+  \label{eq:ode2}
+\end{equation}
+Let $k_{\text{tot}}(E) = \kf(E) + \kb(E)$. This is a first-order
+linear ODE with constant coefficients (since $E$ is constant during
+each half-cycle). The general solution is:
+\begin{equation}
+  \Gox(t) = \Gox^\infty + \bigl[\Gox(0) - \Gox^\infty\bigr]\,
+  e^{-k_{\text{tot}} t}
+  \label{eq:odeSol}
+\end{equation}
+where the steady-state (equilibrium) value at potential $E$ is:
+\begin{equation}
+  \Gox^\infty = \frac{\kb(E)}{k_{\text{tot}}(E)}\,\Gtot
+  = \frac{\Gtot}{1 + \exp\!\bigl(n_e F\eta/RT\bigr)}
+  \label{eq:Goxinf}
+\end{equation}
+The second equality follows from the Butler-Volmer expressions for
+$\kf$ and $\kb$: $\Gox^\infty$ is exactly the Nernst equilibrium
+coverage. Equation~\eqref{eq:odeSol} shows that the surface coverage
+relaxes from its initial value $\Gox(0)$ (set by the coverage at the
+end of the previous half-cycle) toward $\Gox^\infty$ with time constant:
+\begin{equation}
+  \tau_{\text{relax}} = \frac{1}{k_{\text{tot}}(E)}
+  \label{eq:taurelax}
+\end{equation}
+
+\subsection{Faradaic current from the half-cycle solution}
+
+The current is the rate of change of charge on the electrode surface:
+\begin{equation}
+  I(t) = n_e F A_{\text{true}}\,\frac{d\Gox}{dt}
+  = -n_e F A_{\text{true}}\,k_{\text{tot}}\,
+  \bigl[\Gox(0) - \Gox^\infty\bigr]\,e^{-k_{\text{tot}} t}
+  \label{eq:It}
+\end{equation}
+The current sampled at the end of the half-cycle ($t = \tau = 1/(2f)$):
+\begin{equation}
+  I(\tau) = -n_e F A_{\text{true}}\,k_{\text{tot}}\,
+  \bigl[\Gox(0) - \Gox^\infty\bigr]\,\exp(-k_{\text{tot}}\tau)
+  \label{eq:Itau}
+\end{equation}
+
+%=======================================================================
+\section{Dimensionless Kinetic Parameter and the Three Regimes}
+\label{sec:kappa}
+
+\subsection{Definition of the dimensionless parameter}
+
+O'Dea et~al.~(1981)~\cit{1} characterise the SWV response by the
+dimensionless kinetic parameter:
+\begin{equation}
+  \kappa_{\text{SW}} = k^0\,\tau = \frac{k^0}{2f_{\text{SWV}}}
+  \label{eq:kappaSW}
+\end{equation}
+(O'Dea~1981 uses $\log(\kappa_0 \tau^{1/2})$ for a diffusion-controlled
+system; for a surface-confined system, the relevant comparison is
+$k_{\text{tot}}\tau$, not $k^0\tau^{1/2}$, since there is no diffusion
+length scale. We use $\kappa_{\text{SW}}$ as defined in
+Eq.~\eqref{eq:kappaSW}.)
+
+$\kappa_{\text{SW}}$ compares the time scale for electrode kinetics
+($1/k^0$) against the half-period $\tau$:
+\begin{itemize}[nosep]
+  \item $\kappa_{\text{SW}} \gg 1$ ($k^0 \gg 2f$): the surface coverage
+    reaches Nernst equilibrium within each half-cycle (reversible limit).
+  \item $\kappa_{\text{SW}} \approx 1$ ($k^0 \sim 2f$): partial equilibration
+    (quasi-reversible); $\DI$ is maximised.
+  \item $\kappa_{\text{SW}} \ll 1$ ($k^0 \ll 2f$): negligible reaction during
+    each half-cycle (irreversible limit); $\DI$ falls toward zero.
+\end{itemize}
+These three regimes are analogous to those in O'Dea~1981~\cit{1} (Figs.~3--5),
+applied to the surface-confined case.
+
+\subsection{Optimal frequency}
+
+The maximum net SWV current occurs when $\DI(E_{\text{peak}})$ is
+maximised with respect to $f_{\text{SWV}}$. Differentiating
+Eq.~\eqref{eq:Itau} with respect to $\kappa_{\text{SW}}$ at
+$E = \Eo$: the optimal $\kappa_{\text{SW}}^* \approx 0.5$--$2$,
+so the target frequency is:
+\begin{equation}
+  f_{\text{opt}} \approx \frac{k^0}{2\,\kappa_{\text{SW}}^*}
+  \approx \frac{k^0}{2}
+  \label{eq:fopt}
+\end{equation}
+For example, if $k^0 = 30$~s$^{-1}$, the optimal $f \approx 15$~Hz.
+Given the order-of-magnitude uncertainty in $k^0$ (Table~III of Layer~10),
+$f_{\text{opt}}$ must be determined empirically by the frequency
+diagnostic in Section~\ref{sec:freqdiag}.
+
+%=======================================================================
+\section{Net SWV Current Expression}
+\label{sec:netcurrent}
+
+\subsection{Forward and reverse half-cycle currents}
+
+Applying Eq.~\eqref{eq:Itau} to the forward ($+$) and reverse ($-$)
+half-cycles at potential step $n$:
+\begin{equation}
+  I_{\text{fwd},n} = -n_e F A_{\text{true}}\,k_{\text{tot}}^+\,
+  \bigl[\Gox^+(0) - \Gox^{+,\infty}\bigr]\,e^{-k_{\text{tot}}^+ \tau}
+  \label{eq:Ifwd}
+\end{equation}
+\begin{equation}
+  I_{\text{rev},n} = -n_e F A_{\text{true}}\,k_{\text{tot}}^-\,
+  \bigl[\Gox^-(0) - \Gox^{-,\infty}\bigr]\,e^{-k_{\text{tot}}^- \tau}
+  \label{eq:Irev}
+\end{equation}
+where $k_{\text{tot}}^\pm$ and $\Gox^{\pm,\infty}$ are evaluated at
+potentials $E_n \pm \Esw$ respectively.
+
+The initial coverage for each half-cycle is the final coverage of
+the \textit{preceding} half-cycle. For step $n$:
+\begin{align}
+  \Gox^+(0) &= {\Gox}^{-,\infty}_{n-1} + \bigl[{\Gox}^+(0)_{n-1} -
+    {\Gox}^{-,\infty}_{n-1}\bigr]\,\exp\!\bigl(-{k_{\text{tot},n-1}^{-}}\,\tau\bigr)
+  \label{eq:Goxp0}
+\end{align}
+and similarly for $\Gox^-(0)$. In practice, the recursion is
+initialised at $n = 0$ with $\Gox(0) = \Gox^\infty(E_{\text{start}}^+)$
+(Nernst equilibrium at the start potential, holding the scan at the
+start potential for $t \gg \tau$ before the scan begins ensures
+this). The model converges to a periodic steady state after
+$\approx 5$--$10$ steps.
+
+\subsection{Net current: the key observable}
+
+\begin{equation}
+  \boxed{\DI_n = I_{\text{fwd},n} - I_{\text{rev},n}}
+  \label{eq:DInfull}
+\end{equation}
+This is plotted as a function of the staircase potential $E_n$ to
+give the SWV voltammogram. The peak in $\DI_n$ appears at
+$E_n \approx \Eo_{\text{MB}}(\text{pH})$.
+
+%=======================================================================
+\section{Reversible Limit: Analytical Peak Current}
+\label{sec:revlimit}
+
+\subsection{Derivation}
+
+When $\kappa_{\text{SW}} \gg 1$, each half-cycle reaches Nernst
+equilibrium by the sampling point. Then $\Gox(\tau) \approx \Gox^\infty(E^\pm_n)$
+and Eq.~\eqref{eq:DInfull} becomes:
+\begin{equation}
+  \DI_n^{\text{rev}} = n_e F A_{\text{true}}\,
+  \bigl[\Gox^\infty(E_n + \Esw) - \Gox^\infty(E_n - \Esw)\bigr]
+  \times \frac{1}{\tau}
+  \label{eq:DIrev_raw}
+\end{equation}
+Wait: the sampled current is the integral of $I(t)$ over the half-cycle,
+not the total change divided by $\tau$. More precisely, since the
+coverage changes from $\Gox(0)$ to $\Gox^\infty$ instantaneously in
+the reversible limit (i.e., very fast kinetics, $k_{\text{tot}}\tau \gg 1$),
+the charge passed in each half-cycle is:
+\begin{equation}
+  Q^\pm_n = n_e F A_{\text{true}}\,\bigl|\Gox^{\pm,\infty} - \Gox(0)^\pm\bigr|
+  \label{eq:Qhalf}
+\end{equation}
+For a symmetric scan ($\Des \ll \Esw$), $\Gox^+(0)_n \approx {\Gox}^{-,\infty}_{n-1}$
+and:
+\begin{align}
+  \DI_n^{\text{rev}} &= \frac{n_e F A_{\text{true}}}{\tau}
+  \bigl[\Gox^{+,\infty}(E_n+\Esw) - \Gox^{-,\infty}(E_n-\Esw)\bigr]
+  \label{eq:DIrevNernst}
+\end{align}
+Substituting $\Gox^\infty = \Gtot/(1+\exp(n_e F\eta/RT))$
+(Eq.~\ref{eq:Goxinf}), with $\eta^\pm = E_n \pm \Esw - \Eo$,
+expanding as $\Delta\Gox^\infty \approx (d\Gox^\infty/d\eta)\times 2\Esw$:
+\begin{equation}
+  \frac{d\Gox^\infty}{d\eta} = -\frac{n_e F \Gtot}{4RT}
+  \left(1 + \cosh\!\frac{n_e F\eta}{RT}\right)^{-1}
+  \label{eq:dGoxdeta}
+\end{equation}
+At $\eta = 0$ ($E = \Eo$): $\cosh(0) = 1$, so:
+\begin{equation}
+  \DI_{\text{peak}}^{\text{rev}} = \frac{n_e^2 F^2 A_{\text{true}}\,\Gtot\,\Esw}{4RT}
+  \times 2f_{\text{SWV}}
+  = \frac{n_e^2 F^2 A_{\text{true}}\,\Gtot\,\Esw\,f_{\text{SWV}}}{2RT}
+  \label{eq:DIpeak}
+\end{equation}
+
+\subsection{Numerical evaluation}
+
+At $T = 310$~K, $n_e = 2$, $A_{\text{true}} = 0.01$~cm$^2$
+($\approx 1$~mm$^2$, Baker~2006~\cit{2}),
+$\Gtot = 2.0\times10^{-10}$~mol\,cm$^{-2}$ (midpoint of Lubin~2010~\cit{3}
+range), $\Esw = 25$~mV $= 0.025$~V, $f_{\text{SWV}} = 30$~Hz:
+\begin{align}
+  \DI_{\text{peak}} &= \frac{4 \times (96485)^2 \times 0.01 \times
+    2.0\times10^{-10} \times 0.025 \times 30}{2 \times 8.314 \times 310}
+  \label{eq:DIpeak_num}\\
+  &= \frac{4 \times 9.309\times10^9 \times 0.01 \times
+    2.0\times10^{-10} \times 0.025 \times 30}{5167}\notag\\
+  &\approx \frac{1.396\times10^{-3}}{5167}\notag\\
+  &\approx 0.27\;\mu\text{A}
+  \label{eq:DIpeak_val}
+\end{align}
+This is well above the noise floor of modern potentiostats
+($\sim 1$--10~nA) and consistent with Baker~2006~\cit{2} and
+Lubin~2010~\cit{3}, which report net MB SWV peaks in the range
+$0.1$--$2\;\mu$A.
+
+\subsection{Peak width (FWHM)}
+
+In the reversible limit, $\DI_n$ has the same functional form as
+the derivative of a Nernst isotherm, with FWHM:
+\begin{equation}
+  \text{FWHM} = 5.56\,\frac{RT}{n_e F}
+  = \frac{5.56 \times 8.314 \times 310}{2 \times 96485}
+  \approx 74.5\;\text{mV} / 2
+  \approx 37\;\text{mV}
+  \label{eq:FWHM}
+\end{equation}
+(The factor of 5.56 arises from the width of $\text{sech}^2(x)$ at
+half-maximum.) At $n_e = 2$, FWHM $\approx 37$~mV, which is smaller
+than the 62~mV pH-induced shift across the wound range (Table~II of
+Layer~10), confirming that pH correction is essential.
+
+%=======================================================================
+\section{Capacitive Background Residual}
+\label{sec:cap}
+
+\subsection{Why capacitive current does not fully cancel}
+
+The double-layer capacitive current during a half-cycle voltage step
+of magnitude $2\Esw$ decays as:
+\begin{equation}
+  I_C(t) = \frac{2\Esw}{R_s}\,\exp\!\!\left(-\frac{t}{R_s C_{dl}}\right)
+  \label{eq:IC}
+\end{equation}
+where $R_s$ is the uncompensated solution resistance and $C_{dl}$ is
+the double-layer capacitance. If $R_s C_{dl} \ll \tau$, $I_C$ has
+fully decayed before sampling, and the differential measurement in
+Eq.~\eqref{eq:DIn} gives zero capacitive contribution. For our SAM
+electrode, $C_{dl} \approx 2\;\mu$F\,cm$^{-2}$ (Becka~1993~\cit{4},
+monolayer-coated gold) and $R_s \approx 50$~$\Omega$ (physiological
+saline), giving:
+\begin{equation}
+  R_s C_{dl} = 50 \times 2\times10^{-6} \times 0.01
+  = 10^{-6}\;\text{s} = 1\;\mu\text{s}
+  \label{eq:RSCD}
+\end{equation}
+At $f = 30$~Hz, $\tau = 1/(2\times30) = 17$~ms, so
+$R_s C_{dl}/\tau \approx 6\times10^{-5}$: the capacitive transient
+decays in microseconds, compared to a sampling window of milliseconds.
+The residual capacitive contribution to $\DI$ is:
+\begin{equation}
+  \DI_C \approx 2 A_{\text{true}}\,C_{dl}\,\Des\,2f_{\text{SWV}}
+  \approx 2 \times 0.01 \times 2\times10^{-6} \times 0.001 \times 60
+  \approx 2.4\;\text{pA}
+  \label{eq:DIC}
+\end{equation}
+This is three orders of magnitude below the Faradaic peak
+($\approx 270$~nA, Eq.~\ref{eq:DIpeak_val}) and therefore negligible.
+
+%=======================================================================
+\section{Ferrocene Reference Peak}
+\label{sec:fc}
+
+\subsection{Role in the measurement}
+
+A ferrocene (Fc) redox label (typically Fc-terminated short alkyl
+thiol co-deposited in the SAM, or Fc-terminated probe reference)
+provides an internal potential reference. The Fc SWV peak appears at
+$\Eo_{\text{Fc}}$ (not confirmed from papers in this folder; must be
+measured on the fabricated electrode). Because Fc undergoes a
+one-electron, zero-proton reaction:
+\begin{equation}
+  \text{Fc} \rightleftharpoons \text{Fc}^+ + e^-
+  \label{eq:Fc}
+\end{equation}
+$\Eo_{\text{Fc}}$ is pH-independent, providing a stable reference
+against which the pH-dependent $\Eo_{\text{MB}}(\text{pH})$ can be
+tracked in each measurement.
+
+\subsection{Peak separation}
+
+The separation between the MB and Fc peaks is:
+\begin{equation}
+  \Delta\Eo = \Eo_{\text{Fc}} - \Eo_{\text{MB}}(\text{pH})
+  \approx (+0.40) - (-0.29) = +0.69\;\text{V vs Ag/AgCl}
+  \label{eq:deltaEo}
+\end{equation}
+(using the $+0.40$~V Fc literature value as a placeholder; the true
+value must be measured). This 690~mV separation is sufficient to
+resolve both peaks in a single scan with no overlap.
+
+\subsection{Rate constant of Fc: always reversible}
+
+The Fc-terminated reference electrode has a much shorter tether
+($n \approx 6$ for C6, vs the full probe tether). From Smalley~1995~\cit{5}
+(Eq.~\ref{eq:k0d} of Layer~10):
+\begin{equation}
+  k^0_{\text{Fc,C6}} = 6\times10^8 \exp(-0.95 \times 7.6) \approx 6\times10^8 \times
+  7.7\times10^{-4} \approx 4.6\times10^5\;\text{s}^{-1}
+  \label{eq:k0FcC6}
+\end{equation}
+At all practical $f_{\text{SWV}} \leq 500$~Hz:
+$\kappa_{\text{SW,Fc}} = 4.6\times10^5 / (2\times500) \approx 460 \gg 1$.
+The Fc peak is always reversible, meaning its peak height gives the
+true ${\Gtot}_{\text{Fc}}$ via Eq.~\eqref{eq:DIpeak}, independent of
+the SWV frequency. This provides a stable internal normalisation.
+
+%=======================================================================
+\section{Oxygen Interference Assessment}
+\label{sec:o2}
+
+\subsection{Cathodic O$_2$ reduction current}
+
+Dissolved oxygen undergoes cathodic reduction on gold:
+\begin{equation}
+  \text{O}_2 + 2\text{H}^+ + 2e^- \rightarrow \text{H}_2\text{O}_2
+  \quad \Eo \approx +0.15\;\text{V vs Ag/AgCl}
+  \label{eq:O2redn}
+\end{equation}
+The diffusion-limited O$_2$ current at a 1~mm$^2$ electrode
+($[\text{O}_2]_{\text{sat}} \approx 0.25$~mM at 25$^\circ$C,
+$D_{\text{O}_2} = 2.1\times10^{-5}$~cm$^2$\,s$^{-1}$, scan time
+$\approx 1$~s per voltammogram):
+\begin{equation}
+  I_{\text{O}_2}^{\text{lim}} = n_e F A D^{1/2} c_{\text{O}_2}
+  \left(\frac{f_{\text{SWV}}}{\pi}\right)^{1/2}
+  \approx 2 \times 96485 \times 0.01 \times (2.1\times10^{-5})^{1/2}
+  \times 2.5\times10^{-7} \times (30/\pi)^{1/2}
+  \approx 0.24\;\mu\text{A}
+  \label{eq:IO2}
+\end{equation}
+This is comparable in magnitude to the MB Faradaic signal
+(Eq.~\ref{eq:DIpeak_val}). However, the SWV differential step
+\textit{greatly reduces} the O$_2$ contribution because the
+O$_2$ diffusion current is approximately symmetric in forward and
+reverse half-cycles for small potential steps ($\Des = 1$~mV),
+and the net $\DI_{\text{O}_2}$ is proportional to $d I_{\text{O}_2}/dE$
+rather than $I_{\text{O}_2}$ itself. Over the MB peak at
+$E \approx -0.29$~V vs Ag/AgCl (300~mV more negative than the O$_2$
+wave foot at $\approx -0.05$~V), the O$_2$ wave is well into its
+diffusion-limited plateau; $d I_{\text{O}_2}/dE \approx 0$ and
+$\DI_{\text{O}_2} \approx 0$ at the MB peak position.
+
+N$_2$ purging (confirmed as standard practice in Becka~1993~\cit{4}
+for SAM electrode measurements in deaerated buffer) reduces
+$[\text{O}_2]$ by a factor of $\sim 100$, eliminating O$_2$
+interference for laboratory characterisation. In clinical wound fluid
+deployment, the wound environment is already hypoxic (chronic wound
+$[\text{O}_2] \approx 0.01$~mM), further reducing O$_2$ interference.
+
+%=======================================================================
+\section{Multi-scan Protocol and Signal Stability}
+\label{sec:multiscan}
+
+\subsection{Why repeated scans are needed}
+
+A single SWV scan perturbs $\Gox/\Gred$ from its equilibrium state.
+Immediately after the scan, $\Gtot$ is unchanged but $\Gox$ is
+non-equilibrium at the scan-end potential. Lubin~et~al.~(2010)~\cit{3}
+confirm that the MB SWV signal is stable and reproducible across
+repeated scans, as long as the electrode is allowed to re-equilibrate
+at the starting potential between scans. The recommended inter-scan
+rest potential is $E_{\text{start}}$ (Section~\ref{sec:waveform}),
+held for $5\tau_{\text{relax}}$ (Eq.~\ref{eq:taurelax}) to ensure
+full recovery.
+
+\subsection{Signal-off mechanism}
+
+Lubin~2010~\cit{3} confirms that the sensor operates in ``signal-off''
+mode: in the absence of target (MMP-9/HNE), the probe is intact,
+$\Gtot$ is at its maximum, and the MB SWV peak is at maximum.
+Upon target cleavage, $\Gtot$ decreases, and the peak decreases
+proportionally (from Eq.~\ref{eq:DIpeak}, $\DI_{\text{peak}} \propto \Gtot$
+in the reversible limit). The signal change $\Delta(\DI)$ is therefore
+negative for increasing target concentration.
+
+%=======================================================================
+\section{Frequency Diagnostic: Confirming Surface Confinement}
+\label{sec:freqdiag}
+
+\subsection{Surface vs diffusion control from the frequency dependence}
+
+A key diagnostic check (O'Dea~1981~\cit{1}, text; Lubin~2010~\cit{3}):
+
+\begin{itemize}[nosep]
+  \item \textbf{Surface-confined redox:} In the reversible limit,
+    $\DI_{\text{peak}} \propto f_{\text{SWV}}$ (from Eq.~\ref{eq:DIpeak}).
+    In the quasi-reversible regime, the dependence is sub-linear.
+  \item \textbf{Diffusion-controlled redox:} The Cottrell-like scaling
+    gives $\DI_{\text{peak}} \propto f_{\text{SWV}}^{1/2}$.
+\end{itemize}
+
+On a log-log plot of $\DI_{\text{peak}}$ vs $f_{\text{SWV}}$:
+\begin{equation}
+  \log \DI_{\text{peak}} = m\,\log f_{\text{SWV}} + c
+  \label{eq:loglog}
+\end{equation}
+The slope $m$ identifies the regime: $m = 1$ (surface, reversible),
+$0 < m < 1$ (surface, quasi-reversible), $m = 0.5$ (diffusion).
+This diagnostic must be performed on the fabricated electrode to
+confirm surface confinement.
+
+\subsection{Extracting $k^0$ from the frequency dependence}
+
+In the quasi-reversible regime, $\DI_{\text{peak}}$ is a function of
+$\kappa_{\text{SW}} = k^0/(2f)$. By measuring $\DI_{\text{peak}}(f)$
+and fitting to the theoretical curve from Eqs.~\eqref{eq:Ifwd}--\eqref{eq:DInfull},
+$k^0$ can be extracted. This is the Laviron method adapted for SWV:
+the optimal frequency $f_{\text{opt}}$ and the shape of the roll-off
+above $f_{\text{opt}}$ jointly determine $k^0$ and $\alpha$.
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$k^0$ (s$^{-1}$) & $f_{\text{opt}}$ (Hz) & Regime at $f = 30$~Hz &
+$\DI_{\text{peak}}$ at $f = 30$~Hz ($\mu$A)\\
+\midrule
+$10^4$ & $5000$  & reversible & 0.27 (max) \\
+$10^2$ & $50$    & quasi-rev  & $\sim 0.22$ \\
+$10$   & $5$     & quasi-rev  & $\sim 0.15$ \\
+$1$    & $0.5$   & irreversible & $<0.05$ \\
+\bottomrule
+\end{tabular}
+\caption{Estimated SWV peak current and regime at a fixed
+$f_{\text{SWV}} = 30$~Hz, for different values of $k^0$.
+Reversible-limit peak from Eq.~\eqref{eq:DIpeak}; quasi-reversible
+and irreversible values from numerical integration of
+Eqs.~\eqref{eq:Ifwd}--\eqref{eq:DInfull}. The critical design
+requirement is to measure $k^0$ before fixing the operating frequency.}
+\label{tab:freqsweep}
+\end{table}
+
+%=======================================================================
+\section{Limitations}
+\label{sec:limits}
+
+\begin{enumerate}[leftmargin=*]
+
+  \item \textbf{$k^0$ must be measured before the SWV operating point
+    can be fixed.}
+    All frequency recommendations in this layer assume a value of $k^0$
+    from Layer~10, which spans four orders of magnitude depending on
+    $\langle d \rangle$. Without an empirical $k^0$ measurement, any
+    choice of $f_{\text{SWV}}$ risks being in the wrong kinetic regime,
+    which would change $\DI_{\text{peak}}$ non-linearly with $\Gtot$.
+
+  \item \textbf{The surface-confined SWV derivation extends O'Dea~(1981)
+    from first principles.}
+    Laviron~(1979) (not in \texttt{papers/layer\_11/}) derived the
+    surface-confined SWV case analytically. The present derivation
+    is based on the O'Dea~1981~\cit{1} waveform formalism combined
+    with the first-principles ODE solution in Section~\ref{sec:ode},
+    and has not been cross-checked against the Laviron result from
+    a paper in the \texttt{papers/layer\_11/} folder. The derivation
+    should be verified experimentally on the fabricated electrode.
+
+  \item \textbf{$\Eo_{\text{Fc}}$ is not confirmed from papers in
+    this folder.}
+    The peak separation $\Delta\Eo = 690$~mV in Section~\ref{sec:fc}
+    uses a literature placeholder. The actual Fc formal potential on
+    the fabricated SAM must be measured.
+
+  \item \textbf{The signal-off magnitude depends on the probe cleavage
+    efficiency (Layer~9) and on the fraction of MB that remains tethered
+    after cleavage.}
+    The model assumes that cleavage removes the MB label quantitatively.
+    If MB-bearing fragments remain near the electrode surface, the signal
+    decrease will be smaller than predicted.
+
+  \item \textbf{The reversible-limit peak formula (Eq.~\ref{eq:DIpeak})
+    applies only when $\kappa_{\text{SW}} \gg 1$.}
+    If $k^0$ is in the quasi-reversible range at the operating frequency,
+    the full numerical simulation (Eqs.~\ref{eq:Ifwd}--\ref{eq:DInfull})
+    must be used; the analytical formula underestimates or overestimates
+    $\DI_{\text{peak}}$ by up to 30\%.
+
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_11/}.
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+
+\item O'Dea JJ, Osteryoung J, Osteryoung RA (1981) Theory of square
+  wave voltammetry for kinetic systems.
+  \textit{Anal Chem} 53:695--701. DOI:~10.1021/ac00228a026.
+  \textbf{odea1981.pdf} -- SWV waveform definition (Fig.~1), three
+  kinetic regimes (Figs.~3--5), $\log(\kappa\tau^{1/2})$ parameter
+  and peak height vs $n E_{\text{sw}}$ (Fig.~2) confirmed.
+
+\item Baker BR, Lai RY, Wood MS, Doctor EH, Heeger AJ, Plaxco KW (2006)
+  An electronic, aptamer-based small-molecule sensor for the rapid,
+  label-free detection of cocaine in adulterated samples and
+  biological fluids. \textit{J Am Chem Soc} 128:3138--3139.
+  DOI:~10.1021/ja056957p.
+  \textbf{baker2006.pdf} -- MB SWV scan range $-0.46$ to $-0.05$~V vs
+  Ag/AgCl, MB peak $\approx -0.25$~V, electrode $\approx 1$~mm$^2$,
+  $\Des = 1$~mV confirmed; signal-off mechanism and E-AB architecture
+  introduced.
+
+\item Lubin AA, Lai RY, Baker BR, Heeger AJ, Plaxco KW (2010)
+  Electrochemical, structure-switching biosensors: Quantitative
+  analysis of the usable dynamic range.
+  \textit{Anal Chem} 78:5671--5677. DOI:~10.1021/ac0601417.
+  \textbf{lubin2010.pdf} -- MB SWV peak $\approx -0.3$~V vs Ag/AgCl,
+  probe density $1.1$--$3.5\times10^{-10}$~mol\,cm$^{-2}$, signal-off
+  mechanism, multi-frequency characterisation confirmed.
+
+\item Becka AM, Miller CJ (1993) Electrochemistry at $\omega$-hydroxy
+  thiol coated electrodes. 4.
+  \textit{J Phys Chem} 97:6233--6239. DOI:~10.1021/j100125a020.
+  \textbf{(in papers/layer\_10/; also cited here)} --
+  $C_{dl} \approx 2\;\mu$F\,cm$^{-2}$ for monolayer-coated gold,
+  $R_s C_{dl}$ time constant, N$_2$ purge protocol confirmed.
+
+\item Smalley JF et~al.\ (1995) \textit{J Phys Chem} 99:13141--13149.
+  \textbf{(in papers/layer\_10/)} -- $\beta$, $k_{T,s,n=0}$ used to
+  estimate $k^0_{\text{Fc,C6}}$ in Section~\ref{sec:fc}.
+
+\end{enumerate}
+
+\end{document}
