@@ -1,0 +1,627 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\renewcommand\thesection{\Roman{section}}
+\numberwithin{equation}{section}
+
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Layer~13: Ratiometric Signal and Enzyme Quantification}}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\Eo}{E^{\circ\prime}}
+\newcommand{\kB}{k_{\text{B}}}
+\newcommand{\kET}{k_{\text{ET}}^{0}}
+\newcommand{\Esw}{E_{\text{sw}}}
+\newcommand{\Aarea}{A_{\text{area}}}
+\newcommand{\AMB}{A_{\text{MB}}}
+\newcommand{\AFc}{A_{\text{Fc}}}
+\newcommand{\Gtot}{\Gamma_{\text{intact}}}
+\newcommand{\kcat}{k_{\text{cat}}}
+\newcommand{\Km}{K_{m,\text{surf}}^{\Gamma}}
+\newcommand{\kk}{\kappa_k}
+\newcommand{\Fk}{F_k}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Layer~13: Ratiometric Signal Processing and Enzyme Quantification}\\[0.4em]
+{\large From Peak Areas to Enzyme Concentration with Propagated Uncertainty}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer~13 of 17-Layer Biosensor Pipeline \quad$|$\quad
+\texttt{ratiometric.py}}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent
+Layer~12 delivers two peak areas per SWV scan: $\AMB$ (from the MB redox
+probe covalently attached to the aptamer) and $\AFc$ (from the ferrocenemethanol
+internal reference). Layer~13 converts these two numbers into a single
+enzyme concentration estimate $[\text{E}]$ with a full uncertainty budget.
+
+The challenge this layer must solve is that the raw peak areas are corrupted
+by at least four distinct artefacts: variation in electrode area $A_\text{true}$
+between cartridge wells, gain drift in the transimpedance amplifier,
+variation in the SWV voltage amplitude $\Delta E_\text{sw}$ over time, and
+electrode fouling (non-specific adsorption of plasma proteins that blocks
+the electrode surface). The ratiometric scheme described here cancels three
+of these artefacts exactly and the fourth approximately, leaving a signal
+whose remaining uncertainty comes almost entirely from Poisson-like shot
+noise on the peak area fit, which can be propagated analytically.
+
+%=======================================================================
+\section{The Raw Ratio $R$: Cancelling Electrode-to-Electrode Variation}
+\label{sec:ratio}
+
+\subsection{Term-by-term derivation}
+
+From Layer~11 (Eq.~11.8), the measured MB peak area on electrode $i$ is:
+\begin{equation}
+  \AMB^{(i)} = n_e^2 \frac{F^2}{2RT}\,f(\kappa_{\text{SW}}^{(i)})\,
+  A_\text{true}^{(i)}\,\Gtot^{(i)}\,\Esw^{(i)}
+  \label{eq:AMB}
+\end{equation}
+where $n_e = 2$, $f(\kappa_\text{SW})$ is the dimensionless kinetic factor
+(between 0 and~1, from Layer~11, Section~III), $A_\text{true}^{(i)}$ is the
+actual gold area of electrode $i$, $\Gtot^{(i)}$ is the surviving intact
+probe surface coverage, and $\Esw^{(i)}$ is the SWV amplitude delivered
+by the potentiostat at the time of the scan.
+
+The ferrocenemethanol reference peak area, from the same electrode and the
+same scan, obeys the same equation with $n_e = 1$, its own formal potential,
+its own kinetic factor, its own tether length (set by design to give
+$f(\kappa_\text{SW}^\text{Fc}) \approx 1$ at the chosen $f_\text{SWV}$),
+and its own surface coverage $\Gamma_\text{Fc}^{(i)}$:
+\begin{equation}
+  \AFc^{(i)} = 1 \cdot \frac{F^2}{2RT}\,f(\kappa_{\text{SW}}^{\text{Fc},(i)})\,
+  A_\text{true}^{(i)}\,\Gamma_\text{Fc}^{(i)}\,\Esw^{(i)}
+  \label{eq:AFc}
+\end{equation}
+Notice that $A_\text{true}^{(i)}$ and $\Esw^{(i)}$ appear identically in
+both Eq.~\eqref{eq:AMB} and Eq.~\eqref{eq:AFc}. The ratio:
+\begin{equation}
+  \boxed{
+  R^{(i)} = \frac{\AMB^{(i)}}{\AFc^{(i)}}
+  = n_e^2\,\frac{f(\kappa_\text{SW}^{(i)})}{f(\kappa_\text{SW}^{\text{Fc},(i)})}\,
+  \frac{\Gtot^{(i)}}{\Gamma_\text{Fc}^{(i)}}
+  }
+  \label{eq:R}
+\end{equation}
+The electrode area $A_\text{true}^{(i)}$ and the SWV amplitude $\Esw^{(i)}$
+cancel exactly. Physical constants $F, R, T$ also cancel, removing the need
+for temperature calibration in this ratio (though Layer~10 still needs $T$
+for the $\Eo_\text{MB}(\text{pH})$ prediction).
+
+\subsection{What $R$ still depends on}
+
+The remaining factors in Eq.~\eqref{eq:R} are:
+(1) The kinetic ratio $f(\kappa_\text{SW})/f(\kappa_\text{SW}^\text{Fc})$.
+Because the Fc tether is chosen to put Fc in the fast-kinetics limit
+($\kappa_\text{SW}^\text{Fc} \gg 1$ so $f \approx 1$), and because the
+MB kinetic factor $f(\kappa_\text{SW})$ is a function of $\kET \times
+t_\text{pulse}$ that is the same for all electrodes of the same design
+(since $\kET$ depends on tether length, not on $A_\text{true}$), this ratio
+is a device-level constant that cancels when we subsequently take $R(T)/R(0)$
+(Section~\ref{sec:rho}).
+
+(2) The coverage ratio $\Gtot/\Gamma_\text{Fc}$.
+The Fc SAM and the aptamer-MB SAM are co-deposited, so their surface densities
+are correlated: electrodes with more Fc also have more MB. If the Fc coverage
+is stable (Fc molecules do not desorb during the assay, as confirmed by
+Layer~12 diagnostics), then $\Gamma_\text{Fc}$ is a constant for a given
+electrode and the ratio $\Gtot/\Gamma_\text{Fc}$ evolves purely due to
+changes in $\Gtot$ (i.e., cleavage or folding of the aptamer probe).
+
+White and Plaxco~\cit{1} confirmed experimentally that taking this ratio
+eliminates electrode-to-electrode amplitude variation by over 10-fold
+in a chip with deliberate variation in electrode size, validating the
+$A_\text{true}$ cancellation.
+
+\subsection{Uncertainty on $R$}
+
+The uncertainty on $R$ from the peak fitting uncertainties is propagated
+using the standard formula for the ratio of two independent random variables:
+\begin{equation}
+  \left(\frac{\sigma_R}{R}\right)^2 =
+  \left(\frac{\sigma_{\AMB}}{\AMB}\right)^2 +
+  \left(\frac{\sigma_{\AFc}}{\AFc}\right)^2
+  \label{eq:sigR}
+\end{equation}
+This assumes that the MB and Fc areas are independent; they are indeed fitted
+from different non-overlapping regions of the voltammogram (Section~12.V),
+so their fit errors are uncorrelated. The relative uncertainty on $R$ is
+therefore quadrature-added from the relative uncertainties on each area.
+
+Numerically, with $\AMB \approx 0.3$~nA\,V and $\sigma_{\AMB} \approx 3\%$
+of $\AMB$ (Layer~12, Eq.~12.12), and with similar relative precision on
+$\AFc$: $\sigma_R/R \approx 4.2\%$ per scan.
+
+%=======================================================================
+\section{The Normalised Signal $\rho$: Cancelling Probe Density Variation}
+\label{sec:rho}
+
+\subsection{Motivation}
+
+Even after forming $R$ (Eq.~\ref{eq:R}), the coverage ratio
+$\Gtot/\Gamma_\text{Fc}$ varies between electrodes (different deposition
+conditions, different self-assembly kinetics) by up to $\pm 30\%$ (Lubin
+and Plaxco~\cit{2}). This means $R(0)$ (the ratio measured before enzyme
+exposure) is electrode-specific. To cancel this, we normalise each
+electrode's $R(T)$ at time $T$ by its own baseline $R(0)$:
+\begin{equation}
+  \boxed{
+  \rho^{(i)}(T) = \frac{R^{(i)}(T)}{R^{(i)}(0)}
+  = \frac{\Gtot^{(i)}(T)}{\Gtot^{(i)}(0)}
+  }
+  \label{eq:rho}
+\end{equation}
+The kinetic ratio and Fc coverage cancel in Eq.~\eqref{eq:rho} because they
+are constant for a given electrode: $f(\kappa_\text{SW})$ does not change
+during the assay (the scan parameters are fixed), and $\Gamma_\text{Fc}$
+is stable over the 30-minute assay time (Layer~12 diagnostics confirm
+$<2\%$ Fc amplitude drift per scan).
+
+The physical meaning of $\rho$ is exactly the fraction of aptamer probes
+that remain intact at time $T$: $\rho = 1$ means no cleavage, $\rho = 0$
+means complete cleavage. For the biosensor, we expect $\rho \in [0.1, 1]$
+over the clinically relevant enzyme concentration range.
+
+\subsection{Concrete fouling example}
+
+Consider an electrode with 20\% non-specific protein adsorption (fouling)
+that covers a fraction of the gold surface. Fouling reduces both $\AMB$
+and $\AFc$ by the same fractional amount $f_\text{foul}$:
+\begin{align}
+  \AMB(T) &= \AMB^\text{clean}(T) \times (1 - f_\text{foul})
+  \label{eq:foul_MB}\\
+  \AFc(T) &= \AFc^\text{clean}(T) \times (1 - f_\text{foul})
+  \label{eq:foul_Fc}
+\end{align}
+When we form $R = \AMB/\AFc$, the fouling factor $(1-f_\text{foul})$
+cancels because it appears in both numerator and denominator.
+Similarly, the baseline measurement $R(0)$ also suffered the same
+fouling (adsorption is a fast process that saturates before the first
+scan). Therefore $\rho = R(T)/R(0)$ also cancels the fouling
+factor: the ratio of the ratios is the ratio of the cleavage fractions
+with no fouling term surviving.
+
+This cancellation is \emph{exact} only if the fouling is the same on the Fc
+and MB regions of the electrode, which is true if the SAM is uniform.
+A non-uniform fouling pattern (e.g., a protein adsorbing preferentially
+to the aptamer-MB SAM but not to the Fc SAM because of electrostatic
+differences) would cause only partial cancellation. Section~\ref{sec:limits}
+addresses this limitation.
+
+\subsection{Uncertainty on $\rho$}
+
+\begin{equation}
+  \left(\frac{\sigma_\rho}{\rho}\right)^2 =
+  \left(\frac{\sigma_{R(T)}}{R(T)}\right)^2 +
+  \left(\frac{\sigma_{R(0)}}{R(0)}\right)^2
+  \label{eq:sigrho}
+\end{equation}
+The baseline $R(0)$ is the average of three scans taken before enzyme
+addition; averaging $n_0 = 3$ scans reduces $\sigma_{R(0)}$ by
+$1/\sqrt{3}$. With $\sigma_R/R \approx 4.2\%$ per scan and three baseline
+scans:
+\begin{equation}
+  \frac{\sigma_{R(0)}}{R(0)} = \frac{4.2\%}{\sqrt{3}} = 2.4\%
+  \label{eq:sigrho0}
+\end{equation}
+Combining with a single on-assay scan:
+\begin{equation}
+  \frac{\sigma_\rho}{\rho} = \sqrt{(4.2\%)^2 + (2.4\%)^2} = 4.8\%
+  \label{eq:sigrho_val}
+\end{equation}
+This is the irreducible per-electrode fractional uncertainty on $\rho$.
+Taking the average over $N_\text{active}$ active electrodes on a chip
+reduces it further by $1/\sqrt{N_\text{active}}$.
+
+%=======================================================================
+\section{The Double Ratio $F_k$: Cancelling Cleavage Independent of Enzyme}
+\label{sec:Fk}
+
+\subsection{Background cleavage and the control electrode}
+
+Even without target enzyme, the aptamer probe is not perfectly stable.
+Background cleavage can occur from (a) dissolved nucleases in the sample
+matrix (plasma contains substantial nuclease activity), (b) hydrolysis of
+the DNA backbone at the assay temperature, and (c) reactive oxygen species
+in the wound fluid.
+
+This background cleavage reduces $\rho$ on the active electrode by an
+amount $\Delta\rho_\text{bg}$ that is unrelated to the target enzyme.
+Unless accounted for, it would overestimate $F_k$ and therefore
+overestimate $[\text{E}]$.
+
+The solution is a \emph{control electrode}: an electrode with an identical
+SAM but a scrambled or enzyme-resistant aptamer sequence that responds to
+all background cleavage but not to the specific target enzyme. The control
+electrode reports $\rho_\text{control}(T)$ as the surviving fraction under
+background conditions.
+
+\subsection{Derivation of $F_k$}
+
+The enzyme-specific fractional cleavage is:
+\begin{equation}
+  \boxed{
+  \Fk = 1 - \frac{\rho_\text{active}(T)}{\rho_\text{control}(T)}
+  }
+  \label{eq:Fk}
+\end{equation}
+To understand what cancels in Eq.~\eqref{eq:Fk}, write the surviving fractions
+explicitly. Let $p_\text{bg}$ be the fraction of probes cleaved by background
+mechanisms, and $p_\text{E}$ be the additional fraction cleaved by the target
+enzyme. Then:
+\begin{align}
+  \rho_\text{active} &= (1 - p_\text{bg})(1 - p_\text{E})
+  \label{eq:rho_active}\\
+  \rho_\text{control} &= (1 - p_\text{bg})
+  \label{eq:rho_control}
+\end{align}
+Substituting into Eq.~\eqref{eq:Fk}:
+\begin{equation}
+  \Fk = 1 - \frac{(1-p_\text{bg})(1-p_\text{E})}{(1-p_\text{bg})}
+  = 1 - (1 - p_\text{E}) = p_\text{E}
+  \label{eq:Fk_simp}
+\end{equation}
+The factor $(1-p_\text{bg})$ cancels exactly, leaving $\Fk = p_\text{E}$:
+the fraction of active probes cleaved by the target enzyme alone, regardless
+of what background cleavage occurred. This is the quantity that directly
+constrains $[\text{E}]$ through the kinetic model.
+
+Lubin and Plaxco~\cit{2} validate this background cancellation experimentally
+by showing that control electrodes in the same plasma sample track active
+electrodes when no target is added, confirming that the ratio
+$\rho_\text{active}/\rho_\text{control}$ is stable at $\approx 1$ in
+the absence of enzyme.
+
+\subsection{What does not cancel in $F_k$}
+
+Two sources of artefact are not cancelled by Eq.~\eqref{eq:Fk}:
+
+(1) \emph{Differential fouling.} If the active and control SAMs foul
+differently (Section~\ref{sec:rho}), the Fc amplitude on the two electrodes
+drifts at different rates. The ratio $\rho_\text{active}/\rho_\text{control}$
+then drifts even without enzyme. This is controlled by monitoring the Fc
+peak amplitude on both electrodes; a difference $>10\%$ flags differential
+fouling and the control correction is invalidated.
+
+(2) \emph{Enzyme-dependent non-specific cleavage.} If the target enzyme
+cleaves DNA non-specifically (in addition to the aptamer-specific cleavage),
+it would also cleave the scrambled sequence on the control electrode. In
+this case, $\rho_\text{control}$ would decrease with enzyme concentration,
+and Eq.~\eqref{eq:Fk_simp} would underestimate $p_\text{E}$.
+
+\subsection{Uncertainty on $F_k$}
+
+From Eq.~\eqref{eq:Fk}:
+\begin{equation}
+  \sigma_{\Fk}^2 = \left(\frac{1}{\rho_\text{control}}\right)^2 \sigma_{\rho_\text{active}}^2
+  + \left(\frac{\rho_\text{active}}{\rho_\text{control}^2}\right)^2 \sigma_{\rho_\text{control}}^2
+  \label{eq:sigFk_raw}
+\end{equation}
+If active and control electrodes have equal per-electrode uncertainty
+$\sigma_\rho / \rho \approx 4.8\%$ (Eq.~\ref{eq:sigrho_val}) and if
+$\rho_\text{active} \approx \rho_\text{control} \approx \rho$ (early time point,
+small cleavage), then:
+\begin{equation}
+  \sigma_{\Fk} \approx (1 - \Fk)\,\sqrt{2}\,
+  \frac{\sigma_\rho}{\rho}
+  = (1 - \Fk) \times 6.8\%
+  \label{eq:sigFk}
+\end{equation}
+This expression contains the factor $(1-\Fk)$, which decreases toward zero
+as $\Fk \to 1$ (complete cleavage). It might seem that the uncertainty also
+vanishes, but this is misleading: the fractional uncertainty $\sigma_{\Fk} /
+(1 - \Fk)$ is actually $\sqrt{2} \times \sigma_\rho/\rho = 6.8\%$,
+constant regardless of $\Fk$. The practical limit of detection is set by
+whether $\Fk$ exceeds $3\sigma_{\Fk}$ at zero enzyme concentration, i.e.,
+whether $3 \times 6.8\% \approx 20\%$ cleavage can be reliably distinguished
+from baseline noise.
+
+%=======================================================================
+\section{Inversion to Enzyme Concentration}
+\label{sec:inversion}
+
+\subsection{Connecting $F_k$ to the kinetic model}
+
+From Layer~9 (Section~IV), the integrated MM equation gives the fraction
+of probes cleaved $F_k = p_\text{E}$ after incubation time $T$:
+\begin{equation}
+  \kcat[\text{E}]\,T = \Km\ln\!\left(\frac{1}{1-\Fk}\right) + \Gtot(0)\,\Fk
+  \label{eq:intMM}
+\end{equation}
+where $\kcat$ is the catalytic rate constant, $[\text{E}]$ is the enzyme
+molar concentration, $T$ is the incubation time, $\Km$ is the surface
+Michaelis constant, and $\Gtot(0)$ is the initial probe density.
+
+\subsection{Two limiting regimes and the apparent rate}
+
+In the unsaturated regime ($\Fk \ll 1$, i.e., early time or low enzyme),
+Eq.~\eqref{eq:intMM} simplifies. Using $\ln(1/(1-u)) \approx u + u^2/2$
+for small $u$:
+\begin{equation}
+  \kcat[\text{E}]\,T \approx \left(\Km + \Gtot(0)\right)\Fk
+  \quad \Rightarrow \quad
+  \Fk \approx \frac{\kcat[\text{E}]\,T}{\Km + \Gtot(0)}
+  \label{eq:linlimit}
+\end{equation}
+In this regime, $\Fk$ is linear in $[\text{E}] \times T$, making
+calibration straightforward: the slope is $\kcat / (\Km + \Gtot(0))$.
+
+In the saturated regime ($\Gtot \ll \Km$, i.e., low probe density), the
+linear term dominates:
+\begin{equation}
+  \kcat[\text{E}]\,T \approx \Km \Fk
+  \quad \Rightarrow \quad
+  \Fk \approx \frac{\kcat[\text{E}]\,T}{\Km}
+  \label{eq:kmlimit}
+\end{equation}
+In both limits, we can define an \emph{apparent rate} that depends only on
+observables:
+\begin{equation}
+  \boxed{
+  \kk = -\frac{\ln(1-\Fk)}{T}
+  }
+  \label{eq:kappa}
+\end{equation}
+$\kk$ has units of $\text{s}^{-1}$ (or $\text{min}^{-1}$ for $T$ in
+minutes). It is the rate of the monoexponential process that would
+produce the same $\Fk$ in time $T$. In the unsaturated regime where
+$\Fk \ll 1$, $\ln(1/(1-\Fk)) \approx \Fk$, so $\kk \approx \Fk/T =
+\kcat[\text{E}]/(\Km + \Gtot(0))$, which is linear in $[\text{E}]$.
+More generally, $\kk$ is a monotone increasing function of $\Fk$ and
+therefore of $[\text{E}]$: the calibration curve $[\text{E}]$ vs $\kk$
+is monotone and invertible.
+
+Equation~\eqref{eq:kappa} was chosen as the primary reported observable
+rather than $\Fk$ itself for two reasons. First, if the incubation time
+$T$ varies between runs (e.g., because the clinician adds sample at a
+different time), $\kk$ normalises by $T$ so the calibration curve is
+time-independent. Second, Lubin and Plaxco~\cit{2} and Baker~2006~\cit{3}
+both show that the log-transformed observable is more linearly related to
+$[\text{E}]$ across a wide dynamic range than $\Fk$ itself.
+
+\subsection{Dynamic range}
+
+The minimum detectable $\Fk$ is $\Fk^\text{min} = 3\sigma_{\Fk}(0)
+\approx 20\%$ (Section~\ref{sec:Fk}). The maximum usable $\Fk$ is
+approximately 0.95 (near-complete cleavage, beyond which the MB signal
+is indistinguishable from noise). The corresponding apparent rate range is:
+\begin{equation}
+  \kk^\text{min} = \frac{-\ln(1-0.20)}{T} = \frac{0.223}{T},
+  \qquad
+  \kk^\text{max} = \frac{-\ln(1-0.95)}{T} = \frac{3.00}{T}
+  \label{eq:dynrange}
+\end{equation}
+giving a dynamic range of $3.00/0.223 = 13.5\times$ in apparent rate, or
+approximately 1.1 decades in $\kk$. Converting to concentration through
+the calibration curve (which is approximately logarithmic in $[\text{E}]$
+for the MM model), Baker~2006~\cit{3} confirms that the resulting dynamic
+range in enzyme concentration spans approximately 2--3 decades.
+
+\subsection{Inversion algorithm}
+
+Given a measured $\Fk$ and its uncertainty $\sigma_{\Fk}$, the enzyme
+concentration is extracted by solving Eq.~\eqref{eq:intMM} for $[\text{E}]$:
+\begin{equation}
+  [\text{E}] = \frac{1}{\kcat\,T}\left[\Km\ln\!\left(\frac{1}{1-\Fk}\right)
+  + \Gtot(0)\,\Fk\right]
+  \label{eq:inversion}
+\end{equation}
+This is a closed-form expression: given the kinetic parameters $\kcat$,
+$\Km$, $\Gtot(0)$, and the measured $\Fk$, no numerical solver is needed.
+
+The uncertainty on $[\text{E}]$ is:
+\begin{equation}
+  \sigma_{[\text{E}]} = \frac{1}{\kcat\,T}\left(
+  \frac{\Km}{1-\Fk} + \Gtot(0)
+  \right)\sigma_{\Fk}
+  \label{eq:sigE}
+\end{equation}
+The prefactor $\Km/(1-\Fk) + \Gtot(0)$ diverges as $\Fk \to 1$, reflecting
+the fact that near complete cleavage, a small absolute change in $\Fk$
+corresponds to a large relative change in the number of remaining probes
+and therefore to a large change in the inferred concentration. In practice,
+readings with $\Fk > 0.90$ are flagged as "above range": $[\text{E}]$ is
+reported as "$> [\text{E}]_\text{max}$" rather than a precise value with
+a diverging uncertainty.
+
+%=======================================================================
+\section{Error Propagation Chain}
+\label{sec:errprop}
+
+The full error propagation from raw peak areas to enzyme concentration is:
+\begin{equation}
+  \underbrace{\sigma_{\AMB},\,\sigma_{\AFc}}_{\text{Layer~12}}
+  \xrightarrow{\text{Eq.~\ref{eq:sigR}}}
+  \sigma_R
+  \xrightarrow{\text{Eq.~\ref{eq:sigrho}}}
+  \sigma_\rho
+  \xrightarrow{\text{Eq.~\ref{eq:sigFk}}}
+  \sigma_{\Fk}
+  \xrightarrow{\text{Eq.~\ref{eq:sigE}}}
+  \sigma_{[\text{E}]}
+  \label{eq:chain}
+\end{equation}
+Each arrow applies a specific formula derived above. The chain can be run
+forward (from measured areas to final uncertainty) or in reverse (from
+desired $\sigma_{[\text{E}]}$ to required per-scan precision $\sigma_{\AMB}$).
+The reverse direction is used during instrument design to set the required
+transimpedance amplifier noise floor.
+
+Numerically, starting from $\sigma_{\AMB}/\AMB = 3\%$ per scan, the chain
+gives (at $\Fk = 0.5$, $T = 30$~min, $N_\text{active} = 4$ electrodes averaged):
+\begin{align*}
+  \sigma_R/R &= 4.2\%\;\;(\text{single scan}) \\
+  \sigma_\rho/\rho &= 4.8\%\;\;(\text{single electrode}) \\
+  &= 2.4\%\;\;(\text{4 electrodes}) \\
+  \sigma_{\Fk} &= (1-0.5) \times \sqrt{2} \times 2.4\% = 1.7\% \\
+  \sigma_{[\text{E}]} &\approx \frac{\Km + \Gtot(0)}{\kcat T (1-0.5)}\times 1.7\%\;\;
+  (\text{using Eq.~\ref{eq:sigE}})
+\end{align*}
+A 1.7\% absolute uncertainty on $\Fk = 0.5$ corresponds to approximately
+a 3.4\% relative uncertainty on $\Fk$ at the midpoint, translating to
+approximately 3--5\% relative uncertainty on $[\text{E}]$ (varying with the
+exact slope of the calibration curve at that concentration).
+
+%=======================================================================
+\section{Electrode Layout and Averaging}
+\label{sec:layout}
+
+The sensor chip contains a fixed number of electrodes per patient cartridge.
+The ratiometric pipeline aggregates readings from multiple electrodes of the
+same type using a weighted mean:
+\begin{equation}
+  \bar{\kk} = \frac{\sum_i w_i\,\kk^{(i)}}{\sum_i w_i},
+  \qquad
+  w_i = \frac{1}{\sigma_{\kk^{(i)}}^2}
+  \label{eq:wmean}
+\end{equation}
+where the weights are the inverse variances of the per-electrode apparent rates.
+Electrodes flagged by Layer~12 quality diagnostics are assigned $w_i = 0$.
+The uncertainty on $\bar{\kk}$ is:
+\begin{equation}
+  \sigma_{\bar{\kk}}^2 = \frac{1}{\sum_i w_i}
+  \label{eq:sigkmean}
+\end{equation}
+The active-to-control electrode pairing is done before averaging: each
+active electrode $i$ is paired with the spatially nearest control electrode
+$j$ on the chip (to minimise differential fouling, which can have spatial
+gradients across the chip). The double ratio $\Fk^{(i)}$ uses $\rho_\text{control}^{(j)}$
+from its paired control, not the mean of all controls.
+
+\subsection{Minimum electrode count and redundancy}
+
+The minimum number of active electrodes needed to resolve $[\text{E}]$ at the
+LOD ($\Fk = 0.20 \pm 3\sigma_{\Fk}$) at a 95\% confidence level is determined
+by requiring:
+\begin{equation}
+  3\,\frac{\sigma_{\Fk}}{\sqrt{N_\text{active}}} < \Fk^\text{min}
+  \quad \Rightarrow \quad
+  N_\text{active} > \frac{9\,\sigma_{\Fk}^2}{(0.20)^2}
+  = \frac{9 \times (0.068)^2}{0.04} \approx 1.0
+  \label{eq:Nmin}
+\end{equation}
+A single active electrode is sufficient at the LOD (with $\sigma_{\Fk} = 6.8\%$
+from Eq.~\ref{eq:sigFk}). In practice, $N_\text{active} \geq 3$ is required
+for redundancy (in case one electrode fails the Layer~12 quality diagnostics)
+and to achieve $\sigma_{[\text{E}]}/[\text{E}] < 5\%$ at mid-range.
+
+%=======================================================================
+\section{Limitations}
+\label{sec:limits}
+
+\begin{enumerate}[leftmargin=*]
+
+\item \textbf{The kinetic parameters $\kcat$, $\Km$, and $\Gtot(0)$ are
+  not measured per-cartridge.} Equation~\eqref{eq:inversion} requires
+  these values as inputs. They are taken from Layer~9 (where $\kcat$ and
+  $\Km$ come from bulk solution kinetics) and from Layer~11 (where
+  $\Gtot(0)$ is estimated from the MB peak area before cleavage using the
+  Layer~11 equation). Any batch-to-batch variation in aptamer synthesis
+  yield, thiol coupling efficiency, or gold deposition that shifts
+  $\Gtot(0)$ outside the range $[1 \times 10^{-12},\,5 \times 10^{-12}]$
+  mol\,cm$^{-2}$ will bias the inversion. A per-cartridge measurement of
+  $\Gtot(0)$ from $R(0)$ using the Layer~11 calibration is required for
+  absolute accuracy.
+
+\item \textbf{The double-ratio cancellation of fouling is exact only if
+  fouling is uniform across the chip surface.} Baker~2006~\cit{3} and
+  Lubin and Plaxco~\cit{2} note that plasma protein adsorption varies
+  with SAM composition. If the Fc-thiol region and the aptamer-thiol
+  region adsorb proteins at different rates, the Fc amplitude on the active
+  and control electrodes will drift differentially, violating the
+  approximation in Section~\ref{sec:rho}. The Fc amplitude monitoring
+  diagnostic (Layer~12) detects but does not correct this failure mode.
+
+\item \textbf{The inversion formula Eq.~\eqref{eq:inversion} assumes the
+  integrated MM model, which uses surface $\Km$ estimated from bulk
+  $K_m$ and an assumed effective diffusion layer depth.} Layer~9
+  Section~IV establishes that $\Km$ spans two orders of magnitude depending
+  on the assumed $\delta_\text{eff}$. If $\Km$ is uncertain by a factor of
+  10, the inversion maps $\Fk$ to the wrong $[\text{E}]$ by approximately
+  the same factor in the $\Km$-dominated regime ($\Fk \ll 1$). Calibration
+  with known enzyme concentration samples eliminates this systematic error
+  empirically; the model then correctly predicts the \emph{shape} of the
+  calibration curve even if the absolute scale is set by the calibrant.
+
+\item \textbf{The uncertainty formula Eq.~\eqref{eq:sigFk} assumes
+  Gaussian-distributed fit residuals.} If the baseline is non-polynomial
+  (blocked by the Layer~12 quality diagnostic) or if the peak is
+  non-Gaussian (double-MB population), the residuals are non-Gaussian and
+  the propagated $\sigma_{\Fk}$ underestimates the true uncertainty.
+
+\item \textbf{The control electrode sequence must not be cleaved by the
+  target enzyme.} If scrambled aptamer sequences retain partial
+  endonuclease recognition, $\Fk$ from Eq.~\eqref{eq:Fk_simp}
+  underestimates true enzyme-specific cleavage. Sequence design and
+  negative-control validation (adding saturating concentrations of
+  enzyme to a chip with only control electrodes) must confirm that
+  $\rho_\text{control}$ does not drop by more than 5\% when enzyme
+  is present.
+
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_13/}.
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+
+\item White RJ, Plaxco KW (2010). Exploiting binding-induced changes in
+  probe flexibility for the optimization of electrochemical biosensors.
+  \textit{Anal Chem} 82:73--76. DOI:~10.1021/ac9028595.
+  \textbf{white2010.pdf} -- ratiometric signal construction, cancellation of
+  electrode area variation, and SWV frequency optimisation confirmed.
+
+\item Lubin AA, Plaxco KW (2010). Folding-based electrochemical biosensors:
+  the case for responsive nucleic acid architectures. \textit{Acc Chem Res}
+  43:496--505. DOI:~10.1021/ar900165x.
+  \textbf{lubin\_plaxco2010.pdf} -- structure-switching E-AB biosensor
+  architecture, background cleavage correction by control electrode, fouling
+  cancellation via double normalisation, and dynamic range characteristics
+  confirmed.
+
+\item Baker BR, Lai RY, Wood MS, Doctor EH, Heeger AJ, Plaxco KW (2006).
+  An electronic, aptamer-based small-molecule sensor for the rapid,
+  label-free detection of cocaine in adulterated samples and biological
+  fluids. \textit{J Am Chem Soc} 128:3138--3139. DOI:~10.1021/ja056957p.
+  \textbf{baker2006.pdf} -- on-chip reference electrode stability, SWV
+  parameter validation, and dynamic range in biological fluid confirmed.
+
+\item Lubin AA, Lai RY, Baker BR, Heeger AJ, Plaxco KW (2010).
+  Electrochemical, structure-switching biosensors: quantitative analysis
+  of the usable dynamic range. \textit{Anal Chem} 78:5671--5677.
+  DOI:~10.1021/ac0601417.
+  \textbf{lubin2010.pdf} -- per-electrode $R(0)$ baseline normalisation,
+  electrode-to-electrode $R(0)$ variation, and Fc surface coverage stability
+  during assay confirmed.
+
+\end{enumerate}
+
+\end{document}

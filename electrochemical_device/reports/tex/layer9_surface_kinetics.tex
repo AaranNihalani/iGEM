@@ -215,6 +215,171 @@ $k_{-1}/\kcat \gg \Phi$, where $\Phi = 4[E]_t/K_M\,/(1+[E]_t/K_M)^2$, or
 unconditionally when $[E]_t/K_M \leq 0.2$ or $[E]_t/K_M \geq 5$.
 
 %=======================================================================
+\section{Surface Probe Saturation: The Integrated MM Equation}
+\label{sec:surface_sat}
+
+\subsection{A second, independent saturation condition}
+
+The A\&D analysis in Sections~\ref{sec:ode}--\ref{sec:analytic} characterises
+the kinetic zone along the \emph{enzyme} axis: does the enzyme--probe complex
+form and dissociate fast enough that the steady-state approximation holds?
+The conclusion $\lambda \approx 1$ (Section~\ref{sec:regime}) is a statement
+about enzyme-side kinetics and holds independently of the probe surface coverage.
+
+A second condition must be checked separately: whether the probe density
+$\Gz$ is large or small relative to the \emph{surface} Michaelis constant
+$K_{m,\text{surf}}^\Gamma$ (units: mol~cm$^{-2}$). The A\&D Eqs.~4--7 assume
+the probe is always in the unsaturated (dilute) regime, i.e.\ effectively
+$K_{m,\text{surf}}^\Gamma \to \infty$. At the surface coverages used in our
+device this assumption requires verification.
+
+\subsection{The heterogeneous surface MM ODE with correct units}
+
+The surface Michaelis--Menten equation governing probe depletion, with
+substrate and product both expressed as surface concentrations
+(mol~cm$^{-2}$) and enzyme as a volume concentration (mol~L$^{-1}$), is
+(Squires et~al.\ 2008~\cit{4}, Eq.~1):
+\begin{equation}
+  \frac{d\GS}{dt} = -\frac{\kcat\,[E]_t\,\GS}{K_{m,\text{surf}}^\Gamma + \GS}
+  \label{eq:mm_surface}
+\end{equation}
+In the A\&D notation, $K_{m,\text{surf}}^\Gamma$ is the probe density at
+which the per-probe turnover rate is half its maximum value. Its units are
+mol~cm$^{-2}$, not mol~L$^{-1}$.
+
+\subsection{Conversion from solution $K_m$ to surface units}
+
+The solution-phase $K_m^{\text{sol}}$ (mol~L$^{-1}$, confirmed for
+SGKIPRTLTA from Kridel~2001~\cit{2}) is related to the surface saturation
+constant by the effective thickness of the accessible probe layer $\delta_{\text{eff}}$
+(Layer~8):
+\begin{equation}
+  K_{m,\text{surf}}^\Gamma
+  = K_m^{\text{sol}}\,[\text{mol~L}^{-1}]
+    \times 10^{-3}\,[\text{L~cm}^{-3}]
+    \times \delta_{\text{eff}}\,[\text{cm}]
+  \label{eq:Kmsurf}
+\end{equation}
+For $K_m^{\text{sol}} = 1.28$~mM and $\delta_{\text{eff}} = 5$~nm $= 5\times10^{-7}$~cm
+(Layer~8 probe extent, unconfirmed):
+\begin{equation}
+  K_{m,\text{surf}}^\Gamma
+  = 1.28\times10^{-3} \times 10^{-3} \times 5\times10^{-7}
+  = 6.4\times10^{-13}\;\text{mol~cm}^{-2}
+  \label{eq:Kmsurf_val}
+\end{equation}
+
+\subsection{The probe-saturation ratio $\rho$}
+
+Define the dimensionless probe-saturation parameter:
+\begin{equation}
+  \rho = \frac{\Gz}{K_{m,\text{surf}}^\Gamma}
+  \label{eq:rho}
+\end{equation}
+$\rho$ controls the shape of the progress curve independently of $\lambda$
+(which controls the enzyme-saturation regime). Two limits:
+\begin{itemize}[noitemsep]
+  \item $\rho \ll 1$: probe is always in the unsaturated regime
+    $\GS \ll K_{m,\text{surf}}^\Gamma$; Eq.~\eqref{eq:mm_surface} reduces to
+    first-order in $\GS$; the monoexponential Eq.~\eqref{eq:monoexp} is
+    recovered with $\keff^{\text{surf}} = \kcat/K_m^{\text{sol}}$.
+  \item $\rho \gg 1$: the probe is initially in the zeroth-order (saturated)
+    regime; the cleavage rate is independent of $\GS$ and proportional only
+    to $[E]_t$: $d\GS/dt = -\kcat[E]_t$ → $F_k = \kcat[E]_t\,T/\Gz$.
+    The progress curve is \emph{linear} in time, with a Langmuir-like saturation
+    shape at late times as $\GS$ falls through $K_{m,\text{surf}}^\Gamma$.
+  \item $\rho \sim 1$: intermediate (physically realistic) case: the progress
+    curve is \emph{between} the monoexponential and the Langmuir-like linear
+    regime, as treated by the integrated equation below.
+\end{itemize}
+
+At the unconfirmed reference values ($\Gz = 2\times10^{-12}$~mol~cm$^{-2}$
+from Pheeney~2012~\cit{5} midpoint; no steric correction):
+$\rho_0 = 2\times10^{-12}/6.4\times10^{-13} \approx 3.1$.
+With the Layer~8 steric correction (which increases $K_{m,\text{surf}}^\Gamma$
+by $f_{\text{steric}}^{-1}$; unconfirmed factor $\approx 2$--$10\times$):
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$f_{\text{steric}}$ (Layer~8) &
+$K_{m,\text{surf}}^\Gamma$ (mol~cm$^{-2}$) &
+$\rho$ &
+Dominant regime \\
+\midrule
+0.1 (high crowding) & $6.4\times10^{-12}$ & 0.31 & near first-order \\
+0.3                 & $2.1\times10^{-12}$ & 0.95 & intermediate \\
+0.5                 & $1.3\times10^{-12}$ & 1.5  & intermediate \\
+1.0 (no correction) & $6.4\times10^{-13}$ & 3.1  & intermediate--zeroth \\
+\bottomrule
+\end{tabular}
+\caption{Probe-saturation ratio $\rho$ across the plausible steric
+correction range from Layer~8. $\rho = 1$ is the critical point at which
+the progress curve deviates most from the monoexponential.
+The system is unlikely to be in the pure monoexponential limit ($\rho \ll 1$)
+at clinical probe densities unless crowding is severe ($f_{\text{steric}} < 0.05$).}
+\label{tab:rho}
+\end{table}
+
+\subsection{Implicit integrated Michaelis--Menten solution}
+
+Integrating Eq.~\eqref{eq:mm_surface} from $\GS = \Gz$ to
+$\GS = \Gz(1-F_k)$, with $[E]_t$ constant (justified by $\Da \ll 1$,
+Section~\ref{sec:dimensionless}):
+\begin{equation}
+  \boxed{
+  \kcat\,[E]_t\,t
+  = K_{m,\text{surf}}^\Gamma\,\ln\!\frac{1}{1-F_k}
+  + \Gz\,F_k
+  }
+  \label{eq:imp_mm}
+\end{equation}
+This is the primary model for $F_k(T)$. It is an implicit equation in $F_k$
+and must be inverted numerically (bisection or Newton's method, implemented in
+\texttt{surface\_kinetics.py}). In dimensionless form, with
+$\tilde{t} = \kcat[E]_t\,t/K_{m,\text{surf}}^\Gamma$ and $u = F_k$:
+\begin{equation}
+  \tilde{t} = -\ln(1-u) + \rho\,u
+  \label{eq:imp_mm_dimless}
+\end{equation}
+Recovery of the two limits:
+\begin{align}
+  \rho = 0:\quad &\tilde{t} = -\ln(1-u)
+    \;\Rightarrow\; F_k = 1 - \exp\!\left(-\frac{\kcat}{K_m^{\text{sol}}}[E]_t\,t\right)
+    \quad \text{(monoexponential)} \label{eq:limit_mono}\\[0.3em]
+  \rho \to \infty:\quad &\tilde{t} \approx \rho\,u
+    \;\Rightarrow\; F_k = \frac{\kcat[E]_t\,t}{\Gz}
+    \quad \text{(Langmuir-like, linear in }t\text{)} \label{eq:limit_lang}
+\end{align}
+The two-parameter form $\{\kcat[E]_t,\,K_{m,\text{surf}}^\Gamma\}$ (equivalently
+$\{k_{\text{obs}},\,\rho\}$) is fit to experimental progress curves from a
+single incubation time-series. The monoexponential (one-parameter fit) is
+recovered as the $\rho \to 0$ special case.
+
+\subsection{Short-time approximation and discrimination ratio}
+
+At early times ($F_k \ll 1$), Taylor-expanding Eq.~\eqref{eq:imp_mm_dimless}:
+$\tilde{t} \approx (1+\rho)\,u + \ldots$, so:
+\begin{equation}
+  F_k(T) \approx \frac{\kcat[E]_t\,T}{K_{m,\text{surf}}^\Gamma + \Gz}
+  = \frac{\kcat[E]_t\,T}{K_{m,\text{surf}}^\Gamma(1 + \rho)}
+  \quad \text{(short-}T\text{ linear regime)}
+  \label{eq:short_time}
+\end{equation}
+The ratio of chronic to healing signal at short times is independent of both
+$\kcat$ and $K_{m,\text{surf}}^\Gamma$ (and of $\rho$):
+\begin{equation}
+  \frac{F_k^{\text{chronic}}}{F_k^{\text{healing}}} \approx
+  \frac{[E]_{\text{chronic}}}{[E]_{\text{healing}}} = 5\times
+  \label{eq:ratio_rho}
+\end{equation}
+This result, previously derived from the monoexponential limit, holds
+for \emph{all} $\rho$ in the short-time regime. The 5$\times$ discrimination
+ratio is therefore robust to the value of $\rho$ at early incubation times.
+
+%=======================================================================
 \section{Kinetic Regime at Clinical MMP-9 Concentrations}
 \label{sec:regime}
 
@@ -549,8 +714,9 @@ $(\kcat/K_m)^{\text{sol}}$ & Solution efficiency (UB for surface) & $67{,}500\ \
 $[E]_t^{\text{chronic}}$ & Free MMP-9 at 30-min read, chronic & 30~nM & Layer~0 ODE & Yes \\
 $[E]_t^{\text{healing}}$ & Free MMP-9 at 30-min read, healing & 6~nM & Layer~0 ODE & Yes \\
 $\Gz$ & Initial surface probe density & $\sim$5~pmol~cm$^{-2}$ & Layer~7 (device-planned) & No \\
-$\keff^{\text{surf}}$ & Surface rate constant & To be measured & Layer~15 calibration & No \\
-$K_m^{\text{surf}}$ & Surface Michaelis constant & To be measured & Layer~15 calibration & No \\
+$\keff^{\text{surf}}$ & Surface rate constant ($\kcat/K_m^{\text{sol}}$, upper bound) & To be measured & Layer~15 calibration & No \\
+$K_{m,\text{surf}}^\Gamma$ & Surface MM constant (mol~cm$^{-2}$) & $6.4\times10^{-13}$~mol~cm$^{-2}$ (estimate, Eq.~\ref{eq:Kmsurf_val}) & Eq.~\ref{eq:Kmsurf}; Layer~8 $\delta_{\text{eff}}$ unconfirmed & No \\
+$\rho$ & Probe-saturation ratio $\Gz/K_{m,\text{surf}}^\Gamma$ & 0.3--3.1 (Table~\ref{tab:rho}) & Layer~8 steric factor & No \\
 $E_a$ & Activation energy for surface cleavage & $\sim$45~kJ~mol$^{-1}$ placeholder & Not in \texttt{papers/layer\_09/} & No \\
 $A$ & Electrode area & $\sim$0.002~cm$^2$ & Device-planned & No \\
 $k_{\text{eff},j}^{\text{surf}}$ & Surface rate constant for interferents & Unknown & Not in \texttt{papers/layer\_09/} & No \\
@@ -605,11 +771,24 @@ $k_{\text{eff},j}^{\text{surf}}$ & Surface rate constant for interferents & Unkn
 
   \item \textbf{Solution-to-surface $K_m$ conversion requires $\delta_{\text{eff}}$
     from Layer~8.}
-    The effective surface Michaelis constant is related to the solution value by
-    $K_M^{\text{surf}} \approx K_m^{\text{sol}}\,\delta_{\text{eff}}$, where
-    $\delta_{\text{eff}}$ is the effective thickness of the accessible probe layer
-    (Layer~8, unconfirmed). Until $\delta_{\text{eff}}$ is established, $K_M^{\text{surf}}$
-    cannot be predicted from $K_m^{\text{sol}}$ alone.
+    The effective surface Michaelis constant $K_{m,\text{surf}}^\Gamma$ is related to the
+    solution value by $K_{m,\text{surf}}^\Gamma = K_m^{\text{sol}} \times 10^{-3} \times
+    \delta_{\text{eff}}$, where $\delta_{\text{eff}}$ (Layer~8, unconfirmed) is the effective
+    thickness of the accessible probe layer. Until $\delta_{\text{eff}}$ is established from
+    Layer~8, $K_{m,\text{surf}}^\Gamma$ spans approximately $6\times10^{-14}$--$6\times10^{-12}$~mol~cm$^{-2}$
+    ($\delta_{\text{eff}}$ range 0.5--50~nm).
+
+  \item \textbf{The probe-saturation ratio $\rho$ is unconfirmed; the
+    progress curve shape is therefore uncertain.}
+    Table~\ref{tab:rho} shows $\rho \in [0.3, 3.1]$ across the plausible
+    steric correction range. Over this range, the progress curve transitions
+    from near-monoexponential ($\rho \leq 0.3$) to significantly non-monoexponential
+    ($\rho \geq 1$). The implicit integrated equation
+    (Eq.~\eqref{eq:imp_mm}) must be fit to measured progress curves to determine
+    $\rho$ empirically; fitting with the monoexponential alone will overestimate
+    $F_k$ at intermediate times if $\rho > 0.3$. This is the dominant source of
+    \emph{systematic} modelling error until $\Gz$, $\delta_{\text{eff}}$, and
+    $\kcat$ are measured on the fabricated electrode.
 
 \end{enumerate}
 
@@ -643,7 +822,13 @@ $k_{\text{eff},j}^{\text{surf}}$ & Surface rate constant for interferents & Unkn
   reaction and diffusion in surface-based biosensors.
   \textit{Nat Biotechnol} 26:417--426.
   \textbf{squires2008.pdf} -- Damk\"{o}hler number framework for reaction-limited
-  vs.\ transport-limited biosensor regimes.
+  vs.\ transport-limited biosensor regimes; surface MM ODE formulation.
+
+\item Pheeney CG, Barton JK (2012). DNA electrochemistry with tethered methylene blue.
+  \textit{Langmuir} 28:7063--7070. DOI:~10.1021/la300566x.
+  \textbf{(in papers/layer\_10/)} -- MB surface coverage
+  $\Gz = 1.3$--$3.2$~pmol~cm$^{-2}$ used for $\rho$ calculation in
+  Table~\ref{tab:rho}.
 
 \end{enumerate}
 

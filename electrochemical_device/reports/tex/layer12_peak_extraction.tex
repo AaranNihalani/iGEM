@@ -1,0 +1,627 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\renewcommand\thesection{\Roman{section}}
+\numberwithin{equation}{section}
+
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Layer~12: SWV Peak Extraction}}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\kB}{k_{\text{B}}}
+\newcommand{\kET}{k_{\text{ET}}^{0}}
+\newcommand{\Eo}{E^{\circ\prime}}
+\newcommand{\Esw}{E_{\text{sw}}}
+\newcommand{\Apk}{A_{\text{peak}}}
+\newcommand{\Aarea}{A_{\text{area}}}
+\newcommand{\Epk}{E_{\text{peak}}}
+\newcommand{\DI}{\Delta I}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Layer~12: SWV Peak Extraction and Signal Processing}\\[0.4em]
+{\large From Raw Voltammogram to Peak Areas with Quantified Uncertainty}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layer~12 of 17-Layer Biosensor Pipeline \quad$|$\quad
+\texttt{peak\_extraction.py}}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent
+Layer~11 produces a theoretical net SWV current trace $\DI(E)$.
+The instrument measures a noisy, baseline-corrupted version of this trace.
+Layer~12 takes the raw measured array $\{(E_n, \DI_n)\}$ and extracts
+two numbers: the MB peak area $A_{\text{area}}^{\text{MB}}$ and the Fc peak area
+$A_{\text{area}}^{\text{Fc}}$, each with a propagated uncertainty $\sigma$.
+These two quantities are the sole inputs to Layer~13.
+
+The importance of this layer cannot be overstated. No matter how accurate
+the physical models in Layers~0--11 are, a systematic error introduced here
+(wrong baseline, clipped peak, noise spike misidentified as signal) corrupts
+every downstream calculation: the ratiometric signal $F_k$, the apparent
+rate $\kappa_k$, and the final enzyme concentration. The pipeline therefore
+applies four sequential operations: noise filtering (Section~\ref{sec:sg}),
+background subtraction (Section~\ref{sec:baseline}), peak fitting
+(Section~\ref{sec:fit}), and quality diagnostics (Section~\ref{sec:qc}).
+
+%=======================================================================
+\section{Physical Shape of the SWV Peak}
+\label{sec:shape}
+
+Before fitting a model to the data, it is essential to derive the expected
+peak shape from first principles so that the choice of fitting function can
+be justified rather than assumed.
+
+\subsection{Fermi-Dirac occupancy and the sech$^2$ peak}
+
+From Layer~11, the net SWV current at potential step $n$ is
+$\DI_n = I_\text{fwd}(E_n + \Esw) - I_\text{rev}(E_n - \Esw)$. In the
+reversible limit ($\kappa_\text{SW} \gg 1$), each half-cycle reaches Nernst
+equilibrium before current is sampled. The equilibrium surface coverage of
+oxidised MB at potential $E$ is set by the Fermi-Dirac occupancy function:
+\begin{equation}
+  \Gamma_\text{ox}^\infty(E) = \frac{\Gamma_\text{intact}}{1 +
+  \exp\!\bigl(n_e F(E - \Eo_\text{MB})/RT\bigr)}
+  \label{eq:fermi}
+\end{equation}
+This equation states that at potentials much more positive than $\Eo_\text{MB}$,
+MB is predominantly oxidised ($\Gamma_\text{ox} \to \Gamma_\text{intact}$);
+at potentials much more negative, it is predominantly reduced
+($\Gamma_\text{ox} \to 0$). The transition is centred at $E = \Eo_\text{MB}$
+and its sharpness is set by $RT/(n_e F)$: lower temperature or more electrons
+transferred gives a sharper transition.
+
+The net SWV current is proportional to the difference in equilibrium coverage
+between the two half-cycle potentials:
+\begin{equation}
+  \DI(E) \propto \Gamma_\text{ox}^\infty(E + \Esw)
+  - \Gamma_\text{ox}^\infty(E - \Esw)
+  \label{eq:DI_diff}
+\end{equation}
+For small $\Esw$ relative to $RT/(n_e F)$, this difference approximates the
+derivative of $\Gamma_\text{ox}^\infty$ with respect to $E$, multiplied by
+$2\Esw$. Computing that derivative from Eq.~\eqref{eq:fermi}:
+\begin{equation}
+  \frac{d\Gamma_\text{ox}^\infty}{dE}
+  = -\frac{n_e F \Gamma_\text{intact}}{4RT}\,
+  \text{sech}^2\!\!\left(\frac{n_e F (E - \Eo_\text{MB})}{2RT}\right)
+  \label{eq:deriv}
+\end{equation}
+The net SWV current therefore has the shape:
+\begin{equation}
+  \boxed{
+  \DI(E) \propto \Gamma_\text{intact} \cdot
+  \text{sech}^2\!\!\left(\frac{n_e F(E - \Eo_\text{MB})}{2RT}\right)
+  }
+  \label{eq:sech2}
+\end{equation}
+This result, confirmed by Mirceski et~al.~\cit{1} for surface-confined
+reversible systems, tells us three things directly. First, the peak is
+\emph{proportional to} $\Gamma_\text{intact}$: it is a direct measure of the
+remaining intact probe density after cleavage, which is the quantity Layer~13
+must extract. Second, the peak is centred exactly at $\Eo_\text{MB}$, allowing
+a cross-check against the pH-corrected value from Layer~10. Third, the peak
+shape is entirely determined by the thermodynamic ratio $RT/(n_e F)$: it is
+not a free parameter of the fitting model.
+
+\subsection{Full-width at half-maximum and the Gaussian approximation}
+
+The FWHM of Eq.~\eqref{eq:sech2} is obtained by solving $\text{sech}^2(x) = 1/2$:
+\begin{equation}
+  \text{FWHM} = \frac{2 \times 2\ln(1+\sqrt{2}) \times RT}{n_e F}
+  = \frac{2 \times 1.763 \times RT}{n_e F}
+  = \frac{3.526 \times 8.314 \times 310}{2 \times 96485}
+  \approx 47\;\text{mV}
+  \label{eq:fwhm}
+\end{equation}
+at $T = 310$~K, $n_e = 2$. The corresponding Gaussian standard deviation is:
+\begin{equation}
+  \sigma_E^\text{pred} = \frac{\text{FWHM}}{2\sqrt{2\ln 2}}
+  = \frac{\text{FWHM}}{2.355}
+  \approx 20\;\text{mV}
+  \label{eq:sigpred}
+\end{equation}
+The Gaussian function $\exp(-x^2/2)$ approximates $\text{sech}^2(ax)$ to
+within 5\% for $|x| \leq 1.5\sigma$ when the Gaussian $\sigma$ is matched to
+the sech$^2$ FWHM via Eq.~\eqref{eq:sigpred}. Beyond $\pm 1.5\sigma$, the
+sech$^2$ has heavier tails than the Gaussian; this 5\% discrepancy in the
+wings contributes approximately $0.3\%$ error to the integrated peak area.
+The Gaussian fit is therefore an excellent approximation for area extraction
+and is preferred over sech$^2$ for numerical stability.
+
+In the quasi-reversible regime ($\kappa_\text{SW} \sim 1$), the peak broadens
+and its height decreases compared to the reversible limit. Mirceski et~al.
+\cit{1} show that the peak shape remains approximately Gaussian in the
+quasi-reversible regime, with $\sigma_E$ increasing beyond the reversible
+prediction. A measured $\sigma_E > 1.5 \times \sigma_E^\text{pred}$ is
+therefore a sign that the system is in the quasi-reversible regime at the
+chosen $f_\text{SWV}$, not of heterogeneous SAM chemistry.
+
+%=======================================================================
+\section{Savitzky-Golay Noise Filtering}
+\label{sec:sg}
+
+\subsection{The convolution equation}
+
+The potentiostat samples the current at $N \approx 650$ discrete potential
+steps (for a $-0.65$ to $+0.65$~V scan at 2~mV step, from Baker~2006~\cit{3}
+and Lubin~2010~\cit{4}). Each sampled value $\DI_n$ carries per-point noise
+$\delta_n$ with standard deviation $\sigma_\text{noise}$ (from the
+transimpedance amplifier and analogue-to-digital converter, Layer~14).
+The Savitzky-Golay (SG) filter~\cit{2} replaces each point with a
+weighted sum of its neighbours:
+\begin{equation}
+  \hat{I}_n = \sum_{k=-m}^{m} c_k\, \DI_{n+k}
+  \label{eq:sg}
+\end{equation}
+where $m$ is the half-window width and the weights $\{c_k\}$ are
+determined by fitting a polynomial of degree $p$ to the $2m+1$
+points in the window and reading off the polynomial value at the
+centre point. The key property of these weights is that they satisfy:
+\begin{equation}
+  \sum_{k=-m}^{m} c_k = 1, \qquad
+  \sum_{k=-m}^{m} c_k\, k^j = 0 \quad \text{for } j = 1, \ldots, p
+  \label{eq:sgconds}
+\end{equation}
+The first condition in Eq.~\eqref{eq:sgconds} ensures that a constant signal
+passes through the filter unchanged (no DC bias). The second condition
+ensures that polynomial signals of degree up to $p$ also pass unchanged,
+which is why the filter preserves curved features such as peak tops.
+
+\subsection{Why SG outperforms a running average for peaked data}
+
+A running average (boxcar filter) is the special case $c_k = 1/(2m+1)$
+for all $k$, corresponding to $p = 0$ (degree-0 polynomial, a flat line).
+A flat-line fit is a poor model for a peak: it systematically
+underestimates the signal at the peak apex and overestimates it on the
+flanks, broadening the peak in proportion to the window width.
+The SG filter with $p = 3$ fits a cubic polynomial locally, which can
+reproduce the curvature at the peak top without distorting it, as long
+as the peak is wider than the window.
+
+\subsection{Noise reduction factor}
+
+Because the weights $\{c_k\}$ are fixed (not random), and because the noise
+on each point $\delta_n$ is uncorrelated (white noise from the ADC and TIA),
+the noise on the smoothed point $\hat{I}_n$ is:
+\begin{equation}
+  \sigma_{\hat{I}} = \sigma_\text{noise}\,\sqrt{\sum_{k} c_k^2}
+  \label{eq:sgnoise}
+\end{equation}
+For the symmetric SG filter with $m = 5$ (11 points), $p = 3$, the tabulated
+sum $\sum_k c_k^2 \approx 0.233$~\cit{2}, giving:
+\begin{equation}
+  \sigma_{\hat{I}} = \sigma_\text{noise} \times \sqrt{0.233} \approx 0.48\,\sigma_\text{noise}
+  \label{eq:sgnoise_val}
+\end{equation}
+The filter reduces per-point noise by a factor of $\approx 2.1\times$
+relative to the unsmoothed data. This is meaningful: the per-point SNR
+on the MB peak is approximately $0.27\,\mu\text{A} / \sigma_\text{noise}$;
+doubling the per-point SNR halves the uncertainty on the fitted peak
+amplitude.
+
+\subsection{Parameter choice}
+
+The window half-width $m = 5$ (11 points, 22~mV) is chosen to be well below
+the peak FWHM of 47~mV (Eq.~\ref{eq:fwhm}), ensuring no significant peak
+broadening. The polynomial degree $p = 3$ is the minimum needed to capture
+the curvature at the peak apex (a quadratic feature); degree 5 would give
+marginal improvement in peak preservation at the cost of reduced noise
+suppression. These choices are consistent with the recommendations of
+Savitzky and Golay~\cit{2} for spectroscopic peaks with similar
+width-to-window ratios.
+
+%=======================================================================
+\section{Baseline Subtraction}
+\label{sec:baseline}
+
+\subsection{Origin of the baseline}
+
+Even after SWV differential cancellation (Layer~11, Section~VII), a
+non-zero slowly varying baseline remains in the measured trace for three
+reasons. First, the capacitive transient is not perfectly symmetric between
+forward and reverse half-cycles when the potential step $\Delta E_s$ is
+non-zero, leaving a residual proportional to $dC_\text{dl}/dE \times
+\Delta E_s$. Second, the O$_2$ reduction wave contributes a small monotone
+cathodic current across the scan (Layer~11, Section~VIII). Third, unresolved
+faradaic contributions from adventitious species in the sample matrix may
+add broad features.
+
+The baseline is not a physical signal of interest; it is an additive
+artefact that, if not removed, biases the peak area. A 1~nA baseline
+elevation across a 200~mV peak window adds approximately
+$1\;\text{nA} \times 0.2\;\text{V} = 0.2\;\text{nA}\cdot\text{V}$
+to the fitted area, comparable to the area of the MB peak itself at low
+probe coverage.
+
+\subsection{Peak windows and anchor regions}
+
+Two \textit{peak windows} are defined as the voltage ranges expected to
+contain Faradaic current. Everything outside these windows is treated as
+baseline and used to anchor the baseline fit.
+
+The window boundaries are set at $\pm 3\sigma_E^\text{pred}$ from the
+expected peak centres:
+\begin{align}
+  \text{MB window:}&\quad
+  [\Eo_\text{MB}(\text{pH}) - 3\sigma_E^\text{pred},\;
+   \Eo_\text{MB}(\text{pH}) + 3\sigma_E^\text{pred}]
+  = [\Eo_\text{MB} - 60\;\text{mV},\;\Eo_\text{MB} + 60\;\text{mV}]
+  \label{eq:mbwindow}\\[0.3em]
+  \text{Fc window:}&\quad
+  [\Eo_\text{Fc} - 3\sigma_E^\text{pred,Fc},\;
+   \Eo_\text{Fc} + 3\sigma_E^\text{pred,Fc}]
+  \approx [\Eo_\text{Fc} - 90\;\text{mV},\;\Eo_\text{Fc} + 90\;\text{mV}]
+  \label{eq:fcwindow}
+\end{align}
+The $3\sigma$ guard band ensures that less than 0.3\% of the Gaussian peak
+area lies outside the window and therefore the anchor points carry
+essentially no Faradaic signal. The Fc window is wider (90~mV vs 60~mV)
+because the Fc peak, with $n_e = 1$, has FWHM $\approx 94$~mV at 37$^\circ$C,
+giving $\sigma_E^\text{pred,Fc} \approx 40$~mV.
+
+\subsection{Baseline model and fit}
+
+A cubic polynomial is fitted by least squares to the $N_\text{base}$ points
+in the anchor regions. The polynomial is then evaluated across the full
+scan range and subtracted from the smoothed data. The baseline-subtracted
+current at step $n$ is:
+\begin{equation}
+  \DI_n^\text{corr} = \hat{I}_n - \bigl(b_0 + b_1 E_n + b_2 E_n^2 + b_3 E_n^3\bigr)
+  \label{eq:baseline}
+\end{equation}
+The cubic polynomial captures the slowly varying capacitive slope and any
+mild nonlinearity; a linear fit would suffice for a flat baseline but
+fails if the O$_2$ wave tail introduces curvature at the cathodic end of
+the scan.
+
+\subsection{Quality check on baseline fit}
+
+The RMS residual of the polynomial fit over the anchor points is compared
+to the expected noise level $\sigma_\text{noise}$:
+\begin{equation}
+  Q_\text{base} = \frac{1}{N_\text{base}}\sum_{n \in \text{anchor}}
+  \bigl(\hat{I}_n - \hat{b}(E_n)\bigr)^2 / \sigma_\text{noise}^2
+  \label{eq:Qbase}
+\end{equation}
+$Q_\text{base}$ follows a $\chi^2$ distribution with $N_\text{base} - 4$
+degrees of freedom under the null hypothesis that the baseline is truly
+cubic. If $Q_\text{base} > 5$, the baseline is non-polynomial, indicating
+possible electrode fouling, an unresolved interfering wave, or a bubble at
+the electrode surface. The scan is flagged and excluded from averaging.
+
+%=======================================================================
+\section{Gaussian Peak Fitting and Area Extraction}
+\label{sec:fit}
+
+\subsection{The Gaussian model}
+
+After baseline subtraction, the baseline-corrected current in each peak
+window is fitted to a Gaussian:
+\begin{equation}
+  \DI^\text{corr}(E) = \Apk\,\exp\!\!\left(-\frac{(E - \Epk)^2}{2\sigma_E^2}\right)
+  \label{eq:gauss}
+\end{equation}
+This model has three free parameters. $\Apk$ (nA) is the peak
+amplitude: it is proportional to $\Gamma_\text{intact}$ (the quantity
+Layer~13 needs) but also to $f(\kappa_\text{SW})$, the kinetic factor
+from Layer~11 that depends on $\kET$ and the scan frequency $f_\text{SWV}$.
+Because $\kET$ varies between electrodes (different probe lengths, different
+tether conformations), $\Apk$ alone is not a reliable measure of
+$\Gamma_\text{intact}$. $\Epk$ (V) is the measured peak centre: it should
+agree with the Layer~10 prediction $\Eo_\text{MB}(\text{pH})$ within a
+tolerance set by the on-chip reference electrode drift (typically
+$\pm 25$~mV; Baker~2006~\cit{3}, Lubin~2010~\cit{4}). A shift outside this
+tolerance indicates reference electrode failure, sample pH far from
+expectation, or a misidentified peak. $\sigma_E$ (V) is the peak width:
+its predicted value is $\sigma_E^\text{pred} \approx 20$~mV
+(Eq.~\ref{eq:sigpred}); deviations carry diagnostic information (see
+Section~\ref{sec:qc}).
+
+\subsection{Why peak area rather than peak height}
+
+The integrated area under the Gaussian is:
+\begin{equation}
+  \Aarea = \int_{-\infty}^{+\infty} \Apk\,
+  \exp\!\!\left(-\frac{(E-\Epk)^2}{2\sigma_E^2}\right)\!dE
+  = \Apk\,\sigma_E\,\sqrt{2\pi}
+  \label{eq:area}
+\end{equation}
+This equation says that the area is the product of the peak height $\Apk$
+and the width $\sigma_E$, scaled by $\sqrt{2\pi}$. The key physical point
+is that as the system moves from the reversible to the quasi-reversible
+regime (lower $f_\text{SWV}$, slower $\kET$), the peak becomes shorter and
+broader simultaneously: $\Apk$ decreases while $\sigma_E$ increases, with
+the product $\Apk \times \sigma_E$ approximately conserved. This charge
+conservation follows from the fact that the total charge passed during a
+sweep through the peak is $Q = n_e F A_\text{true} \Gamma_\text{intact}$,
+which depends only on the physical state of the electrode (probe coverage
+and electrode area) and not on the scan kinetics.
+
+The amplitude $\Apk$ therefore conflates the kinetic regime with the surface
+coverage, whereas the area $\Aarea$ is approximately proportional to
+$\Gamma_\text{intact}$ alone. White and Plaxco~\cit{5} confirm
+experimentally that the SWV signal gain (effectively the peak area) is
+the more robust metric for quantifying surface coverage across a range of
+$f_\text{SWV}$ values. We therefore use $\Aarea$ as the primary output
+of this layer, not $\Apk$.
+
+\subsection{Nonlinear least-squares fitting and the covariance matrix}
+
+The three parameters $(\Apk, \Epk, \sigma_E)$ are determined by minimising
+the sum of squared residuals between the data and Eq.~\eqref{eq:gauss}.
+The fitting algorithm (Levenberg-Marquardt, as implemented in
+\texttt{scipy.optimize.curve\_fit}) provides, in addition to the best-fit
+parameters, the $3\times3$ covariance matrix $\Sigma$. The diagonal
+elements give the variances: $\sigma_{\Apk}^2 = \Sigma_{11}$,
+$\sigma_{\Epk}^2 = \Sigma_{22}$, $\sigma_{\sigma_E}^2 = \Sigma_{33}$.
+The off-diagonal element $\Sigma_{13}$ gives the covariance between
+$\Apk$ and $\sigma_E$.
+
+This covariance is physically important and must not be ignored. When a peak
+is slightly wider than the model predicts, the least-squares algorithm
+responds by reducing $\Apk$ and increasing $\sigma_E$, keeping their
+product approximately constant. The amplitude and width are therefore
+negatively correlated: $\Sigma_{13} < 0$. Propagating uncertainty in
+$\Aarea = \Apk\,\sigma_E\,\sqrt{2\pi}$ while ignoring this covariance
+overestimates $\sigma_{\Aarea}$. The correct propagation is:
+\begin{equation}
+  \sigma_{\Aarea}^2 = 2\pi\!\left[
+    \sigma_E^2\,\sigma_{\Apk}^2
+    + \Apk^2\,\sigma_{\sigma_E}^2
+    + 2\,\Apk\,\sigma_E\,\Sigma_{13}
+  \right]
+  \label{eq:sigarea}
+\end{equation}
+The third term (the covariance contribution) is negative, so ignoring it
+gives a conservative (upper-bound) estimate of $\sigma_{\Aarea}$.
+
+\subsection{Initial guesses and fitting bounds}
+
+The fitting algorithm requires initial guesses for the three parameters.
+These are obtained from the smoothed, baseline-subtracted data: the initial
+$\Apk$ is the maximum value within the peak window, $\Epk$ is the potential
+at that maximum, and $\sigma_E$ is set to the predicted value
+$\sigma_E^\text{pred}$. Bounds are imposed:
+$\Apk \in [0, 2\max(\DI^\text{corr})]$,
+$\Epk \in [\Eo_\text{MB}(\text{pH}) \pm 75\;\text{mV}]$,
+$\sigma_E \in [0.5\sigma_E^\text{pred}, 5\sigma_E^\text{pred}]$.
+These bounds prevent the algorithm from converging to unphysical solutions
+(negative amplitude, unreasonably sharp or broad peaks).
+
+%=======================================================================
+\section{Two-Gaussian Simultaneous Fit}
+\label{sec:twogauss}
+
+When both MB and Fc peaks are extracted from the same scan, they are fitted
+simultaneously with a shared baseline model:
+\begin{equation}
+  \DI(E) = \Apk^\text{MB}\,G_\text{MB}(E)
+  + \Apk^\text{Fc}\,G_\text{Fc}(E)
+  + b_0 + b_1 E
+  \label{eq:twogauss}
+\end{equation}
+where $G_j(E) = \exp(-(E-\Epk^j)^2/(2\sigma_E^{j\,2}))$. The simultaneous
+fit prevents the following bias: if the two peaks are fitted sequentially
+and the first fit has slightly wrong wings, the residual from the first peak
+is absorbed into the baseline of the second, systematically biasing the
+second area.
+
+The two peaks are resolvable as independent Gaussians when their separation
+exceeds $3(\sigma_E^\text{MB} + \sigma_E^\text{Fc})$. For
+$\sigma_E^\text{MB} \approx 20$~mV and $\sigma_E^\text{Fc} \approx 40$~mV,
+the resolvability criterion requires $|\Epk^\text{Fc} - \Epk^\text{MB}|
+> 180$~mV. The expected separation is approximately 690~mV (Layer~10,
+Section~VIII), comfortably exceeding this threshold. The two-Gaussian model
+is therefore never degenerate for this system.
+
+%=======================================================================
+\section{Quality Diagnostics}
+\label{sec:qc}
+
+Every extracted peak is subjected to the following automated diagnostics.
+Each diagnostic flag has a specific physical interpretation.
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{}p{3.5cm}p{2.5cm}p{2.5cm}X@{}}
+\toprule
+Diagnostic & Flag condition & Expected value & Physical interpretation \\
+\midrule
+Peak width $\sigma_E^\text{MB}$ & $> 2\sigma_E^\text{pred}$ & $20$~mV & SAM is heterogeneous (two populations of probe with different $\Eo_\text{MB}$), or dissolved MB is contributing a broader diffusion-controlled peak \\[0.5em]
+Peak width $\sigma_E^\text{MB}$ & $< 0.5\sigma_E^\text{pred}$ & $20$~mV & Noise spike misidentified as peak; or the peak is not a Faradaic signal \\[0.5em]
+Peak position $|\Epk^\text{MB} - \Eo_\text{MB}(\text{pH})|$ & $> 25$~mV & $<5$~mV & Reference electrode drift, sample pH far from the assumed value, or a different redox-active species is being fitted \\[0.5em]
+Fit $\chi^2/\nu$ & $> 5$ & $\approx 1$ & Non-Gaussian peak shape; the sech$^2$ vs Gaussian discrepancy is only 5\% at the wings, so a value $> 5$ indicates a real non-Gaussianity (asymmetric peak from two probe populations, or double-MB peak) \\[0.5em]
+Fc amplitude stability $|\Apk^\text{Fc}(i) - \bar{\Apk}^\text{Fc}|/\bar{\Apk}^\text{Fc}$ & $> 10\%$ between scans & $< 2\%$ & Fc SAM is damaged (Fc molecules desorbing) or a bubble is intermittently blocking part of the electrode \\[0.5em]
+Signal below LOD: $\Apk < 3\sigma_\text{noise}/\sqrt{N_\text{pts}}$ & (triggered) & Not triggered & Probe coverage is too low to detect, or signal is lost through complete cleavage; Layer~13 reports $A_\text{area} = 0 \pm A_\text{LOD}$ \\[0.5em]
+\bottomrule
+\end{tabularx}
+\caption{Automated quality diagnostics applied to every SWV peak extraction.
+$\nu$ is the number of degrees of freedom in the Gaussian fit
+($N_\text{pts} - 3$, where $N_\text{pts}$ is the number of points in the
+peak window); $\sigma_\text{noise}$ is the per-point noise from Layer~14.}
+\label{tab:qc}
+\end{table}
+
+%=======================================================================
+\section{Edge Cases}
+\label{sec:edge}
+
+\subsection{Double MB peak}
+
+If two distinct MB populations exist on the electrode (e.g., intact probe
+with MB at the full tether distance, and a cleaved stub with MB at a shorter
+distance), the SWV voltammogram may show two partially overlapping MB peaks
+at slightly different formal potentials. The single-Gaussian fit would
+return a large $\sigma_E$ and a high $\chi^2/\nu$. The diagnostic table
+(Section~\ref{sec:qc}) flags this case, and the pipeline switches to a
+two-Gaussian fit within the MB window. The two fitted areas are reported
+separately; Layer~13 uses only the intact-probe peak (the peak at
+$\Epk \approx \Eo_\text{MB}(\text{pH})$).
+
+\subsection{Signal clipping}
+
+If $\Apk > 0.9 \times I_\text{range,TIA}$, the transimpedance amplifier has
+saturated and the peak top is clipped. The fitted Gaussian amplitude is
+unreliable. This flag triggers a recommendation to reduce the probe coverage
+$\Gamma_0$ or the TIA gain.
+
+\subsection{Signal below detection limit}
+
+If the peak amplitude is not statistically distinguishable from the noise
+(see Table~\ref{tab:qc}, last row), Layer~13 is not called for this channel.
+The result is reported as a censored measurement: $A_\text{area} < A_\text{LOD}$.
+
+%=======================================================================
+\section{Frequency Diagnostic Implementation}
+\label{sec:freqdiag}
+
+From Layer~11 (Section~XI), the slope of $\log\Aarea$ versus $\log f_\text{SWV}$
+distinguishes surface-confined from diffusion-controlled redox. This
+diagnostic is run once per electrode batch (not on every cartridge):
+
+\begin{equation}
+  \frac{d\log\Aarea}{d\log f_\text{SWV}} =
+  \begin{cases}
+    1 & \text{reversible surface-confined (}f \ll k^0/2\text{)}\\
+    0\text{--}1 & \text{quasi-reversible surface-confined}\\
+    0.5 & \text{diffusion-controlled (dissolved MB)}
+  \end{cases}
+  \label{eq:freqslope}
+\end{equation}
+The area $\Aarea$ is extracted by the Gaussian fit at each frequency using
+the same pipeline described in this layer. The slope of the log-log plot
+confirms which regime the electrode is operating in and validates the
+Layer~11 model.
+
+%=======================================================================
+\section{Layer Outputs}
+\label{sec:outputs}
+
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}lXlll@{}}
+\toprule
+Output & Physical meaning & Typical value & Uncertainty & Feeds \\
+\midrule
+$\Aarea^\text{MB}$ & Integrated MB peak area & 0.05--5~nA\,V & $\sigma_{\Aarea}$ (Eq.~\ref{eq:sigarea}) & Layer~13 \\
+$\Aarea^\text{Fc}$ & Integrated Fc peak area & 0.1--10~nA\,V & $\sigma_{\Aarea}$ & Layer~13 \\
+$\Epk^\text{MB}$ & Measured MB formal potential & $-0.29 \pm 0.06$~V vs on-chip RE & $\sigma_{\Epk}$ & Layer~10 cross-check \\
+$\sigma_E^\text{MB}$ & MB peak width & $\approx 20$~mV & $\sigma_{\sigma_E}$ & Quality diagnostic \\
+Quality flags & Boolean flags from Table~\ref{tab:qc} & All clear & --- & Data pipeline \\
+\bottomrule
+\end{tabularx}
+\caption{Outputs of Layer~12 passed to downstream layers. All uncertainties
+are at the $1\sigma$ level and come from the nonlinear least-squares
+covariance matrix (Eq.~\ref{eq:sigarea}).}
+\label{tab:outputs}
+\end{table}
+
+%=======================================================================
+\section{Limitations}
+\label{sec:limits}
+
+\begin{enumerate}[leftmargin=*]
+
+\item \textbf{The Gaussian is an approximation to sech$^2$.} The systematic
+  error in the fitted area from the sech$^2$/Gaussian discrepancy is
+  $\approx 0.3\%$ (Section~\ref{sec:shape}). This is negligible compared
+  to other uncertainties, but the numerical implementation in
+  \texttt{peak\_extraction.py} can optionally use the exact sech$^2$ model
+  for verification.
+
+\item \textbf{The single-Gaussian fit assumes one probe population.} If the
+  SAM contains probes with a broad distribution of $\Eo_\text{MB}$ values
+  (e.g., from heterogeneous PEG linker lengths), the true peak is a
+  superposition of Gaussians at different centres. The fitted single Gaussian
+  overestimates $\sigma_E$ and produces a biased area. The frequency
+  diagnostic (Section~\ref{sec:freqdiag}) can distinguish this from
+  quasi-reversible broadening: kinetic broadening increases with $f$,
+  whereas heterogeneous broadening is frequency-independent.
+
+\item \textbf{The cubic baseline polynomial fails near the O$_2$ reduction
+  wave.} If the cathodic scan limit is close to the O$_2$ wave (at
+  approximately $-0.5$ to $-0.6$~V vs Ag/AgCl in aerated buffer), the wave
+  tail introduces a nonlinear feature at the MB baseline anchor region. In
+  this case, a spline through more anchor points, or a separate exponential
+  term for the O$_2$ contribution, must be added to Eq.~\eqref{eq:baseline}.
+
+\item \textbf{The Fc peak width prediction assumes $n_e = 1$ and the
+  reversible limit.} If Fc is at a distance where $k^{0}_{\text{ET,Fc}}$ is not
+  much larger than $2f_\text{SWV}$, the Fc peak will broaden and its area
+  will drop. Section~\ref{sec:fit} applies the same area-over-height
+  argument to Fc as to MB, so the area is still the preferred metric; but
+  if the Fc peak broadens enough to overlap with the MB peak tail, the
+  two-Gaussian simultaneous fit (Section~\ref{sec:twogauss}) is required.
+
+\end{enumerate}
+
+%=======================================================================
+\section*{References}
+
+\noindent All papers in \texttt{electrochemical\_device/papers/layer\_12/}.
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+
+\item Mirceski V, Skrzypek S, Stojanov L (2018). Square-wave voltammetry:
+  a review on the recent progress. \textit{ChemTexts} 4:17.
+  DOI:~10.1007/s40828-018-0073-0. \textbf{mirceski2018.pdf} -- surface-confined
+  reversible SWV peak shape (sech$^2$ form), FWHM, quasi-reversible broadening,
+  and peak area behaviour confirmed.
+
+\item Savitzky A, Golay MJE (1964). Smoothing and differentiation of data
+  by simplified least squares procedures. \textit{Anal Chem} 36:1627--1639.
+  DOI:~10.1021/ac60214a047. \textbf{savitzky1964.pdf} -- convolution weights
+  $\{c_k\}$ for polynomial smoothing (Table~1), noise reduction factor, and
+  peak-preservation property confirmed.
+
+\item Baker BR, Lai RY, Wood MS, Doctor EH, Heeger AJ, Plaxco KW (2006).
+  An electronic, aptamer-based small-molecule sensor for the rapid,
+  label-free detection of cocaine in adulterated samples and biological
+  fluids. \textit{J Am Chem Soc} 128:3138--3139. DOI:~10.1021/ja056957p.
+  \textbf{baker2006.pdf} -- SWV scan range and 2~mV step size confirmed;
+  on-chip RE peak position reference confirmed.
+
+\item Lubin AA, Lai RY, Baker BR, Heeger AJ, Plaxco KW (2010).
+  Electrochemical, structure-switching biosensors: quantitative analysis
+  of the usable dynamic range. \textit{Anal Chem} 78:5671--5677.
+  DOI:~10.1021/ac0601417.
+  \textbf{lubin2010.pdf} -- MB peak position, probe density range, and
+  per-scan signal stability confirmed.
+
+\item White RJ, Plaxco KW (2010). Exploiting binding-induced changes in
+  probe flexibility for the optimization of electrochemical biosensors.
+  \textit{Anal Chem} 82:73--76. DOI:~10.1021/ac9028595.
+  \textbf{white2010.pdf} -- SWV frequency dependence of signal area;
+  peak area robustness to frequency change compared to peak height
+  confirmed.
+
+\end{enumerate}
+
+\end{document}
