@@ -57,9 +57,9 @@ Layer~13 of 17-Layer Biosensor Pipeline \quad$|$\quad
 
 \noindent
 Layer~12 delivers two peak areas per SWV scan: $\AMB$ (from the MB redox
-probe covalently attached to the aptamer) and $\AFc$ (from the ferrocenemethanol
-internal reference). Layer~13 converts these two numbers into a single
-enzyme concentration estimate $[\text{E}]$ with a full uncertainty budget.
+label covalently attached to the peptide probe SGKIPRTLTA) and $\AFc$ (from the
+ferrocenemethanol internal reference). Layer~13 converts these two numbers into a
+single enzyme concentration estimate $[\text{E}]$ with a full uncertainty budget.
 
 The challenge this layer must solve is that the raw peak areas are corrupted
 by at least four distinct artefacts: variation in electrode area $A_\text{true}$
@@ -256,11 +256,19 @@ amount $\Delta\rho_\text{bg}$ that is unrelated to the target enzyme.
 Unless accounted for, it would overestimate $F_k$ and therefore
 overestimate $[\text{E}]$.
 
-The solution is a \emph{control electrode}: an electrode with an identical
-SAM but a scrambled or enzyme-resistant aptamer sequence that responds to
-all background cleavage but not to the specific target enzyme. The control
-electrode reports $\rho_\text{control}(T)$ as the surviving fraction under
-background conditions.
+The solution is a \emph{control electrode}: an electrode bearing the
+D-amino acid enantiomer of the peptide substrate (D-SGKIPRTLTA) in an
+otherwise identical SAM. MMP-9, like all natural metalloproteinases, is
+stereospecific for L-amino acid substrates: the active-site geometry that
+positions the scissile bond over the catalytic zinc ion requires the
+L-configuration at each $\alpha$-carbon. The D-enantiomer substrate cannot
+adopt this geometry and is therefore not cleaved by MMP-9 (or any natural
+L-specific protease in wound fluid) regardless of enzyme concentration.
+Non-stereospecific background processes (non-specific nucleases acting on
+the thiol linker, gold--thiol bond hydrolysis, and reactive oxygen species)
+act on both the L-peptide active electrode and the D-peptide control equally.
+The control electrode therefore reports $\rho_\text{control}(T)$ as the
+surviving fraction under background conditions alone.
 
 \subsection{Derivation of $F_k$}
 
@@ -309,11 +317,14 @@ then drifts even without enzyme. This is controlled by monitoring the Fc
 peak amplitude on both electrodes; a difference $>10\%$ flags differential
 fouling and the control correction is invalidated.
 
-(2) \emph{Enzyme-dependent non-specific cleavage.} If the target enzyme
-cleaves DNA non-specifically (in addition to the aptamer-specific cleavage),
-it would also cleave the scrambled sequence on the control electrode. In
-this case, $\rho_\text{control}$ would decrease with enzyme concentration,
-and Eq.~\eqref{eq:Fk_simp} would underestimate $p_\text{E}$.
+(2) \emph{Non-stereospecific metalloprotease activity.} Although natural
+MMPs are L-stereospecific, some bacterial proteases and heat-denatured
+MMPs may exhibit reduced stereospecificity. Any MMP-9 activity on the
+D-enantiomer would cause $\rho_\text{control}$ to decrease with enzyme
+concentration, causing Eq.~\eqref{eq:Fk_simp} to underestimate $p_\text{E}$.
+Validation requires adding saturating MMP-9 to a chip bearing only
+D-enantiomer control electrodes and confirming $\rho_\text{control}$
+drops by less than 5\%.
 
 \subsection{Uncertainty on $F_k$}
 
@@ -418,10 +429,14 @@ is indistinguishable from noise). The corresponding apparent rate range is:
   \label{eq:dynrange}
 \end{equation}
 giving a dynamic range of $3.00/0.223 = 13.5\times$ in apparent rate, or
-approximately 1.1 decades in $\kk$. Converting to concentration through
-the calibration curve (which is approximately logarithmic in $[\text{E}]$
-for the MM model), Baker~2006~\cit{3} confirms that the resulting dynamic
-range in enzyme concentration spans approximately 2--3 decades.
+approximately 1.1 decades in $\kk$. In the linear (unsaturated) regime
+where $\kk \approx \kcat[\text{E}]/(\Km + \Gtot(0))$, $\kk$ is proportional
+to $[\text{E}]$, so 1.1 decades in $\kk$ corresponds to 1.1 decades in
+$[\text{E}]$. The clinically relevant MMP-9 range is 6--30~nM
+(chronic vs healing wound, Layer~0), spanning 0.7 decades. This fits
+comfortably within the 1.1-decade window, confirming that the biosensor
+can discriminate healing from chronic wounds across the full physiological
+range with the stated noise floor.
 
 \subsection{Inversion algorithm}
 
@@ -575,14 +590,13 @@ and to achieve $\sigma_{[\text{E}]}/[\text{E}] < 5\%$ at mid-range.
   non-Gaussian (double-MB population), the residuals are non-Gaussian and
   the propagated $\sigma_{\Fk}$ underestimates the true uncertainty.
 
-\item \textbf{The control electrode sequence must not be cleaved by the
-  target enzyme.} If scrambled aptamer sequences retain partial
-  endonuclease recognition, $\Fk$ from Eq.~\eqref{eq:Fk_simp}
-  underestimates true enzyme-specific cleavage. Sequence design and
-  negative-control validation (adding saturating concentrations of
-  enzyme to a chip with only control electrodes) must confirm that
-  $\rho_\text{control}$ does not drop by more than 5\% when enzyme
-  is present.
+\item \textbf{The D-enantiomer control must be verified stereospecifically
+  resistant to MMP-9.} The design assumes MMP-9 cannot cleave
+  D-SGKIPRTLTA. This assumption holds for natural L-specific metalloproteinases
+  but must be confirmed experimentally: add saturating MMP-9 to a chip
+  bearing only D-enantiomer electrodes and confirm $\rho_\text{control}$
+  does not drop by more than 5\%. Any residual activity on the D-enantiomer
+  causes $\Fk$ from Eq.~\eqref{eq:Fk_simp} to underestimate $p_\text{E}$.
 
 \end{enumerate}
 

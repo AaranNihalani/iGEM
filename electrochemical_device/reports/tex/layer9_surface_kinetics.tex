@@ -142,9 +142,15 @@ constraint yields the steady-state progress curve~\cit{1} (Eq.~3):
   \keff = \frac{\kcat}{1 + K_M/[E]_t}, \quad
   K_M = \frac{k_{-1} + \kcat}{k_1}
 \end{equation}
-This is the Langmuirian (LG) progress curve. In the linear regime
-($[E]_t \ll K_M$): $\keff \approx (\kcat/K_M)[E]_t \equiv \keff^{\text{surf}}[E]_t$,
-giving a simple pseudo-first-order decay.
+This is the Langmuirian (LG) progress curve. The denominator
+$(1 + K_M/[E]_t)$ shows that $\keff$ can only reach its maximum $\kcat$
+when $[E]_t \gg K_M$ (enzyme-saturated regime). At clinical concentrations
+$[E]_t \leq 30$~nM $\ll K_M \approx 1.28$~mM~\cit{2} (Section~\ref{sec:regime}),
+the denominator $\approx K_M/[E]_t$ and the expression simplifies to:
+$\keff \approx (\kcat/K_M)[E]_t \equiv \keff^{\text{surf}}[E]_t$. In this limit
+$[E]_t$ appears only in the numerator and the rate is first-order in enzyme:
+the enzyme is in excess and does not appear in any denominator in the
+operative equations.
 
 \subsection{Exact biexponential solution}
 
@@ -246,6 +252,13 @@ substrate and product both expressed as surface concentrations
 In the A\&D notation, $K_{m,\text{surf}}^\Gamma$ is the probe density at
 which the per-probe turnover rate is half its maximum value. Its units are
 mol~cm$^{-2}$, not mol~L$^{-1}$.
+The enzyme concentration $[E]_t$ appears only in the numerator as a rate
+multiplier; the denominator contains surface concentrations only ($K_{m,\text{surf}}^\Gamma$
+and $\GS$). This reflects the physical situation: MMP-9 is present in bulk excess
+in solution and is \emph{not} the limiting species. The denominator $K_{m,\text{surf}}^\Gamma + \GS$
+captures saturation of enzyme--probe encounters at high probe density, not
+saturation of the enzyme active sites (which would require $[E]_t$ in the
+denominator).
 
 \subsection{Conversion from solution $K_m$ to surface units}
 
