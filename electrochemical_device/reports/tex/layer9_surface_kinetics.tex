@@ -55,7 +55,7 @@
 Layer~9 of 17-Layer Biosensor Pipeline \quad$|$\quad
 \texttt{surface\_kinetics.py}}
 \end{center}
-\vspace{0.6em}
+\vspace{0.4em}\hrule\vspace{0.7em}
 
 %=======================================================================
 \section{Physical Picture}
@@ -552,8 +552,10 @@ With $[E]_c = 30$~nM, $[E]_h = 6$~nM, and ratio $r = 5$:
   T^* = \frac{\ln 5}{\keff^{\text{surf}} \times 24\ \text{nM}}
   = \frac{1.609}{\keff^{\text{surf}} \times 2.4\times10^{-8}\ \text{M}}
 \end{equation}
-\begin{center}
-\begin{tabular}{lll}
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lll@{}}
 \toprule
 $\keff^{\text{surf}}$ (M$^{-1}$s$^{-1}$) & $T^*$ (s) & $T^*$ (min) \\
 \midrule
@@ -563,7 +565,11 @@ $30{,}000$   & $2{,}230$  &  37 \\
 $67{,}500$ (sol.\ UB) & $990$ & 16 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Optimal readout time $T^*$ (Eq.~\eqref{eq:Tstar_eval}) as a function of the surface
+rate constant $\keff^{\text{surf}}$. The 30--60~min clinical window
+corresponds to $\keff^{\text{surf}} \approx 13{,}000$--$27{,}000\ \Mms$.}
+\label{tab:Tstar}
+\end{table}
 The target incubation window of 30--60~min corresponds to
 $\keff^{\text{surf}} \approx 13{,}000$--$27{,}000\ \Mms$. If the measured
 $\keff^{\text{surf}}$ falls significantly below this, the incubation time must be
@@ -638,7 +644,10 @@ k_{\text{eff},j}^{\text{surf}}[E_j]$.
 
 \subsection{Known interferents and status}
 
-\begin{tabular}{llll}
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}lXll@{}}
 \toprule
 Interferent & $[E_j]$ source & $k_{\text{eff},j}^{\text{surf}}$ status & Risk \\
 \midrule
@@ -646,9 +655,12 @@ HNE    & 30~nM chronic (Layer~0, Trengove~1999) & Unconfirmed & Moderate \\
 MMP-2  & Wound fluid present, conc.\ unconfirmed & Unconfirmed & Low--moderate \\
 MMP-8  & Wound fluid present, conc.\ unconfirmed & Unconfirmed & Low \\
 \bottomrule
-\end{tabular}
-
-\medskip
+\end{tabularx}
+\caption{Known interferent proteases and their MMP-9 selectivity risk.
+None of the surface rate constants $k_{\text{eff},j}^{\text{surf}}$ are confirmed
+from papers in \texttt{papers/layer\_09/}; HNE is the priority interferent.}
+\label{tab:interferents}
+\end{table}
 \textit{No paper in \texttt{papers/layer\_09/} provides $k_{\text{eff}}^{\text{surf}}$ for any
 interferent protease on SGKIPRTLTA. The competition fractions $\xi_j$ cannot be
 computed until these are measured.} HNE is the highest-priority interferent given its
@@ -681,7 +693,10 @@ By standard propagation:
 
 \subsection{Dominant uncertainty sources}
 
-\begin{tabular}{lll}
+\begin{table}[H]
+\centering
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
 \toprule
 Source & Relative uncertainty $\sigma/\mu$ & Status \\
 \midrule
@@ -690,9 +705,13 @@ $[E]_t$ & $\sim15$--$20\%$ (Layer~0 ODE; healing estimate approximate) & Seconda
 $T$ (incubation) & $\sim1$--$2\%$ (timer precision) & Negligible \\
 $T_{\text{amb}}$ & $\sim0.6\%$ per ${}^\circ$C (Eq.~\ref{eq:temp_sensitivity}) & Tertiary \\
 \bottomrule
-\end{tabular}
-
-\medskip
+\end{tabularx}
+\caption{Dominant uncertainty sources for the fractional cleavage $F_k$
+(Eq.~\eqref{eq:sigma_Fk}).
+$\keff^{\text{surf}}$ is the dominant source until the fabricated electrode
+is calibrated at Layer~15.}
+\label{tab:uncertainty}
+\end{table}
 The dominant uncertainty is $\keff^{\text{surf}}$, which spans more than an order of
 magnitude before electrode calibration. All $F_k$ predictions are therefore presented
 as parametric sweeps over the plausible $\keff^{\text{surf}}$ range. Once the
