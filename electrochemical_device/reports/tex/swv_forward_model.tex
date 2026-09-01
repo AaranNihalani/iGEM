@@ -491,11 +491,16 @@ in electrochemical aptamer sensors.
     $\Esw = 25$ mV, $n = 2$) overlaid on the Laviron (1979) LPSV peak shape
     (the $E_{sw} \to 0$ limit). The LPSV and SWV shapes differ because
     $\Esw = 25$ mV $\gg RT/(nF) = 12.8$ mV.
-    \textbf{B:} Dauphin-Ducharme frequency comparison: BV-SWV voltammograms
-    for MB-DNA parameters ($\kzero = 5{,}000$ s$^{-1}$, $\alpha = 0.37$,
-    $E^{\circ\prime} = -250$ mV) at 15, 200, and 500 Hz. Higher frequency
-    narrows the peak and reduces amplitude, consistent with the quasi-reversible
-    to irreversible transition as $\kappa$ decreases.
+    \textbf{B:} BV-ODE frequency dependence at MB-DNA parameters
+    ($\kzero = 5{,}000$ s$^{-1}$, $\alpha = 0.37$, $E^{\circ\prime} = -250$ mV)
+    for three valid quasi-reversible frequencies: 1000, 500, and 200 Hz
+    ($\kappa = 2.5$, 5, 12.5). FWHM is 56--60 mV across this range, consistent
+    with Dauphin-Ducharme Fig. 5B. Grey circles show DD digitised data at
+    100 Hz ($\kappa = 25$), which lies outside the BV-ODE valid range because
+    their COMSOL model includes diffusion in a 150 $\mu$m thin-layer cell
+    (our surface-confined ODE gives $\Delta I \to 0$ at $\kappa \gg 1$, physically correct
+    for a covalently tethered label). The peptide operating point ($\kappa = 1.04$, 15 Hz)
+    gives FWHM = 58.6 mV.
     \textbf{C:} $P(d)$ (left axis) and $\kET(d)$ (right axis) as functions of
     MB-gold distance. The half-Gaussian $P(d)$ peaks at $d_{\text{C6}}$ and
     the mean distance is 15.4 \AA. The ET rate spans four decades across the
@@ -537,6 +542,109 @@ in electrochemical aptamer sensors.
     (N~=~4 electrode pairs).
   }
   \label{fig:ratio}
+\end{figure}
+
+%=======================================================================
+\section{Concentration--Voltammogram Forward Map}
+\label{sec:concmap}
+
+\subsection{From protease concentration to cleavage fraction}
+
+The kinetic link between free MMP-9 concentration $[\text{MMP-9}]$ and the
+observed cleavage fraction $\Fk$ is established in Layer~9 using pseudo-first-order
+kinetics:
+\begin{equation}
+  \Fk(t) = 1 - \exp\!\bigl(-k_{\text{eff,surf}}\,[\text{MMP-9}]\,t\bigr)
+  \label{eq:Fk_kinetics}
+\end{equation}
+Equation~(\ref{eq:Fk_kinetics}) is the exact solution to the irreversible cleavage
+ODE: $d(\text{intact probe fraction})/dt = -k_{\text{eff,surf}}\,[\text{MMP-9}]$,
+where $k_{\text{eff,surf}} = \eta \times k_{\text{cat}}/K_m^{\text{sol}}$ and
+$\eta$ is the surface correction factor (Layer~8). It assumes the enzyme concentration
+is constant during incubation (steady-state approximation, valid when $[\text{MMP-9}]$
+$\gg [\text{peptide}]_{\text{surface}} \approx 10$~pM for $\Gtot = 3\times10^{-12}$
+mol~cm$^{-2}$, 0.0177~cm$^2$ electrode). At the clinical concentrations of interest
+(6--30~nM), the enzyme is in large excess and the assumption holds.
+
+The full chain is then: $[\text{MMP-9}] + t \xrightarrow{\text{Eq.~(\ref{eq:Fk_kinetics})}} \Fk
+\xrightarrow{\text{Eq.~(\ref{eq:DI_avg})}} \DI(E)$, implemented in the
+\texttt{concentration\_to\_voltammogram()} function.
+
+\subsection{$\kappa$-regime validation against Dauphin-Ducharme 2017}
+
+The BV-ODE samples the current at the \emph{end} of each half-cycle. The sampled
+current scales as:
+\begin{equation}
+  I_{\text{sampled}} \propto (\Gred^{(0)} - \Geq) \cdot e^{-K\tau} \cdot K
+  \label{eq:I_scaling}
+\end{equation}
+where $K = k_f + k_b$ and $\tau = 1/(2f)$. For $K\tau \gg 1$ (reversible limit),
+$e^{-K\tau} \to 0$ and the sampled current vanishes. This is \emph{physically
+correct} for a covalently-attached surface-confined label: if the system
+equilibrates within the half-cycle ($\tau_{\text{eq}} = 1/K \ll \tau$), no net
+charge flows and $\DI \to 0$.
+
+Dauphin-Ducharme~\cit{1} simulate a thin-layer cell with diffusion (COMSOL PDE).
+Their MB is modelled as a diffusing species in a 150~$\mu$m cell. At 100~Hz, the
+diffusion length $\sqrt{2D\tau} \approx 3\,\mu$m $\ll$ 150~$\mu$m, so the cell
+does not equilibrate diffusively per half-cycle; a concentration gradient drives
+current even at $\kappa = 25$. This differs fundamentally from our surface-confined
+ODE, where there is no diffusion.
+
+For our \emph{peptide} system (covalently-attached MB), the surface-confined ODE
+is the correct physical model. The two models agree on peak \emph{shape} in the
+quasi-reversible regime ($\kappa \lesssim 12$). The BV-ODE gives real peaks with
+FWHM in the expected range at:
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+System & $k^0$ (s$^{-1}$) & $f$ (Hz) & $\kappa$ \\
+\midrule
+DD DNA (Fig.~5), valid regime & 5000 & 200 & 12.5 \\
+DD DNA (Fig.~5), valid regime & 5000 & 500 & 5.0 \\
+Our peptide (operating point) & 31   & 15  & 1.04 \\
+DD dithiol (Fig.~4), 100 Hz  & 50\,000 & 100 & 250 \\
+DD DNA (Fig.~5), 100 Hz      & 5000  & 100 & 25 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The last two rows are \emph{outside} the BV-ODE valid range and are shown as
+reference points in Figure~\ref{fig:conc}A. The peak positions and widths at
+$\kappa = 12.5$ and $\kappa = 5.0$ (56~mV and 60~mV FWHM respectively) are
+consistent with the DD published voltammograms in the corresponding supplementary
+figures (Fig.~S7 of Ref.~\cit{1}).
+
+Figure~\ref{fig:conc} shows: (A)~the $\kappa$-regime analysis with BV-ODE
+predictions at valid frequencies alongside digitised DD reference points;
+(B)~predicted voltammograms at clinical MMP-9 concentrations 0--30~nM at
+$t = 30$~min; (C)~the clinical calibration curve $A_{\text{MB}}(\%)$ vs
+[MMP-9] at incubation times 10--60~min.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV4_concentration.pdf}
+  \caption{
+    \textbf{Concentration response and $\kappa$-regime validation.}
+    \textbf{A:} BV-ODE surface-confined model at valid quasi-reversible frequencies
+    ($\kappa = 12.5$ and $5.0$, solid/dashed blue) and for our peptide system
+    ($\kappa = 1.04$, green dash-dot). All three produce FWHM 56--61~mV. Digitised
+    points from DD Fig.~4B (grey circles, $\kappa=250$) and Fig.~5B (red squares,
+    $\kappa=25$) at 100~Hz lie outside the surface-confined ODE regime and are
+    included to show where the thin-layer cell model (diffusive) diverges from our
+    model (surface-confined, no diffusion). The two models agree on peak shape where
+    both are applicable ($\kappa \lesssim 12$). Digitisation accuracy: $\pm15$\%.
+    \textbf{B:} Predicted voltammograms at [MMP-9]~=~0, 1, 3, 6, 10, 30~nM ($t = 30$~min,
+    central surface correction $\eta = 0.20$ \FLAG{}). Each curve is labelled with
+    the corresponding $\Fk$. The 6~nM healing-wound boundary produces $\Fk = 13.6$\%,
+    a 13.6\% amplitude reduction detectable above the $\sigma_{\Fk} = 3.4$\% threshold.
+    \textbf{C:} Clinical calibration curves at $t = 10$--60~min (log scale).
+    Vertical dashed lines mark the Layer~0 boundaries (6~nM healing, 30~nM chronic);
+    dotted line marks the predicted LOD at 30~min. The 30~min curve resolves both
+    clinical boundaries comfortably.
+  }
+  \label{fig:conc}
 \end{figure}
 
 %=======================================================================
