@@ -1,0 +1,456 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{mdframed}
+\usepackage{times}
+\usepackage{microtype}
+
+\hypersetup{colorlinks=false, pdfborder={0 0 0}}
+
+% ---------- section numbering: Roman numerals, per-section equations ----------
+\renewcommand{\thesection}{\Roman{section}}
+\numberwithin{equation}{section}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection.}{0.6em}{}[{\titlerule}]
+\titlespacing*{\section}{0pt}{1.4em}{0.8em}
+
+\newcommand{\subhead}[1]{\vspace{0.6em}\noindent\textbf{#1}\vspace{0.2em}\\}
+
+% ---------- header/footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{14pt}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\textit{Layer 15: Calibration and Clinical Interpretation}}
+\fancyhead[R]{Aaran Nihalani \textbullet\ Eton iGEM Dry Lab}
+\fancyfoot[C]{\thepage}
+
+% ---------- boxed key-equation environment ----------
+\newmdenv[linewidth=0.6pt, innermargin=8pt, outermargin=0pt, skipabove=10pt, skipbelow=10pt]{keybox}
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+
+% ================= TITLE BLOCK =================
+\begin{center}
+{\LARGE \bfseries Layer 15: Calibration and Clinical Interpretation}\\[4pt]
+{\large Single-Channel MMP-9 Calibration, Detection Limits, Interference, Matrix Correction,\\ and Bayesian Wound-State Classification}\\[6pt]
+{\small \textcolor[gray]{0.4}{Eton iGEM 2026, Dry Lab \quad $|$ \quad Layer 15 of 17-Layer Biosensor Pipeline \quad $|$ \quad \texttt{calibration\_curve.py} $\cdot$ \texttt{deconvolution.py} $\cdot$ \texttt{matrix\_correction.py} $\cdot$ \texttt{wound\_classifier.py}}}
+\end{center}
+\vspace{4pt}
+
+\noindent Layer 15 is the inverse-problem layer of the device model chain: given a measured fractional cleavage
+$F_k$ on the fabricated electrode, what is the wound-fluid MMP-9 concentration, and what does it imply
+clinically? It takes the surface kinetics of Layer 9 and the ratiometric signal chain of Layer 13 as fixed
+inputs and builds four downstream tools: a calibration-curve fit with detection limits, an interference-bias
+check for the one significant off-target protease (HNE), a matrix-effect / spike-and-recovery correction, and
+a Bayesian wound-state classifier.
+
+\noindent\textbf{Architecture note.} Earlier planning material (\code{contents.md}, Section 15.5) specified a
+two-probe device (separate MMP-9 and HNE channels) with a $2\times2$ cross-sensitivity matrix $S$ and a
+condition-number design criterion $\kappa(S)<30$. Layers 9 and 13 confirm the fabricated design is not this:
+it is a \emph{single} MMP-9 channel (active electrode: SGKIPRTLTA; negative control: the D-enantiomer of the
+same peptide, a stereospecific control -- Layer 13, Sec.\ III). There is no HNE-specific probe. This report
+therefore supersedes the two-channel framing: HNE is treated throughout as a possible \emph{interferent} on
+the single MMP-9 channel (Layer 9, Sec.\ X), not as a second measurable channel.
+
+% ================= SECTION I =================
+\section{Calibration Model}
+
+\subhead{The progress-curve equation, and a units correction}
+Layer 9 (Sec.\ IV) derives the surface Michaelis--Menten progress curve for fractional probe cleavage $F_k$
+as an implicit function of the free enzyme concentration $[E]$, the incubation time $T$, the surface rate
+constant $k_{\mathrm{surf}}\equiv k_{\mathrm{cat}}/K_m^{\mathrm{surf}}$ (M$^{-1}$s$^{-1}$), and the
+probe-saturation ratio $\rho = \Gamma_0/K_{m,\mathrm{surf}}^{\Gamma}$ (Layer 9, Eq.\ IV.4). As stated in Layer
+9 (Eq.\ IV.5), the equation reads $k_{\mathrm{cat}}[E]t = K_{m,\mathrm{surf}}^{\Gamma}\ln\!\frac{1}{1-F_k} +
+\Gamma_0 F_k$. Implementing this directly exposed a dimensional inconsistency: the left side is dimensionless
+($k_{\mathrm{surf}}$ in M$^{-1}$s$^{-1}$ $\times$ $[E]$ in M $\times$ $t$ in s), while the right side carries
+units of mol\,cm$^{-2}$ ($K_{m,\mathrm{surf}}^{\Gamma},\Gamma_0\sim10^{-13}$--$10^{-12}$) -- a mismatch of
+roughly twelve orders of magnitude. Layer 9's own Eq.\ IV.2 converts the solution-phase $K_m$ into areal units
+via a probe-layer thickness $\delta_{\mathrm{eff}}$, but that conversion is not carried through consistently
+into Eq.\ IV.5.
+
+Dividing Layer 9's Eq.\ IV.5 through by $K_{m,\mathrm{surf}}^{\Gamma}$ gives a dimensionally consistent
+equation that (a) uses Layer 9's own dimensionless ratio $\rho$, and (b) exactly reproduces Layer 9's stated
+probe-dilute limit ($\rho\to0$: $F_k = 1-\exp(-k_{\mathrm{surf}}[E]T)$, their Eq.\ IV.7). This corrected form
+is used throughout Layer 15:
+
+\begin{keybox}
+\begin{equation}
+k_{\mathrm{surf}}\,[E]\,T \;=\; \ln\!\frac{1}{1-F_k} \;+\; \rho\,F_k
+\label{eq:forward}
+\end{equation}
+\end{keybox}
+
+\noindent where $\rho = \Gamma_0/K_{m,\mathrm{surf}}^{\Gamma}$. Using Layer 9's own reference values
+($K_{m,\mathrm{surf}}^{\Gamma}=6.4\times10^{-13}$ mol\,cm$^{-2}$, from an unconfirmed $\delta_{\mathrm{eff}}=5$
+nm; $\Gamma_0 = 2.0\times10^{-12}$ mol\,cm$^{-2}$, the Pheeney 2012 midpoint), $\rho \approx 3.1$, matching
+Layer 9's own worked example (Table 1, "no correction" row) -- well outside the probe-dilute limit, so the
+implicit form is required rather than a simple exponential.
+
+\subhead{Forward and inverse solutions}
+Equation~\ref{eq:forward} is monotonic in $F_k\in[0,1)$ for any fixed $[E]$, so the forward direction
+($[E]\to F_k$) is solved by bisection (\code{scipy.optimize.brentq}). The inverse direction ($F_k\to[E]$,
+i.e.\ the actual quantification step) is closed-form and needs no solver:
+
+\begin{equation}
+[E] \;=\; \frac{\ln\!\frac{1}{1-F_k} + \rho\,F_k}{k_{\mathrm{surf}}\,T}
+\label{eq:inverse}
+\end{equation}
+
+\subhead{Fitting $k_{\mathrm{surf}}$ from calibration data}
+Only one parameter is fit from a calibration curve: $k_{\mathrm{surf}}$. $\rho$ is held fixed at the Layer 9
+estimate (itself unconfirmed pending a measured $\delta_{\mathrm{eff}}$ from Layer 8), and $T=1800$ s by
+protocol. The solution-phase value $k_{\mathrm{cat}}/K_m = 67{,}500$ M$^{-1}$s$^{-1}$ is
+\textbf{confirmed} for SGKIPRTLTA (Kridel 2001, Table II) and is an \emph{upper bound} on the surface value;
+Layer 9 (Sec.\ XIII) states surface immobilisation is expected to reduce this 2--100$\times$, giving a
+plausible surface range of 2{,}000--67{,}500 M$^{-1}$s$^{-1}$, with 13{,}000--27{,}000 M$^{-1}$s$^{-1}$
+consistent with a 30--60 min read window (Layer 9, Table 2). Pending fabrication, calibration curves in this
+report are simulated with a synthetic placeholder $k_{\mathrm{surf}}=2.0\times10^4$ M$^{-1}$s$^{-1}$, chosen
+within that target range, and refit from the simulated data as a self-consistency check
+(Fig.~\ref{fig:calibration}).
+
+% ================= SECTION II =================
+\section{Uncertainty Model}
+
+Layer 13 (Sec.\ III, Eq.\ III.6) derives the propagated uncertainty on $F_k$ from the full ratiometric error
+chain: peak-area fit noise $\to\sigma_R/R\to\sigma_\rho/\rho\to\sigma_{F_k}$. The result is
+\emph{heteroscedastic} -- it depends on $F_k$ itself, not a flat blank-noise floor:
+
+\begin{keybox}
+\begin{equation}
+\sigma_{F_k}(F_k) \;=\; (1-F_k)\,\sqrt{2}\;\frac{\sigma_\rho/\rho}{\sqrt{N_{\mathrm{active}}}}
+\label{eq:sigmaFk}
+\end{equation}
+\end{keybox}
+
+\noindent with $\sigma_\rho/\rho \approx 4.8\%$ per active/control electrode pair on a single scan (Layer 13,
+Eq.\ II.6), reducible by $1/\sqrt{N_{\mathrm{active}}}$ when averaging over $N_{\mathrm{active}}$ paired
+electrodes. At $F_k=0$, single electrode: $\sigma_{F_k}(0)\approx6.8\%$ -- roughly 30$\times$ larger than an
+earlier flat 0.2\% placeholder used before Layers 9/13 were available, and the reason Layer 13 itself sets its
+detection floor at $F_k=20\%$ rather than a few percent (Sec.\ IV, below).
+
+% ================= SECTION III =================
+\section{Detection Limits and Dynamic Range}
+
+Layer 13 (Sec.\ IV) defines the usable window directly on $F_k$: $F_{\min}=0.20$ ($\approx3\sigma_{F_k}$ at
+$F_k=0$, single electrode) and $F_{\max}=0.95$ (beyond this the MB signal is indistinguishable from noise and
+Eq.~\ref{eq:inverse}'s prefactor diverges). This differs from a generic IUPAC $3\sigma/10\sigma$ blank-slope
+LOD/LLOQ definition (ICH Q2(R1), 2005 -- see References) -- Layer 13's own thresholds are used here instead, since they are already
+derived from the device's real noise model rather than a linear-regime approximation.
+
+$[E]$-space limits follow directly from Eq.~\ref{eq:inverse} at $F_{\min}$ and $F_{\max}$:
+$\mathrm{LOD} = [E](F_{\min})$, $\mathrm{ULOQ}=[E](F_{\max})$.
+
+\subhead{Result, at the synthetic placeholder $k_{\mathrm{surf}}$}
+Fitting the simulated calibration curve (Fig.~\ref{fig:calibration}) recovers $k_{\mathrm{surf}} = 1.97\times
+10^4 \pm 6.5\times10^2$ M$^{-1}$s$^{-1}$ (input: $2.0\times10^4$), giving:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Quantity & Value \\
+\midrule
+LOD ($F_k=20\%$) & 23.9 nM \\
+ULOQ ($F_k=95\%$) & 168.2 nM \\
+Dynamic range & 0.85 decades \\
+Covers clinical range (6--30 nM)? & \textbf{No} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent This is a genuine finding, not a bug: at this placeholder $k_{\mathrm{surf}}$, the device's LOD
+(23.9 nM) sits \emph{above} the confirmed healing-wound concentration (6 nM, Layer 0/9), so a healing-range
+signal would currently fall below the detection floor. Section VIII revisits this against the wound
+classifier's decision boundary. As a cross-check, Layer 13's own closed-form window on the apparent rate
+$\kappa_k=-\ln(1-F_k)/T$ (Eq.\ IV.5) gives $[\kappa_{\min},\kappa_{\max}] = [1.2\times10^{-4},\,2.0\times10^{-3}]$
+s$^{-1}$, a $13.4\times$ (1.13-decade) window -- consistent in scale with the $[E]$-space result above, though
+not identical, since the two use different (rate- vs.\ concentration-based) definitions.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_calibration_curves.pdf}
+\caption{Left: simulated calibration data and the fitted implicit-MM curve (Eq.~\ref{eq:forward}), with LOD,
+ULOQ, and the confirmed clinical range (6--30 nM, Layer 0/9) marked. Right: the heteroscedastic noise model
+(Eq.~\ref{eq:sigmaFk}) at 1 and 4 averaged electrodes.}
+\label{fig:calibration}
+\end{figure}
+
+% ================= SECTION IV =================
+\section{HNE Interference on the Single Channel}
+
+With no second probe, HNE cannot be deconvolved from MMP-9 -- it can only bias the single MMP-9 channel if it
+cross-cleaves SGKIPRTLTA at all. Layer 9 (Sec.\ X, Table 3) flags this as unconfirmed with "moderate risk" and
+gives no measured cross-reactivity constant. In the first-order regime, rate contributions from different
+proteases on the same probe add (Layer 9, Eq.\ X.1):
+
+\begin{equation}
+k_{\mathrm{obs,total}} = k_{\mathrm{surf}}^{\mathrm{MMP9}}[\mathrm{MMP9}] + k_{\mathrm{surf}}^{\mathrm{HNE}}[\mathrm{HNE}],
+\qquad
+\xi_{\mathrm{HNE}} = \frac{k_{\mathrm{surf}}^{\mathrm{HNE}}[\mathrm{HNE}]}{k_{\mathrm{obs,total}}}
+\label{eq:xihne}
+\end{equation}
+
+\noindent Because the device inverts $F_k$ assuming pure MMP-9 signal (Eq.~\ref{eq:inverse}), any nonzero
+$\xi_{\mathrm{HNE}}$ biases the inferred $[\mathrm{MMP9}]$ upward. Using a 3\% cross-reactivity placeholder
+($k_{\mathrm{surf}}^{\mathrm{HNE}} = 0.03\,k_{\mathrm{surf}}^{\mathrm{MMP9}}$, pending measurement) at the
+confirmed clinical concentrations (chronic: 30 nM MMP-9 + 30 nM HNE; healing: 6 nM MMP-9 + 0 nM HNE, Layer 0):
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+State & $F_k$ observed & $\xi_{\mathrm{HNE}}$ & Apparent [MMP-9] (bias) \\
+\midrule
+Chronic & 26.0\% & 2.9\% & 30.9 nM ($+3.0\%$) \\
+Healing & 5.2\% & 0.0\% & 6.00 nM ($-0.0\%$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent giving an apparent chronic/healing ratio of $5.15\times$ against a clean (no-interference) value of
+$5.0\times$ (Layer 9, Eq.\ VIII.3) -- a small perturbation at the 3\% placeholder. Sweeping the cross-reactivity
+fraction (Fig.~\ref{fig:hne}) shows the bias grows steeply: it crosses 20\% (comparable to the LOD-scale
+detection floor) at roughly 15--20\% cross-reactivity, well within the range Layer 9 itself leaves open as
+possible. Measuring the true HNE-on-SGKIPRTLTA rate constant is therefore a priority alongside
+$k_{\mathrm{surf}}^{\mathrm{MMP9}}$ itself.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_hne_interference_bias.pdf}
+\caption{Left: bias in inferred [MMP-9] vs.\ assumed HNE cross-reactivity fraction, at chronic and healing
+clinical concentrations. Right: the resulting apparent chronic/healing discrimination ratio vs.\ the clean
+5$\times$ value.}
+\label{fig:hne}
+\end{figure}
+
+% ================= SECTION V =================
+\section{Matrix Effects and Spike-and-Recovery}
+
+\subhead{What the double ratio already cancels}
+Layer 13's D-enantiomer double ratio, $F_k = 1-\rho_{\mathrm{active}}/\rho_{\mathrm{control}}$, already cancels
+\emph{exactly} any non-stereospecific background cleavage and \emph{uniform} electrode fouling (Layer 13, Sec.\
+II--III). A naive matrix-correction model that re-litigates those two effects would be redundant. What
+Layer 13 itself flags as \emph{not} cancelled (Sec.\ VII, Limitation 2) is \emph{differential} fouling between
+the active and control electrodes -- so this is what a matrix-correction model should actually target, together
+with a genuine shift in enzyme catalytic efficiency ($k_{\mathrm{surf}}$) from ionic strength, Ca$^{2+}$, and
+protein crowding in real wound-fluid-matched matrix, and pH (Sec.\ 15.6, \code{contents.md}).
+
+\subhead{Recovery model}
+Spiked matrix cartridges are simulated with $k_{\mathrm{surf}}^{\mathrm{matrix}} = k_{\mathrm{surf}}^{\mathrm{nominal}}
+\times a_{\mathrm{matrix}}\times\mathrm{pH\_correction}(\mathrm{pH})$, plus a small residual differential-fouling
+bias on $F_k$ (placeholder $1.5\%$, unconfirmed). Recovery is defined against the buffer-only nominal
+calibration curve:
+
+\begin{equation}
+\mathrm{Recovery}(\%) = \frac{F_{k,\mathrm{spiked}} - F_{k,\mathrm{blank}}}{F_{k,\mathrm{calibration}}}\times100
+\label{eq:recovery}
+\end{equation}
+
+\noindent At a 15\% matrix attenuation placeholder ($a_{\mathrm{matrix}}=0.85$) and pH 7.4, mean recovery at
+mid-to-high spiked concentrations is $83.8\%$ ($m=1.19\times$ correction factor) -- within the 80--120\%
+acceptance band (\code{contents.md}, Sec.\ 15.4) and consistent with the input attenuation. Near-LOD spike
+points (1--3 nM) are excluded from the mean: noise in $F_k$ (Eq.~\ref{eq:sigmaFk}) is amplified by dividing
+by a small calibration $F_k$, producing recovery estimates that swing from $-200\%$ to $+300\%$ at trace
+levels (Fig.~\ref{fig:matrix}) -- an expected artefact of the ratio, not a real matrix effect, and the reason
+real spike-and-recovery protocols avoid trace-level spikes.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_matrix_correction.pdf}
+\caption{Left: simulated spike-and-recovery vs.\ concentration and pH; low-concentration points are
+noise-dominated. Right: matrix-corrected vs.\ nominal concentration axis using the fitted correction factor
+$m$.}
+\label{fig:matrix}
+\end{figure}
+
+% ================= SECTION VI =================
+\section{Bayesian Wound-State Classification}
+
+\subhead{Two states, not three}
+Layer 0 analyses only Healing and Chronic wounds; no literature cited anywhere in Layers 0/9/13 defines or
+supports a third "Inflammatory" intermediate category, so the classifier here uses two states.
+
+\subhead{Primary classifier: MMP-9 alone}
+Because the fabricated device has a single MMP-9 channel, the clinically realistic classifier conditions on
+$[\mathrm{MMP9}]$ alone. Confirmed values from Layer 0's full ODE solution at $t=30$ min are
+$[\mathrm{MMP9}]_{\mathrm{chronic}}=31.9$ nM and $[\mathrm{MMP9}]_{\mathrm{healing}}=6.2$ nM (rounded to 30
+and 6 nM respectively in Layer 9 and used identically here for consistency with the calibration numbers
+above). Likelihoods are log-normal, with a common $\sigma_{\log_{10}}=0.15$ ($\approx40\%$ relative) for both
+states: Layer 0 characterises only the healing estimate as "order-of-magnitude" (Sec.\ II) and gives no
+formally propagated uncertainty for either state, so a single conservative symmetric value is used rather than
+an invented asymmetric split.
+
+\begin{equation}
+P(\text{state} \mid [\mathrm{MMP9}]) \;\propto\; \mathcal{N}\!\big(\log_{10}[\mathrm{MMP9}];\ \mu_{\text{state}},\ \sigma_{\log_{10}}^2\big)\, P(\text{state})
+\label{eq:classifier}
+\end{equation}
+
+\noindent with equal priors $P(\text{state})=0.5$. The maximum-a-posteriori decision boundary
+($P(\text{Healing})=P(\text{Chronic})$) is at $\mathbf{13.4}$ nM (Fig.~\ref{fig:classifier}).
+
+\subhead{Illustrative secondary model: MMP-9 + HNE}
+A bivariate extension is retained only to show what a hypothetical second channel would add. Layer 0's own
+conclusion undercuts the case for building one: HNE is elevated in only 6 of 13 chronic samples (Trengove
+1999) -- roughly half of chronic wounds are HNE-low regardless of state -- so Layer 0 explicitly frames HNE
+as "not a reliable standalone discriminator" and "a secondary reference channel, not a primary diagnostic
+output." Consistent with this, adding HNE moves the chronic-state posterior negligibly (from 100.0\% to
+100.0\% across HNE $=1$--$30$ nM at fixed MMP-9 $=31.9$ nM in the simulated check): the MMP-9 axis alone is
+already doing essentially all of the discriminating work.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{fig_wound_classifier_mmp9.pdf}
+\caption{Posterior probability vs.\ [MMP-9] for the primary (MMP-9-only) classifier, with the decision
+boundary, confirmed state means, and the device's own measurable range (Section III) overlaid.}
+\label{fig:classifier}
+\end{figure}
+
+% ================= SECTION VII =================
+\section{Cross-Layer Integration Check}
+
+Overlaying the classifier's decision boundary on the calibration curve's own measurable range
+(Fig.~\ref{fig:classifier}) surfaces the report's central finding: the boundary (13.4 nM) falls
+\emph{below} the LOD (23.9 nM) at the current placeholder $k_{\mathrm{surf}}$. In other words, at this
+(unmeasured, synthetic) surface rate constant, the device cannot yet reliably resolve concentrations near the
+clinically decisive threshold -- it is blind exactly where the classification depends most sensitively on
+signal. This is not a flaw in the classifier or the calibration model individually; it only appears by running
+both together, and it is the clearest concrete argument in this report for prioritising a real
+$k_{\mathrm{surf}}$ measurement on the fabricated electrode: a higher true $k_{\mathrm{surf}}$ (within Layer
+9's own 13{,}000--27{,}000 M$^{-1}$s$^{-1}$ target band) would push the LOD down and could resolve this gap
+without any change to the classifier itself.
+
+% ================= SECTION VIII =================
+\section{Key Outputs}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Output & Value (this report) & Feeds \\
+\midrule
+$k_{\mathrm{surf}}$ (fitted, synthetic demo) & $1.97\times10^4$ M$^{-1}$s$^{-1}$ & LOD, ULOQ, classifier check \\
+LOD / ULOQ & 23.9 / 168.2 nM & Dynamic range, Sec.\ VII \\
+Dynamic range & 0.85 decades & Clinical validation \\
+HNE bias (3\% cross-react.\ placeholder) & $+3.0\%$ (chronic) & Sec.\ VII priority list \\
+Matrix correction factor $m$ & $1.19\times$ & Clinical translation \\
+MMP-9 decision boundary & 13.4 nM & Sec.\ VII \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ================= SECTION IX =================
+\section{Limitations}
+
+\begin{enumerate}[leftmargin=*, itemsep=6pt]
+\item \textbf{$k_{\mathrm{surf}}$ is not measured.} Every LOD, ULOQ, dynamic-range, and classifier-overlap
+number in this report is computed at a synthetic placeholder ($2.0\times10^4$ M$^{-1}$s$^{-1}$) standing in
+for the as-yet-unmeasured fabricated-electrode value. The confirmed solution-phase upper bound
+(67{,}500 M$^{-1}$s$^{-1}$, Kridel 2001) and Layer 9's 13{,}000--27{,}000 M$^{-1}$s$^{-1}$ target band bracket
+the plausible range, but only a real calibration run pins the value.
+
+\item \textbf{A dimensional error in Layer 9's Eq.\ IV.5 was found and corrected here.} Section I documents
+the fix (dividing through by $K_{m,\mathrm{surf}}^{\Gamma}$ to recover a dimensionless equation in
+$k_{\mathrm{surf}}$ and $\rho$). This should be back-ported to Layer 9's own report and code so the two stay
+consistent.
+
+\item \textbf{HNE cross-reactivity on SGKIPRTLTA is unconfirmed.} Section IV's $\xi_{\mathrm{HNE}}$ and bias
+numbers use a 3\% placeholder with no wet-lab support (Layer 9, Table 3, flags this as "moderate risk"). The
+bias grows steeply with this fraction; measuring it is high priority.
+
+\item \textbf{$\rho$ (probe-saturation ratio) is inherited unconfirmed from Layer 9.} $\rho\approx3.1$ depends
+on $K_{m,\mathrm{surf}}^{\Gamma}$ (via an unconfirmed $\delta_{\mathrm{eff}}$, Layer 8) and $\Gamma_0$
+(literature midpoint, not the fabricated device's actual probe density).
+
+\item \textbf{Wound-state uncertainties are approximate.} No paper propagates a formal uncertainty on
+$[\mathrm{MMP9}]_{\mathrm{free}}$; the symmetric $\sigma_{\log_{10}}=0.15$ used in Section VI is a
+conservative stand-in, not a fitted value.
+
+\item \textbf{The HNE-augmented classifier (Section VI) uses a single Gaussian for a bimodal quantity.}
+Chronic-wound HNE is elevated in only $\sim$50\% of samples (Trengove 1999); a two-component mixture would be
+more faithful but was judged not worth the added complexity given HNE is not implemented on the real device.
+
+\item \textbf{Matrix-effect and differential-fouling parameters are placeholders.} The 15\% $k_{\mathrm{surf}}$
+attenuation and 1.5\% differential-fouling bias (Section V) have no wet-lab support; a real spike-and-recovery
+panel across the pH 6.5--8.0 range (\code{contents.md}, Sec.\ 15.1) is needed to replace them.
+\end{enumerate}
+
+% ================= REFERENCES =================
+\section*{References}
+\addcontentsline{toc}{section}{References}
+\textit{Papers confirmed in Layers 0, 9, and 13's own reference lists; drawn on directly here.}
+
+\begin{enumerate}[leftmargin=2.2em, itemsep=6pt, label={[\arabic*]}]
+
+\item Anne A, Demaille C (2012). Kinetics of enzyme action on surface-attached substrates: a practical guide
+to progress curve analysis in any kinetic situation. \textit{Langmuir} 28:14665--14671.
+\textbf{anne\_demaille2012.pdf} -- exact surface-substrate ODE system and progress-curve solutions confirmed
+(Layer 9).
+
+\item Kridel SJ, Chen E, Kotra LP, Howard EW, Mobashery S, Smith JW (2001). Substrate hydrolysis by matrix
+metalloproteinase-9. \textit{J Biol Chem} 276(23):20572--20578. DOI: 10.1074/jbc.M100900200.
+\textbf{kridel2001.pdf} -- $k_{\mathrm{cat}}=86.4$ s$^{-1}$, $K_m=1.28$ mM, $k_{\mathrm{cat}}/K_m=67{,}500$
+M$^{-1}$s$^{-1}$ for SGKIPRTLTA (peptide A11) by MMP-9, Table II confirmed.
+
+\item Adj\'emian J, Anne A, Cauet G, Demaille C (2010). Cleavage-sensing peptide-enzyme multilayer gold
+surfaces for the parallel, selective, and sensitive assay of trypsin and plasmin activities by electrochemical
+methods. \textit{Langmuir} 26:10347--10356. \textbf{adjemian2010.pdf} -- experimental surface cleavage yields
+and $\Gamma_0$ context (Layer 9).
+
+\item Squires TM, Messinger RJ, Manalis SR (2008). Making it stick: convection, reaction and diffusion in
+surface-based biosensors. \textit{Nat Biotechnol} 26:417--426. \textbf{squires2008.pdf} -- Damk\"ohler-number
+framework and surface MM ODE formulation (Layer 9).
+
+\item Pheeney CG, Barton JK (2012). DNA electrochemistry with tethered methylene blue. \textit{Langmuir}
+28:7063--7070. DOI: 10.1021/la300566x. \textbf{pheeney\_barton2012.pdf} -- MB surface coverage
+$\Gamma_0=1.3$--$3.2$ pmol cm$^{-2}$ used for the $\rho$ estimate (Layer 9, Table 1).
+
+\item White RJ, Plaxco KW (2010). Exploiting binding-induced changes in probe flexibility for the optimization
+of electrochemical biosensors. \textit{Anal Chem} 82:73--76. DOI: 10.1021/ac9028595. \textbf{white2010.pdf} --
+ratiometric signal construction and electrode-area cancellation confirmed (Layer 13).
+
+\item Lubin AA, Plaxco KW (2010). Folding-based electrochemical biosensors: the case for responsive nucleic
+acid architectures. \textit{Acc Chem Res} 43:496--505. DOI: 10.1021/ar900165x.
+\textbf{lubin\_plaxco2010.pdf} -- background-cleavage correction by control electrode and double-ratio fouling
+cancellation confirmed (Layer 13).
+
+\item Baker BR, Lai RY, Wood MS, Doctor EH, Heeger AJ, Plaxco KW (2006). An electronic, aptamer-based
+small-molecule sensor for the rapid, label-free detection of cocaine in adulterated samples and biological
+fluids. \textit{J Am Chem Soc} 128:3138--3139. DOI: 10.1021/ja056957p. \textbf{baker2006.pdf} -- on-chip
+reference stability and dynamic range in biological fluid confirmed (Layer 13).
+
+\item Lubin AA, Lai RY, Baker BR, Heeger AJ, Plaxco KW (2010). Electrochemical, structure-switching
+biosensors: quantitative analysis of the usable dynamic range. \textit{Anal Chem} 78:5671--5677. DOI:
+10.1021/ac0601417. \textbf{lubin2010.pdf} -- per-electrode $R(0)$ baseline normalisation and dynamic range
+characteristics confirmed (Layer 13).
+
+\item Trengove NJ, Stacey MC, Macauley S, Bennett N, Gibson J, Burslem F, Murphy G, Schultz G (1999). Analysis
+of the acute and chronic wound environments: the role of proteases and their inhibitors. \textit{Wound Repair
+Regen} 7(6):442--452. \textbf{trengove1999.pdf} -- HNE elevated in only 6 of 13 chronic VLU samples; TIMP-1
+values confirmed (Layer 0).
+
+\item Ladwig GP, Robson MC, Liu R, Kuhn MA, Muir DF, Schultz GS (2002). Ratios of activated matrix
+metalloproteinase-9 to tissue inhibitor of metalloproteinase-1 in wound fluids are inversely correlated with
+healing of pressure ulcers. \textit{Wound Repair Regen} 10(1):26--37. \textbf{ladwig2002.pdf} -- chronic and
+healing active MMP-9 concentrations confirmed (Layer 0).
+
+\item International Conference on Harmonisation (2005). \textit{ICH Harmonised Tripartite Guideline: Q2(R1),
+Validation of Analytical Procedures -- Text and Methodology.} ICH, Geneva. \textbf{ich\_q2r1\_2005.pdf} --
+general LOD/LLOQ terminology referenced for comparison with Layer 13's own $F_k$-based detection thresholds
+(Section III); Layer 13's thresholds, not the generic $3\sigma/10\sigma$ blank-slope definition, are used for
+all numeric results in this report.
+
+\item Duda RO, Hart PE, Stork DG (2001). \textit{Pattern Classification}, 2nd ed. Wiley, New York.
+\textbf{duda\_hart\_stork2001.pdf} -- standard reference for multi-class Bayesian posterior classification
+(Section VI).
+
+\end{enumerate}
+
+\end{document}
