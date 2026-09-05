@@ -136,11 +136,11 @@ folders as noted. Values that remain unconfirmed are labelled \FLAG{}.
 \subsection{Physical picture}
 
 The gold electrode surface is coated with a mixed self-assembled monolayer (SAM).
-The active component is our peptide probe: a C6 alkyl spacer anchors to the gold
-via a thiol group, and the ten-residue peptide SGKIPRTLTA extends away from the
-surface, with MB attached at the far end. The ``background'' component is
-6-mercaptohexanol (MCH), which passivates the surface and prevents non-specific
-binding.
+The active component is our peptide probe: a PEG6 spacer (six ethylene oxide units)
+anchors to the gold via a thiol group, the ten-residue peptide SGKIPRTLTA extends
+from the PEG6 tip, and MB is attached at the far end. When only the peptide probe is
+present, 6-mercaptohexanol (MCH) passivates the background surface; when the Fc
+reference is co-deposited, MCH is omitted (Lab note, Jaden Potishko, Apr 2026).
 
 At body temperature in wound fluid, the peptide chain is flexible. Rather than
 sitting at a fixed distance, MB thermally fluctuates across a range of distances
@@ -168,7 +168,7 @@ Section~\ref{sec:limits} as future work.
 Residue count & $N_{\text{res}}$ & 10 & SGKIPRTLTA \\
 Contour length per residue & $\ell_0$ & 0.38 nm & standard \\
 Kuhn length & $b$ & 0.76 nm & Kohn 2004~\cit{2} \\
-C6 linker length & $d_{\text{C6}}$ & 0.756 nm & \cit{1} Fig.~4 \\
+PEG6 spacer (Flory, dilute) & $d_{\text{PEG}}$ & 1.40 nm & Layer 8 model \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -191,32 +191,35 @@ equivalent. The standard deviation of MB distance along the surface-normal axis
   \sigma_z = \sqrt{\langle r^2 \rangle / 3} = \sqrt{2.888/3} = 0.981\;\text{nm}
   \label{eq:sigmaz}
 \end{equation}
-\says{$\sigma_z$ is the typical spread of MB positions above the surface. It is roughly 1~nm, comparable to the C6 linker length itself.}
+\says{$\sigma_z$ is the typical spread of MB positions above the PEG6 tip. It is roughly 1~nm, set by the peptide chain entropy.}
 
 \subsection{The distance distribution $P(d)$}
 
-The surface is a hard wall: MB cannot go below $d = d_{\text{C6}}$ (the linker
-holds it there). Above that, the chain end-position follows a 3D Gaussian, conditioned
-on $z \geq 0$ and shifted by $d_{\text{C6}}$. This gives a half-Gaussian:
+The PEG6 spacer holds the base of the peptide at a mean height $d_{\text{PEG}} = 1.40$~nm
+above the gold surface (Flory radius in dilute regime, Layer 8 model at
+$\Gamma_p = 3$~pmol~cm$^{-2}$). This acts as an effective hard wall for the peptide FJC.
+Above this, the peptide chain end-position follows a 3D Gaussian shifted by $d_{\text{PEG}}$,
+giving a half-Gaussian:
 \begin{equation}
   P(d) = \frac{\sqrt{2/\pi}}{\sigma_z}
-         \exp\!\left(-\frac{(d - d_{\text{C6}})^2}{2\sigma_z^2}\right),
-         \qquad d \geq d_{\text{C6}}
+         \exp\!\left(-\frac{(d - d_{\text{PEG}})^2}{2\sigma_z^2}\right),
+         \qquad d \geq d_{\text{PEG}}
   \label{eq:Pd}
 \end{equation}
-\says{the most likely position for MB is just above the linker tip; it becomes progressively less likely farther away, with spread $\sigma_z \approx 1$~nm.}
+\says{the most likely position for MB is just above the PEG6 tip ($d_{\text{PEG}} = 14$~\AA);
+it becomes progressively less likely farther away, with spread $\sigma_z \approx 10$~\AA.}
 
 The mean distance (centre of mass of the distribution):
 \begin{equation}
-  \langle d \rangle = d_{\text{C6}} + \sigma_z\sqrt{2/\pi}
-  = 0.756 + 0.784 = 1.540\;\text{nm} = 15.4\Ang
+  \langle d \rangle = d_{\text{PEG}} + \sigma_z\sqrt{2/\pi}
+  = 1.398 + 0.784 = 2.182\;\text{nm} = 21.8\Ang
   \label{eq:dmean}
 \end{equation}
 
 \begin{keyresult}
-\textbf{Key result:} MB sits at a mean distance of 15.4~\AA\ from the gold surface,
-with a spread of 9.8~\AA\ ($\sigma_z$). The distribution peaks at the linker tip (7.56~\AA)
-and has a long tail to larger distances. See Figure~\ref{fig:valid}C.
+\textbf{Key result:} MB sits at a mean distance of 21.8~\AA\ from the gold surface,
+with a spread of 9.8~\AA\ ($\sigma_z$). The distribution peaks at the PEG6 tip (14.0~\AA)
+and decays into a tail at larger distances. See Figure~\ref{fig:valid}C.
 \end{keyresult}
 
 %=======================================================================
@@ -233,9 +236,11 @@ exactly where MB sits, which is why the $P(d)$ distribution calculated above
 matters so much.
 
 The tunnelling rate also depends on the medium: electrons tunnel faster through
-conjugated aromatic systems than through saturated alkyl chains. The C6 linker
-plus peptide backbone here is effectively an insulating alkyl bridge, so the
-decay is rapid.
+conjugated aromatic systems than through saturated alkyl chains. The PEG6 spacer
+plus peptide backbone is an insulating bridge, so the decay is rapid. The exact
+$\beta$ for PEG-linked probes has not been confirmed from our paper set
+(Smalley 1995~\cit{3} characterises alkanethiol SAMs, not PEG). This is
+flagged as the key experimental parameter to measure at Layer 15 via EIS.
 
 \subsection{Tunnelling decay equation}
 
@@ -244,32 +249,33 @@ decay is rapid.
 \toprule
 \textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Source} \\
 \midrule
-Tunnelling decay constant & $\beta$ & 1.0~\AA$^{-1}$ & Smalley 1995~\cit{3} \\
-Rate at C6 tip & $k_{\text{ref}}$ & $7.8\times10^4$~s$^{-1}$ & \cit{1} Fig.~3 \\
+Tunnelling decay constant & $\beta$ & 1.0~\AA$^{-1}$ & Smalley 1995~\cit{3} \FLAG \\
+Rate at PEG6 tip & $k_{\text{ref}}$ & $\approx 127$~s$^{-1}$ & derived \FLAG \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The rate at any distance $d$ beyond the C6 linker tip:
+The rate at any distance $d$ beyond the PEG6 tip:
 \begin{equation}
-  k_0(d) = k_{\text{ref}} \exp\!\bigl(-\beta (d - d_{\text{C6}})\bigr)
+  k_0(d) = k_{\text{ref}} \exp\!\bigl(-\beta (d - d_{\text{PEG}})\bigr)
   \label{eq:kETd}
 \end{equation}
-\says{each additional \AA ngstr\"{o}m of distance reduces the rate by a factor $e^{-1.0} = 0.37$, i.e.\ a 63\% reduction per \AA ngstr\"{o}m.}
+\says{each additional \AA ngstr\"{o}m of distance beyond the PEG6 tip reduces the rate by a factor $e^{-1.0} = 0.37$. The FLAG on $\beta$ means this is an estimate until EIS is done.}
 
-At the mean label distance $\langle d \rangle = 15.4$~\AA:
+The reference rate at the PEG6 tip, using $\beta = 1.0$~\AA$^{-1}$ (alkanethiol value as placeholder):
 \begin{equation}
-  k_0(\langle d \rangle) = 7.8\times10^4 \times \exp\!\bigl(-1.0 \times (15.4 - 7.56)\bigr)
-  = 7.8\times10^4 \times e^{-7.84} = 31\;\text{s}^{-1}
+  k_{\text{ref}} = 1.5\times10^8 \times \exp\!\bigl(-1.0 \times 14.0\bigr)
+  = 127\;\text{s}^{-1}
   \label{eq:kETmean}
 \end{equation}
 
-This is a drop of more than 2000-fold from the linker tip to the mean position. The
-rate would be $k_{\text{ref}} = 7.8\times10^4$~s$^{-1}$ if the peptide were absent
-(MB sitting right on the C6 tip), but the 7.84~\AA\ of extra chain drops it to
-31~s$^{-1}$. Probes with MB closer than average contribute disproportionately more
-current (faster rate), which is why we must integrate over $P(d)$ rather than just
-use the mean.
+\textbf{Implication for $\kappa$:} At $d_{\text{PEG}}$ (PEG6 tip), $k_0 = 127$~s$^{-1}$
+and $\kappa = 4.2$ at 15~Hz (quasi-reversible, signal exists). At the mean peptide
+distance $\langle d \rangle = 21.8$~\AA, $k_0 = 0.05$~s$^{-1}$ and $\kappa = 0.002$
+(deep irreversible, negligible contribution). The SWV signal therefore comes
+predominantly from probes near $d_{\text{PEG}}$ (the P(d) peak), not from the
+mean-distance probes. This is the key difference from the C6 alkyl case: the PEG6
+spacer shifts the dominant signal population to the $P(d)$ peak rather than the mean.
 
 \subsection{The dimensionless kinetic parameter $\kappa$}
 
@@ -292,22 +298,29 @@ There are three regimes:
     This is where $\DI$ is maximised and most sensitive to changes in $k_0$.
 \end{itemize}
 
-At our operating frequency $f = 15$~Hz and mean $k_0 = 31$~s$^{-1}$:
+With the corrected PEG6 spacer geometry \FLAG, the key $\kappa$ values are:
 \begin{equation}
-  \kappa_{\text{mean}} = \frac{31}{2 \times 15} = 1.04
+  \kappa_{\text{tip}} = \frac{k_{\text{ref}}}{2f} = \frac{127}{30} = 4.2
+  \qquad\text{(at PEG6 tip, quasi-reversible)}
   \label{eq:kappa_val}
 \end{equation}
+\begin{equation}
+  \kappa_{\text{mean}} = \frac{k_0(\langle d \rangle)}{2f} = \frac{0.05}{30} = 0.002
+  \qquad\text{(at mean distance, deep irreversible)}
+  \label{eq:kappa_mean}
+\end{equation}
 
-This is not a coincidence. The 15~Hz frequency was chosen precisely to sit at
-$\kappa \approx 1$ for our peptide system, maximising sensitivity to cleavage.
-The Fc internal reference electrode operates at $\kappa_{\text{Fc}} = 9{,}000$
-(firmly reversible), which is required for a stable reference.
+The SWV signal is dominated by probes at $d \approx d_{\text{PEG}}$ (where $P(d)$
+peaks and $\kappa \approx 4$). Probes at the mean distance contribute negligibly.
+This changes how the optimum frequency is identified: the relevant $\kappa$ is
+$\kappa_{\text{tip}} \approx 4$, not $\kappa_{\text{mean}}$.
+The Fc reference operates at $\kappa_{\text{Fc}} = 9{,}000$ (reversible), unchanged.
 
 \begin{keyresult}
-\textbf{Key result:} $k_0$ at the mean MB distance is 31~s$^{-1}$. At 15~Hz this
-gives $\kappa = 1.04$, the quasi-reversible optimum for maximum sensitivity. Probes
-closer to the gold have higher $k_0$ and higher $\kappa$; probes farther away have lower
-$k_0$ and lower $\kappa$.
+\textbf{Key result (FLAG):} With PEG6 spacer and $\beta = 1.0$~\AA$^{-1}$ (alkanethiol
+placeholder), $k_{\text{ref}} = 127$~s$^{-1}$ at the PEG6 tip giving $\kappa = 4.2$
+(quasi-reversible). The signal comes from the tip of the $P(d)$ distribution, not
+the mean. $\beta$ for PEG6+peptide must be confirmed by EIS to resolve this.
 \end{keyresult}
 
 %=======================================================================
@@ -423,7 +436,7 @@ each at its own distance $d$, each contributing its own current.
 
 Critically, probes with MB very close to the gold (small $d$, large $k_0$, large
 $\kappa$) are in the reversible limit and contribute \emph{almost no} net current.
-Probes near the mean distance ($d \approx 15.4$~\AA, $\kappa \approx 1$) dominate
+Probes near the PEG6 tip ($d \approx d_{\text{PEG}} = 14$~\AA, $\kappa \approx 4$) dominate
 the signal. This makes the measured voltammogram shape robust: even if a few probes
 sit unusually close to the gold, they do not dominate.
 
@@ -433,7 +446,7 @@ After cleavage fraction $\Fk$ of probes have lost their MB label, only the remai
 $(1 - \Fk)$ fraction contribute current. The total voltammogram:
 \begin{equation}
   \DI(E;\,\Fk) = (1-\Fk)\,\Gtot\,A
-    \int_{d_{\text{C6}}}^{\infty} P(d)\;\DI_{\text{norm}}\!\bigl(E;\,k_0(d)\bigr)\;dd
+    \int_{d_{\text{PEG}}}^{\infty} P(d)\;\DI_{\text{norm}}\!\bigl(E;\,k_0(d)\bigr)\;dd
   \label{eq:DI_avg}
 \end{equation}
 \says{the measured current is $(1-\Fk)$ times the integral over all probe distances. Each distance contributes proportionally to how many probes sit there [$P(d)$] and how much current each generates [$\DI_{\text{norm}}(E;\,k_0(d))$].}
@@ -444,12 +457,12 @@ physics: the tether geometry $P(d)$ and the ET kinetics $k_0(d)$.
 
 The $(1-\Fk)$ factor is exact when cleavage is binary (each probe is either fully
 intact or fully cleaved). This is a good approximation because MMP-9 cleaves the
-Arg|Thr bond stoichiometrically, and the remaining C6-thiol stub has no MB label.
+Arg|Thr bond stoichiometrically, and the released TLTA-MB fragment diffuses away, leaving a PEG6-thiol stub with no MB label.
 
 \subsection{Numerical implementation}
 
 The integral in Eq.~(\ref{eq:DI_avg}) is evaluated over 80 distance points
-spanning $d_{\text{C6}}$ to $d_{\text{C6}} + 5\sigma_z$. At each point, the
+spanning $d_{\text{PEG}}$ to $d_{\text{PEG}} + 5\sigma_z$. At each point, the
 BV-SWV simulation runs the pulse chain described in Section~IV. Gauss quadrature
 over 80 points is sufficient because $P(d)$ is smooth and the integrand varies
 smoothly with $d$.
@@ -651,7 +664,7 @@ diffusion drives it. These are consistent with their respective physical models.
 \begin{keyresult}
 \textbf{Key result:} At $\kappa \lesssim 12$, the surface-confined BV-SWV model
 agrees with Dauphin-Ducharme to within 4~mV FWHM. Our operating point
-($\kappa = 1.04$, 15~Hz) is well within this valid range. The surface correction
+($\kappa_{\text{tip}} = 4.2$, 15~Hz) is well within this valid range. The surface correction
 factor $\eta$ \FLAG{} is the only unconfirmed number.
 \end{keyresult}
 
@@ -687,12 +700,12 @@ sensitivity (lower LOD) but also larger risk of surface drift.
     FWHM is 56--60~mV across all three, matching Dauphin-Ducharme Fig.~5B.
     Grey circles are digitised DD data at 100~Hz ($\kappa = 25$): they fall
     outside the surface-confined ODE valid range (see Section~VII) and are
-    shown for regime comparison. At $\kappa = 1.04$ (our peptide, 15~Hz),
-    FWHM = 58.6~mV.
+    shown for regime comparison. At $\kappa_{\text{tip}} = 4.2$ (our peptide,
+    PEG6 tip, 15~Hz), FWHM~$= 58.6$~mV.
     \textbf{C: Tether geometry.}
     $P(d)$ (left axis, blue) and $k_0(d)$ (right axis, red dashed) as functions
-    of MB-to-gold distance. The half-Gaussian $P(d)$ peaks at the C6 linker tip
-    (7.56~\AA); the mean is at 15.4~\AA. The ET rate spans four decades across
+    of MB-to-gold distance. The half-Gaussian $P(d)$ peaks at the PEG6 tip
+    (14.0~\AA); the mean is at 21.8~\AA. The ET rate spans four decades across
     the sampled range.
   }
   \label{fig:valid}
@@ -741,8 +754,8 @@ sensitivity (lower LOD) but also larger risk of surface drift.
   \includegraphics[width=\textwidth]{../figures/fig_SWV4_concentration.pdf}
   \caption{
     \textbf{A: $\kappa$-regime map.}
-    BV-ODE predictions at $\kappa = 12.5$, 5, and 1.04 (valid regime, solid/dashed
-    curves) alongside digitised DD data at 100~Hz (grey circles, $\kappa = 25$,
+    BV-ODE predictions at $\kappa = 12.5$, 5, and $\kappa_{\text{tip}}=4.2$ (valid regime,
+    solid/dashed curves) alongside digitised DD data at 100~Hz (grey circles, $\kappa = 25$,
     outside valid range). All valid curves give FWHM 56--61~mV.
     \textbf{B: Predicted voltammograms at clinical concentrations.}
     [MMP-9] = 0, 1, 3, 6, 10, 30~nM at $t = 30$~min with central surface
@@ -815,7 +828,7 @@ $\approx$90~nM at 30~min, giving a 20-fold dynamic range (4.3~nM to 90~nM).
     all residues. Proline (P in SGKIPRTLTA) locally increases stiffness. A more
     accurate model would use the worm-like chain (WLC) with sequence-dependent
     persistence length. Effect on $\langle d \rangle$: at most 10--20\% increase,
-    shifting $\kappa$ from 1.04 to $\sim$0.6, still firmly quasi-reversible.
+    shifting $\kappa_{\text{tip}}$ from 4.2 to $\sim$2.5, still firmly quasi-reversible.
 
   \item \textbf{Tunnelling decay constant.} $\beta = 1.0$~\AA$^{-1}$ is from
     Smalley et al.\ (1995)~\cit{3} for alkanethiol SAMs. The peptide backbone
@@ -836,11 +849,11 @@ $\approx$90~nM at 30~min, giving a 20-fold dynamic range (4.3~nM to 90~nM).
 
 \textbf{Section A: Tether geometry.} Replace FJC with a WLC model for SGKIPRTLTA.
 Model the post-cleavage P(d) separately (only the C-terminal stub -RTLTA-MB
-remains after cutting, shortening the effective tether). Check against FRET
+remains after cutting at KIPRT|TLTA, shortening the effective tether). Check against FRET
 measurements on immobilised peptide if available.
 
 \textbf{Section B: Electron transfer kinetics.} Determine $k_0$ for our
-specific peptide-C6 system experimentally by EIS (trumpet plot method, Laviron
+specific peptide-PEG6 system experimentally by EIS (trumpet plot method, Laviron
 analysis). Measure temperature dependence of $k_0$: $E^{\circ\prime}$ shifts
 $\approx -1.5$~mV/$^\circ$C for MB, meaning the peak position will shift
 $\approx$18~mV between lab temperature (25~$^\circ$C) and wound temperature (37~$^\circ$C).
@@ -868,12 +881,12 @@ into a recorded voltammogram:
 \toprule
 \textbf{Step} & \textbf{Equation} & \textbf{Key result} \\
 \midrule
-FJC tether (SGKIPRTLTA) & Eq.~(\ref{eq:Pd}) &
-  $\langle d \rangle = 15.4$~\AA, $\sigma_z = 9.8$~\AA \\
-ET decay ($\beta = 1.0$~\AA$^{-1}$) & Eq.~(\ref{eq:kETd}) &
-  $k_0(\langle d \rangle) = 31$~s$^{-1}$ \\
+FJC tether (SGKIPRTLTA) + PEG6 & Eq.~(\ref{eq:Pd}) &
+  $\langle d \rangle = 21.8$~\AA, $\sigma_z = 9.8$~\AA \\
+ET decay ($\beta = 1.0$~\AA$^{-1}$ \FLAG{}) & Eq.~(\ref{eq:kETd}) &
+  $k_{\text{ref}} = 127$~s$^{-1}$ at PEG6 tip \\
 $\kappa$ at 15~Hz & Eq.~(\ref{eq:kappa}) &
-  $\kappa = 1.04$ (quasi-reversible optimum) \\
+  $\kappa_{\text{tip}} = 4.2$ (quasi-reversible) \\
 BV-SWV simulator & Eq.~(\ref{eq:Gred_soln}) &
   FWHM $= 60.6$~mV, anodic peak \\
 Distance average & Eq.~(\ref{eq:DI_avg}) &

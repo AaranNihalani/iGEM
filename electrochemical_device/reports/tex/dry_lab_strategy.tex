@@ -1,0 +1,264 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% ---- Section numbering: Roman numerals ---------------------------------
+\renewcommand\thesection{\Roman{section}}
+\numberwithin{equation}{section}
+
+% ---- Section formatting ------------------------------------------------
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+% ---- Page headers ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Dry Lab Strategy}}
+\fancyhead[R]{\small Eton iGEM Dry Lab}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+% ---- Macros ------------------------------------------------------------
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\FLAG}{\textcolor{red}{$\bigstar$\,FLAG}}
+\newcommand{\layer}[1]{\textbf{L#1}}
+\newcommand{\modeltype}[1]{\textit{#1}}
+
+\begin{document}
+
+%=======================================================================
+\begin{center}
+{\LARGE\bfseries Dry Lab Pipeline: Strategy and Model Inventory}\\[0.4em]
+{\large End-to-End Model from Wound Biology to Voltammogram}\\[0.25em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
+17-Layer Biosensor Pipeline \quad$|$\quad v1.0 --- September 2026}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent
+This document answers three questions: what models exist, what type each one is,
+and how they connect. It is written so any team member can follow the logic,
+not just the person who built it.
+
+%=======================================================================
+\section{The Big Picture}
+
+We are building a wound-swab biosensor that reads MMP-9 concentration from a
+square-wave voltammogram. The dry lab models the full chain from
+\textbf{wound biology} (what concentration of MMP-9 is at the wound site)
+to \textbf{signal readout} (what peak area we measure on a potentiostat).
+
+There are 17 layers (L0--L16). Each layer is a self-contained model that takes
+inputs from earlier layers and passes outputs forward. The chain is:
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Domain} & \textbf{Layers} & \textbf{What it models} \\
+\midrule
+Wound biology   & L0              & MMP-9/HNE concentrations at wound site \\
+Sample handling & L1--L3          & Swab collection, dilution, matrix effects \\
+Electrode surface & L4--L12      & SAM geometry, probe conformation, ET kinetics \\
+Signal readout  & L13--L16       & SWV voltammogram, noise, calibration, LOD \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The SWV forward model (this document's focus) sits in the signal readout domain.
+It chains L8 (probe conformation), L10 (ET kinetics), and L13 (SWV simulator).
+
+%=======================================================================
+\section{Model Inventory by Type}
+
+\subsection{Ordinary differential equation (ODE) models}
+
+ODE models describe how a quantity changes in time. They are the right tool
+when mixing or reaction happens in a well-stirred compartment.
+
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*]
+  \item \textbf{Layer 0: Wound biology.}
+    Two-compartment ODE for free MMP-9 and HNE in wound fluid, accounting for
+    $\alpha$2-macroglobulin binding (Olson 1997). Output: [MMP-9]$_{\text{free}}(t)$.
+    \emph{Source:} \texttt{wound\_biology.py}
+
+  \item \textbf{Layer 5: MMP-9 reaction kinetics.}
+    Michaelis-Menten ODE for bulk cleavage of the peptide substrate by MMP-9.
+    This is solution-phase MM; at clinical concentrations (6--30~nM $\gg$
+    surface probe density $\approx$10~pM) the pseudo-first-order limit applies
+    exactly, so the ODE reduces to $F_k(t) = 1 - e^{-k_{\text{eff}} \cdot [\text{MMP-9}] \cdot t}$.
+    \emph{Source:} \texttt{protease\_kinetics.py}
+
+  \item \textbf{Layer 13: BV-SWV simulator.}
+    One surface-confined Butler-Volmer ODE per potential step:
+    $\dot{\Gamma}_{\text{red}} = -k_f \Gamma_{\text{red}} + k_b (1-\Gamma_{\text{red}})$.
+    Solved analytically in closed form (exponential decay to equilibrium), so it
+    runs as fast as an algebraic expression. 80 distance samples $\times$ $N_{\text{steps}}$
+    potential steps per voltammogram.
+    \emph{Source:} \texttt{swv\_forward\_model.py}
+\end{enumerate}
+
+\subsection{Algebraic / statistical models}
+
+These models have no time derivative: they compute a quantity directly from inputs.
+
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*]
+  \item \textbf{Layer 8: Probe conformation (FJC tether).}
+    Freely-jointed chain (FJC) for the SGKIPRTLTA peptide tether. Outputs
+    a half-Gaussian distance distribution $P(d)$ with mean
+    $\langle d \rangle = 21.8$~\AA{} and $\sigma_z = 9.8$~\AA.
+    For the PEG6 spacer: Flory radius $R_F = 1.40$~nm sets the hard wall.
+    \emph{Type:} statistical mechanics, no ODE.
+    \emph{Source:} \texttt{probe\_conformation.py}
+
+  \item \textbf{Layer 10: Electron transfer kinetics.}
+    Marcus/Butler-Volmer tunnelling: $k_0(d) = k_0^{\text{ref}} \cdot e^{-\beta(d - d_{\text{PEG}})}$.
+    With $\beta = 1.0$~\AA$^{-1}$ (Smalley 1995 \FLAG{}), $k_{\text{ref}} = 127$~s$^{-1}$
+    at the PEG6 tip. This is a single algebraic formula, not an ODE.
+    \emph{Source:} \texttt{electron\_transfer.py}
+
+  \item \textbf{Layer 15: Calibration.}
+    Linear fit mapping peak area $A_{\text{area}}$ to cleavage fraction $F_k$.
+    Algebraic: $F_k = 1 - A_{\text{area}}/A_{\text{area,0}}$.
+    \emph{Source:} \texttt{layer15\_calibration.py}
+\end{enumerate}
+
+\subsection{What we are NOT using and why}
+
+\textbf{Surface enzyme kinetics (SEK) ODE.} A full Michaelis-Menten ODE for
+surface-confined cleavage would be:
+\[
+  \frac{d[S]_{\text{surf}}}{dt} = -\frac{k_{\text{cat}} \cdot [\text{MMP-9}] \cdot [S]_{\text{surf}}}{K_m + [S]_{\text{surf}}}
+\]
+We use pseudo-first-order instead because at clinical concentrations
+(6--30~nM MMP-9) the enzyme is in at least 600-fold excess over surface probe
+density ($\approx$10~pM), so $[S] \ll K_m$ and the MM ODE collapses exactly to
+$dF_k/dt = k_{\text{eff,surf}} \cdot [\text{MMP-9}]$. The SEK ODE would add
+parameters ($k_{\text{cat}}, K_m$) without changing the answer at any clinically
+relevant concentration.
+
+\textbf{PDE / diffusion models.} We do not include diffusion of MMP-9 to the
+electrode surface. At the concentrations and timescales of interest (30~min),
+diffusion is not rate-limiting: the surface reaction rate is slower than the
+diffusion supply rate by at least two orders of magnitude (Dauphin-Ducharme
+2020, supplementary note 2).
+
+\textbf{COMSOL thin-layer cell.} The Dauphin-Ducharme (DD) COMSOL model includes
+diffusion and is valid for $\kappa > 12$. Our system operates at $\kappa_{\text{tip}} = 4.2$
+(quasi-reversible), well within the surface-confined ODE regime ($\kappa \lesssim 12$).
+The COMSOL model is validated against our simulator at the regime boundary.
+
+%=======================================================================
+\section{How the Models Connect: The Forward Pipeline}
+
+\noindent
+The pipeline runs top to bottom. Each row shows one model, its inputs, and what
+it passes to the next layer.
+
+\begin{center}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Layer} & \textbf{Model} & \textbf{Input} & \textbf{Output to next layer} \\
+\midrule
+L0 & Wound biology ODE & Clinical MMP-9 total & [MMP-9]$_{\text{free}}(t)$ \\
+L1--L3 & Sample handling (algebraic) & [MMP-9]$_{\text{free}}$ & [MMP-9] at electrode \\
+L5 & Protease kinetics (pseudo-1st) & [MMP-9], time & Cleavage fraction $F_k$ \\
+L8 & FJC tether (algebraic) & Peptide sequence & $P(d)$: distance distribution \\
+L10 & ET kinetics (algebraic) & $P(d)$, $\beta$, $d_{\text{PEG}}$ & $k_0(d)$: rate vs distance \\
+L13 & BV-SWV ODE (analytic) & $F_k$, $k_0(d)$, $P(d)$ & $\Delta I(E)$: voltammogram \\
+L15 & Calibration (algebraic) & $\Delta I(E)$ & $F_k$ recovered, LOD \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The SWV forward model integrates L8, L10, and L13 into a single runnable script
+(\texttt{swv\_forward\_model.py}) so that specifying protease concentration and
+incubation time produces a full predicted voltammogram.
+
+%=======================================================================
+\section{Key Science Decisions}
+
+\subsection{PEG6 spacer, not C6 alkanethiol}
+
+The probe uses a PEG6 spacer (6 ethylene oxide units) between the gold surface
+and the peptide-MB construct. Earlier model versions incorrectly used
+C6 alkanethiol geometry ($d_{\text{C6}} = 0.756$~nm). The correct hard wall is
+the PEG6 Flory radius:
+\[
+  R_F = N_k^{3/5} \cdot l_{\text{Kuhn}} = 2.76^{0.6} \times 0.76 = 1.40\;\text{nm}
+\]
+This shifts the ET rate from 78,000~s$^{-1}$ (C6 case) to 127~s$^{-1}$ (PEG6 case),
+moving from the reversible to the quasi-reversible regime: $\kappa_{\text{tip}} = 4.2$.
+The sensor still works; signal now comes from the peak of $P(d)$ at the PEG6 tip
+rather than from probes at the mean distance.
+
+\subsection{MCH backfill: only on the peptide-only electrode}
+
+Per lab protocol (Jaden, April 2026): the MCH backfill is present only on the
+peptide-only electrode (no Fc). The peptide + Fc electrode has no MCH. This
+distinction matters because MCH changes the surface packing and therefore $P(d)$.
+The model currently uses the same $P(d)$ for both electrodes; this is a FLAG for
+experimental refinement.
+
+\subsection{$\beta$ for PEG6 is unconfirmed}
+
+The tunnelling decay $\beta = 1.0$~\AA$^{-1}$ is confirmed for alkanethiol
+(Smalley 1995). For PEG6 or a peptide bridge, $\beta$ may differ.
+Papers to check: Pheeney \& Barton (2012) and Smalley et~al.\ (2003),
+both in \texttt{papers/layer\_10/}. Until measured, $k_{\text{ref}} = 127$~s$^{-1}$
+and $\kappa_{\text{tip}} = 4.2$ carry a FLAG.
+
+%=======================================================================
+\section{What Needs Experimental Input}
+
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+  \item \textbf{Surface correction factor $\eta$} (Layer~15). Ratio of surface
+    to solution cleavage rate. Range 1--100\% changes the LOD by 100-fold. Must be
+    measured at Layer~15 by comparing an electrode assay to a solution-phase
+    fluorescence assay on the same batch.
+
+  \item \textbf{$\beta$ for PEG6 bridge} (Layer~10). Read Pheeney \& Barton 2012
+    and Smalley 2003. If $\beta_{\text{PEG}} < 1.0$~\AA$^{-1}$, $k_{\text{ref}}$
+    increases and $\kappa_{\text{tip}}$ increases (more reversible, smaller signal).
+
+  \item \textbf{$k_0$ by EIS} (trumpet plot). Layer~13 validation. Confirm that
+    $k_0 = 5{,}000$~s$^{-1}$ (from Dauphin-Ducharme for MB-DNA) applies to our
+    MB-peptide-PEG6 system.
+
+  \item \textbf{$P(d)$ with MCH vs without MCH.} Two different surface geometries
+    need two different $P(d)$ runs. FJC model is the same; the hard-wall
+    boundary may shift if MCH compresses the PEG6 layer.
+\end{enumerate}
+
+%=======================================================================
+\section{References}
+
+\begin{enumerate}[label={[\arabic*]},leftmargin=*]
+  \item Dauphin-Ducharme et al.\ (2020). \textit{J. Am. Chem. Soc.}\ 142,
+    10,988. \texttt{dauphin\_ducharme2020.pdf}
+  \item Laviron, E.\ (1979). \textit{J. Electroanal. Chem.}\ 101, 19.
+    \texttt{laviron1979.pdf}
+  \item Smalley, J.F.\ et al.\ (1995). \textit{J. Phys. Chem.}\ 99, 13,141.
+    \texttt{smalley1995.pdf}
+  \item Pheeney, C.G.\ \& Barton, J.K.\ (2012). \textit{Langmuir} 28, 7,063.
+    \texttt{pheeney2012.pdf}
+  \item Olson, S.T.\ et al.\ (1997). \textit{J. Biol. Chem.}\ 272, 19,023.
+    \texttt{olson1997.pdf}
+\end{enumerate}
+
+\end{document}

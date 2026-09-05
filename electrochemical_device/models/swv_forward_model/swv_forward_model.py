@@ -224,97 +224,104 @@ def test_bv_simulator():
 
 
 # ─── M2: DISTANCE DISTRIBUTION P(d) ─────────────────────────────────────────
-# Freely jointed chain (FJC) for SGKIPRTLTA (10 residues) + C6 thiol linker.
+# Freely jointed chain (FJC) for SGKIPRTLTA (10 residues) + PEG6 spacer.
 # Kohn et al. (2004) [3] confirm random-coil FJC scaling for unfolded peptides.
 #
 # Amino acid geometry (standard polypeptide backbone):
 #   Contour length per residue: l0 = 0.38 nm
-#   Kuhn length: b = 0.76 nm (= 2 residues; accounts for finite backbone
-#     stiffness via the rotational isomeric state model; each Kuhn segment
-#     spans 2 residues for a polypeptide backbone, Flory 1953)
+#   Kuhn length: b = 0.76 nm (= 2 residues; Flory 1953)
 #
-# C6 thiol linker:
-#   Extended length: d_C6 = 6 × 0.126 nm = 0.756 nm (all-trans alkyl chain,
-#     projected C-C distance = l_CC × sin(θ/2) = 0.154 × sin(54.75°))
+# PEG6 spacer (6 ethylene oxide units, Layer 8 probe_conformation.py):
+#   l_EO = 0.35 nm per EO unit, l_kuhn_PEG = 0.76 nm
+#   n_k_PEG = 6 × 0.35 / 0.76 = 2.76 Kuhn segments
+#   Flory radius R_F = n_k^(3/5) × l_kuhn = 1.40 nm (dilute regime at Γ_p = 3 pmol/cm²)
+#   Hard wall: d_PEG = R_F = 1.40 nm  (mean PEG end-to-end distance, dilute regime)
 #
-# FJC end-to-end statistics:
+# NOTE: Previously this used d_C6 = 0.756 nm (C6 alkanethiol). The spacer is
+# PEG6, not C6. Corrected from Jaden Potishko's experimental note (Apr 2026).
+#
+# FJC end-to-end statistics for the PEPTIDE portion above PEG6 tip:
 #   N_K = L_c / b = (10 × 0.38) / 0.76 = 5 Kuhn segments
 #   <r²> = N_K b² = 5 × (0.76)² = 2.888 nm²
+#   σ_z = sqrt(<r²>/3) = 0.981 nm
 #
-# The z-component (perpendicular to electrode surface) for a chain tethered
-# at a reflecting wall follows a half-Gaussian (Gaussian chain, 1D projection):
-#
-#   σ_z = sqrt(<r²>/3) = sqrt(2.888/3) = 0.981 nm
-#
-#   P(d) = sqrt(2/π) × (1/σ_z) × exp(-(d - d_C6)²/(2σ_z²))  for d ≥ d_C6
+#   P(d) = sqrt(2/π) × (1/σ_z) × exp(-(d - d_PEG)²/(2σ_z²))  for d ≥ d_PEG
 
 N_RESIDUES  = 10          # SGKIPRTLTA
 L0_NM       = 0.38        # nm per residue (contour)
 B_KUHN_NM   = 0.76        # nm (Kuhn length = 2 residues)
-D_C6_NM     = 0.756       # nm (C6 linker, all-trans)
+D_PEG_NM    = 1.398       # nm (PEG6 Flory radius at Γ_p=3 pmol/cm², dilute regime)
 N_KUHN      = (N_RESIDUES * L0_NM) / B_KUHN_NM   # 5 segments
 R2_MEAN_NM2 = N_KUHN * B_KUHN_NM**2              # 2.888 nm²
 SIGMA_Z_NM  = np.sqrt(R2_MEAN_NM2 / 3.0)         # 0.981 nm
 
-D_MAX_NM    = D_C6_NM + N_RESIDUES * L0_NM       # 4.556 nm (contour length limit)
-D_GRID      = np.linspace(D_C6_NM, D_MAX_NM, 300)
+D_MAX_NM    = D_PEG_NM + N_RESIDUES * L0_NM      # 5.198 nm (PEG tip + peptide contour)
+D_GRID      = np.linspace(D_PEG_NM, D_MAX_NM, 300)
 
 
 def P_d(d_nm):
     """
     Half-Gaussian distance distribution for MB label above electrode.
+    Hard wall at d_PEG (PEG6 spacer tip); FJC distribution for peptide above.
     d_nm : distance from gold surface to MB label (nm)
-    Returns: probability density (nm-1), normalised over [D_C6_NM, D_MAX_NM].
+    Returns: probability density (nm-1), normalised over [D_PEG_NM, D_MAX_NM].
     """
     d = np.asarray(d_nm, dtype=float)
     p = np.where(
-        d >= D_C6_NM,
-        np.sqrt(2.0 / np.pi) / SIGMA_Z_NM * np.exp(-(d - D_C6_NM)**2 / (2.0 * SIGMA_Z_NM**2)),
+        d >= D_PEG_NM,
+        np.sqrt(2.0 / np.pi) / SIGMA_Z_NM * np.exp(-(d - D_PEG_NM)**2 / (2.0 * SIGMA_Z_NM**2)),
         0.0
     )
     return p
 
 
 def _normalise_P_d():
-    """Return normalisation factor for P(d) over [D_C6_NM, D_MAX_NM]."""
-    norm, _ = quad(P_d, D_C6_NM, D_MAX_NM)
+    """Return normalisation factor for P(d) over [D_PEG_NM, D_MAX_NM]."""
+    norm, _ = quad(P_d, D_PEG_NM, D_MAX_NM)
     return norm
 
 _P_NORM = _normalise_P_d()
 
 
 def P_d_norm(d_nm):
-    """Normalised P(d) integrating to 1 over [D_C6_NM, D_MAX_NM]."""
+    """Normalised P(d) integrating to 1 over [D_PEG_NM, D_MAX_NM]."""
     return P_d(d_nm) / _P_NORM
 
 
 # ─── M3: k_ET(d) AND DISTANCE-AVERAGED VOLTAMMOGRAM ─────────────────────────
 # From Layer 10 / Dauphin-Ducharme (2017) [1] Eqs 13-14 / Smalley (1995) [4]:
 #
-#   k0(d) = k0_ref × exp(-β (d - d_ref))
+#   k0(d) = k0_ref × exp(-β (d - d_PEG))
 #
 # Anchoring point from Dauphin-Ducharme [1] Fig. 4:
-#   MB covalently attached to dithiol at 8 Å from gold:
-#   k0(cm s-1) = 1.5 ± 0.5 cm s-1
-#   k0(s-1)    = k0(cm s-1) × β = 1.5 × 10^8 s-1  (β = 1.0 Å-1 = 10^8 cm-1)
+#   MB-dithiol at x=0: k0 = 1.5×10^8 s-1 (extrapolated to zero distance).
+#   β = 1.0 Å-1 = 10 nm-1 confirmed for ALKANETHIOL SAMs (Smalley 1995 [4]).
 #
-# We convert this to k0 at the top of the C6 SAM (d_ref = d_C6 = 7.56 Å):
-#   k0_ref = 1.5×10^8 × exp(-β × 7.56) = 1.5×10^8 × exp(-7.56)
+# FLAG: β = 1.0 Å-1 is from Smalley 1995 for alkyl chains. The PEG6 linker
+# may have a different effective β (literature range 0.3-1.0 Å-1 through-bond
+# for PEG, but no confirmed value in our paper set). k_ref therefore needs
+# experimental calibration via EIS (trumpet plot) on our fabricated electrode.
 #
-# β in nm-1: β = 1.0 Å-1 = 10 nm-1
+# k_ref at PEG6 tip (d = D_PEG_NM = 1.398 nm), using β = 1.0 Å-1 as placeholder:
+#   k0_ref = 1.5×10^8 × exp(-10 × 1.398) = 127 s-1
+#
+# Key consequence: k0(d_PEG) = 127 s-1, κ(15 Hz) = 4.2 (quasi-reversible).
+# k0(d_mean) = 0.05 s-1, κ = 0.002 (deep irreversible). Signal comes
+# predominantly from probes at d ≈ d_PEG (P(d) peak), not the mean.
 
-BETA_NM     = 10.0         # nm-1  (β = 1.0 Å-1, Smalley 1995 [4])
-K0_AT_0_S1  = 1.5e8        # s-1  (MB-dithiol at x=0, Dauphin-Ducharme [1] Fig 4 via Eq 13)
-# k0 at top of C6 SAM (d = D_C6_NM):
-K0_REF_S1   = K0_AT_0_S1 * np.exp(-BETA_NM * D_C6_NM)   # ≈ 1.7×10^5 s-1
+BETA_NM     = 10.0         # nm-1  (β = 1.0 Å-1, Smalley 1995 [4]; FLAG: may differ for PEG6)
+K0_AT_0_S1  = 1.5e8        # s-1  (MB-dithiol at x=0, Dauphin-Ducharme [1] Fig 4)
+# k0 at PEG6 tip (d = D_PEG_NM): FLAG -- see note above
+K0_REF_S1   = K0_AT_0_S1 * np.exp(-BETA_NM * D_PEG_NM)   # ≈ 127 s-1
 
 
 def k0_of_d(d_nm):
     """
     Standard ET rate constant at MB-electrode distance d (nm).
-    k0(d) = K0_REF_S1 × exp(-β(d - D_C6_NM))   [s-1]
+    k0(d) = K0_REF_S1 × exp(-β(d - D_PEG_NM))   [s-1]
+    FLAG: β and K0_REF_S1 are placeholders; needs EIS calibration.
     """
-    return K0_REF_S1 * np.exp(-BETA_NM * (np.asarray(d_nm) - D_C6_NM))
+    return K0_REF_S1 * np.exp(-BETA_NM * (np.asarray(d_nm) - D_PEG_NM))
 
 
 def dist_averaged_voltammogram(E_arr, F_k,
@@ -341,7 +348,7 @@ def dist_averaged_voltammogram(E_arr, F_k,
     -------
     DI_total : net SWV current (A)
     """
-    d_vals   = np.linspace(D_C6_NM, D_MAX_NM, n_dist)
+    d_vals   = np.linspace(D_PEG_NM, D_MAX_NM, n_dist)
     dd       = d_vals[1] - d_vals[0]
     weights  = P_d_norm(d_vals)   # nm-1, normalised
 
@@ -513,7 +520,7 @@ def run_all(save=True):
                                   E0=-0.250, f_swv=1000.0, E_sw=0.025)
 
     # ── P(d) and k0(d) ────────────────────────────────────────────────────────
-    d_plot = np.linspace(D_C6_NM, D_MAX_NM, 500)
+    d_plot = np.linspace(D_PEG_NM, D_MAX_NM, 500)
     Pd_plot = P_d_norm(d_plot)
     k0d_plot = k0_of_d(d_plot)
     kappa_plot = k0d_plot / (2.0 * F_SWV)
@@ -570,7 +577,7 @@ def run_all(save=True):
     freq_arr = np.array([5, 10, 15, 30, 50, 100, 200, 500])
     DI_peak_dist = []
     DI_peak_sing = []
-    k0_eff = k0_of_d(D_C6_NM + SIGMA_Z_NM * np.sqrt(2.0 / np.pi))  # at mean distance
+    k0_eff = k0_of_d(D_PEG_NM + SIGMA_Z_NM * np.sqrt(2.0 / np.pi))  # at mean distance
     for fq in freq_arr:
         # Distance-averaged
         DI_tmp = dist_averaged_voltammogram(E_SCAN, 0.0,
@@ -632,10 +639,10 @@ def run_all(save=True):
     ax3.fill_between(d_plot, Pd_plot, alpha=0.15, color="#1565c0")
     ax3_twin.semilogy(d_plot, k0d_plot, color="#c62828", lw=2.5, ls="--",
                       label="$k^0(d)$ (s$^{-1}$)")
-    ax3.axvline(D_C6_NM, color="gray", ls=":", lw=1.2, label=f"C6 SAM ({D_C6_NM:.2f} nm)")
-    ax3.axvline(D_C6_NM + SIGMA_Z_NM * np.sqrt(2.0 / np.pi), color="#2e7d32",
+    ax3.axvline(D_PEG_NM, color="gray", ls=":", lw=1.2, label=f"PEG6 tip ({D_PEG_NM:.2f} nm)")
+    ax3.axvline(D_PEG_NM + SIGMA_Z_NM * np.sqrt(2.0 / np.pi), color="#2e7d32",
                 ls="-.", lw=1.5,
-                label=f"$\\langle d \\rangle = {D_C6_NM + SIGMA_Z_NM*np.sqrt(2/np.pi):.2f}$ nm")
+                label=f"$\\langle d \\rangle = {D_PEG_NM + SIGMA_Z_NM*np.sqrt(2/np.pi):.2f}$ nm")
     ax3.set_xlabel("$d$ (nm)  [MB–electrode distance]")
     ax3.set_ylabel("$P(d)$ (nm$^{-1}$)", color="#1565c0")
     ax3_twin.set_ylabel("$k^0(d)$ (s$^{-1}$)", color="#c62828")
@@ -809,7 +816,7 @@ def run_all(save=True):
     # Our peptide system (k0_eff = 31 s-1, f=15 Hz): κ=1.04  → peak FWHM ≈ 60 mV
     #
     k0_DNA   = 5.0e3   # s-1   MB-DNA (20-base), same as in Fig 1B
-    k0_eff   = k0_of_d(D_C6_NM + SIGMA_Z_NM * np.sqrt(2.0 / np.pi))  # mean d
+    k0_eff   = k0_of_d(D_PEG_NM + SIGMA_Z_NM * np.sqrt(2.0 / np.pi))  # mean d
     E_DD_val = np.linspace(-0.40, -0.10, 400)
 
     # BV-ODE at DD system (k0=5000) at two valid quasi-reversible frequencies
@@ -920,13 +927,16 @@ def run_all(save=True):
     print(f"  Tether geometry (FJC, Kohn 2004):")
     print(f"    N_K = {N_KUHN:.0f} Kuhn segments, b = {B_KUHN_NM*10:.1f} Å")
     print(f"    sigma_z = {SIGMA_Z_NM*10:.1f} Å,  mean d = "
-          f"{(D_C6_NM + SIGMA_Z_NM*np.sqrt(2/np.pi))*10:.1f} Å")
+          f"{(D_PEG_NM + SIGMA_Z_NM*np.sqrt(2/np.pi))*10:.1f} Å")
     print(f"  ET kinetics:")
-    print(f"    k0_ref (at C6 top) = {K0_REF_S1:.2e} s-1")
-    print(f"    k0 at mean d       = {k0_of_d(D_C6_NM + SIGMA_Z_NM*np.sqrt(2/np.pi)):.1f} s-1")
-    print(f"    kappa at mean d, {F_SWV} Hz = "
-          f"{k0_of_d(D_C6_NM + SIGMA_Z_NM*np.sqrt(2/np.pi))/(2*F_SWV):.2f}"
-          "  (quasi-reversible)")
+    print(f"    k0_ref (at PEG6 tip, FLAG) = {K0_REF_S1:.2e} s-1")
+    print(f"    k0 at mean d       = {k0_of_d(D_PEG_NM + SIGMA_Z_NM*np.sqrt(2/np.pi)):.1f} s-1")
+    kappa_mean = k0_of_d(D_PEG_NM + SIGMA_Z_NM*np.sqrt(2/np.pi))/(2*F_SWV)
+    kappa_tip  = K0_REF_S1 / (2*F_SWV)
+    regime = "quasi-reversible" if 0.1 < kappa_mean < 10 else \
+             ("deep irreversible (FLAG: beta_PEG unconfirmed)" if kappa_mean < 0.1 else "reversible")
+    print(f"    kappa at mean d, {F_SWV} Hz = {kappa_mean:.4f}  ({regime})")
+    print(f"    kappa at PEG6 tip, {F_SWV} Hz = {kappa_tip:.2f}  (signal from close-approach tail)")
     print(f"  Calibration linearity:")
     print(f"    Max residual = {max(residuals_pct):.1f}%  "
           f"({'PASS' if max(residuals_pct) < 5 else 'FAIL: non-linear, use forward model curve'})")
@@ -940,7 +950,7 @@ def run_all(save=True):
         "bv_test_pass": all_ok,
         "A_areas_pAV": A_areas * 1e12,
         "max_nonlinearity_pct": float(max(residuals_pct)),
-        "kappa_at_mean_d": k0_of_d(D_C6_NM + SIGMA_Z_NM*np.sqrt(2/np.pi)) / (2*F_SWV),
+        "kappa_at_mean_d": k0_of_d(D_PEG_NM + SIGMA_Z_NM*np.sqrt(2/np.pi)) / (2*F_SWV),
         "kappa_Fc": kappa_Fc,
     }
 
