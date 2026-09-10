@@ -5,15 +5,16 @@
 \usepackage{parskip}
 \usepackage{microtype}
 \usepackage{amsmath,amssymb,mathtools}
-\usepackage{array,booktabs,tabularx,multirow}
+\usepackage{array,booktabs,tabularx,multirow,longtable}
 \usepackage[table]{xcolor}
 \usepackage{graphicx,float}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
 % ---- Section numbering: Roman numerals ---------------------------------
 \renewcommand\thesection{\Roman{section}}
-% ---- Equation numbering: (I.1), (II.2), etc. ---------------------------
 \numberwithin{equation}{section}
 
 % ---- Section formatting ------------------------------------------------
@@ -27,924 +28,1300 @@
 \pagestyle{fancy}
 \fancyhf{}
 \setlength{\headheight}{15pt}
-\fancyhead[L]{\small\textit{SWV Forward Model}}
-\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\fancyhead[L]{\small\textit{SWV Forward Model -- Flagship Report}}
+\fancyhead[R]{\small Eton iGEM Dry Lab 2026}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.35pt}
 
-% ---- Key result box (left rule, shaded) --------------------------------
-\newenvironment{keyresult}{%
-  \par\addvspace{0.5ex}%
-  \setlength{\fboxsep}{6pt}%
-  \noindent\colorbox{black!6}\bgroup
-  \minipage{\dimexpr\linewidth-2\fboxsep}%
-  \small
-}{%
-  \endminipage\egroup\par\addvspace{0.5ex}%
-}
-
 % ---- Macros ------------------------------------------------------------
 \newcommand{\cit}[1]{[#1]}
-\newcommand{\Fk}{F_k}
-\newcommand{\kET}{k_{\text{ET}}}
-\newcommand{\kref}{k_{\text{ref}}}
-\newcommand{\betaD}{\beta}
-\newcommand{\Gtot}{\Gamma_{\text{tot}}}
-\newcommand{\Geq}{\Gamma_{\text{eq}}}
-\newcommand{\Gred}{\Gamma_{\text{red}}}
-\newcommand{\Gox}{\Gamma_{\text{ox}}}
-\newcommand{\Esw}{E_{\text{sw}}}
-\newcommand{\kzero}{k_0}
-\newcommand{\Pd}{P(d)}
-% \kappa already defined by amsmath
 \newcommand{\DI}{\Delta I}
-\newcommand{\nm}{\,\text{nm}}
-\newcommand{\Ang}{\,\text{\AA}}
-\newcommand{\FLAG}{\textbf{[FLAG: unconfirmed]}}
+\newcommand{\Fk}{F_k}
+\newcommand{\Esw}{E_{\rm sw}}
+\newcommand{\Fswv}{f_{\rm SWV}}
+\newcommand{\Grred}{\Gamma_{\rm red}}
+\newcommand{\Grtot}{\Gamma_{\rm tot}}
+\newcommand{\Greq}{\Gamma_{\rm eq}}
+\newcommand{\kf}{k_f}
+\newcommand{\kb}{k_b}
+\newcommand{\kzero}{k^0}
+\newcommand{\Grox}{\Gamma_{\rm ox}}
+\newcommand{\FLAG}{\textcolor{red}{$\bigstar$\,FLAG}}
+\newcommand{\CONF}{\textcolor{teal}{\checkmark\,confirmed}}
+% \says: physical gloss after an equation
 \newcommand{\says}[1]{\par\noindent\textit{\small $\triangleright$\;#1}\par\smallskip}
+% keyresult box
+\newenvironment{keyresult}{%
+  \begin{tcolorbox}[colback=black!5,colframe=black!25,boxrule=0.5pt,
+                    arc=2pt,left=4pt,right=4pt,top=3pt,bottom=3pt]
+  \small}{%
+  \end{tcolorbox}\smallskip}
 
 \begin{document}
 
 %=======================================================================
 \begin{center}
-{\LARGE\bfseries SWV Forward Model}\\[0.4em]
-{\large From Cleavage Fraction to Recorded Voltammogram}\\[0.25em]
-{\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
-Synthesis of Layers 6, 8, 9, 10, 11, 13 \quad$|$\quad
-\texttt{swv\_forward\_model.py}}
+{\LARGE\bfseries Square-Wave Voltammetry Forward Model}\\[0.4em]
+{\large Complete Derivation: From Cleavage Fraction to Recorded Voltammogram}\\[0.25em]
+{\small\color{gray}
+Eton iGEM 2026, Dry Lab \quad$|$\quad
+Pipeline Layers 8, 10, 11, 12, 13 \quad$|$\quad
+\texttt{swv\_forward\_model.py} \quad$|$\quad
+Flagship research report}
 \end{center}
 \vspace{0.4em}\hrule\vspace{0.7em}
 
+\noindent\textbf{Abstract.}
+We derive from first principles the complete forward model that converts
+MMP-9 concentration and incubation time into the SWV voltammogram recorded
+at a gold electrode functionalised with a methylene blue peptide probe.
+Starting from the Marcus theory of outer-sphere electron transfer and the
+freely jointed chain model of flexible polymers, we build up the
+Butler-Volmer surface ODE, show its exact analytic solution, and integrate
+over the distance distribution of the tethered probe. Every equation is
+derived step by step. Parameters confirmed from published papers are marked
+\CONF; unconfirmed values are marked \FLAG. At the operating conditions
+($f = 15$~Hz, 30~min incubation), the predicted limit of detection
+is 4.3~nM (below the 6~nM healing/chronic wound boundary), and the
+discrimination ratio between 6~nM and 30~nM MMP-9 is $3.9\times$.
+
 %=======================================================================
-\section{What This Model Does}
-\label{sec:overview}
+\section{Physical Story: What the Experiment Does}
+\label{sec:story}
 
-\subsection{The physical story}
+\subsection{The electrode and its probes}
 
-Picture the electrode surface. Thousands of peptide chains are chemisorbed to a gold
-disc through a short alkyl spacer. Each chain ends in a methylene blue (MB) dye
-molecule. MB is a redox reporter: it can gain or lose electrons, and we detect that
-electrochemically. MMP-9, if present in the wound fluid, cuts each peptide at a
-specific bond. The MB label falls away. The electrochemical signal drops.
+The working electrode is a 1.5~mm diameter gold disc ($A = 0.0177$~cm$^2$).
+The surface carries a mixed self-assembled monolayer (SAM) with two
+probe types (Fig.~\ref{fig:assem}):
 
-The SWV forward model answers one question precisely: \textbf{if a fraction $\Fk$
-of those peptide chains have been cleaved, what voltammogram would we actually
-record?}
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*]
+\item \textbf{Signal probe (peptide-MB).}
+  Structure from inner to outer: Au--S--PEG6--SGKIPRTLTA--MB.
+  PEG6 is a six-unit poly(ethylene glycol) spacer that holds the probe
+  away from the gold surface and prevents nonspecific adsorption.
+  SGKIPRTLTA is the MMP-9 recognition peptide (cleavage site:
+  KIPRT$|\,$TLTA). MB (methylene blue) is the electroactive reporter,
+  a two-electron redox couple. When MMP-9 cleaves the peptide,
+  the MB-bearing C-terminal fragment TLTA--MB is released into solution
+  and lost; only the stub Au--S--PEG6--SGKIPR remains on the electrode,
+  electrochemically silent.
 
-Answering this requires three pieces of physics, linked in sequence:
-
-\begin{enumerate}[leftmargin=*,noitemsep]
-  \item \textbf{Tether geometry.} MB is not at a fixed distance from the gold
-    surface. The peptide chain is flexible and wiggles thermally, so MB samples a
-    range of distances. We need the probability distribution $P(d)$ of those
-    distances, because the electron transfer rate depends exponentially on $d$.
-
-  \item \textbf{Electron transfer kinetics.} Once we know $d$, we can calculate how
-    fast the redox reaction is. This rate $k_0(d)$ sets how MB responds to the SWV
-    voltage waveform.
-
-  \item \textbf{BV-SWV simulator.} Given the rate $k_0$, a Butler--Volmer model
-    converts the SWV waveform into the net current $\DI(E)$ that the potentiostat
-    records. Averaging over the $P(d)$ distribution and scaling by $(1 - \Fk)$
-    gives the complete voltammogram.
+\item \textbf{Reference probe (Fc-hexanethiol).}
+  Structure: Au--S--(CH$_2$)$_6$--Fc. Ferrocene (Fc) is a one-electron
+  redox couple, not cleavable by MMP-9. Its SWV peak area provides an
+  internal standard for surface density, enabling ratiometric noise
+  cancellation (Section~\ref{sec:Fc}).
 \end{enumerate}
 
-\noindent The chain is therefore:
+\textbf{Surface coverage and backfill protocol.}
+Per Adjemian et~al.~(2010)~\cit{8} (the closest published system to ours,
+using Fc-peptide-PEG7 on Au with the same MCH backfill strategy), the
+optimal probe coverage for maximal cleavage efficiency is
+$\Grtot \leq 10^{-11}$~mol~cm$^{-2}$. Our system uses
+$\Grtot = 3 \times 10^{-12}$~mol~cm$^{-2}$~\cit{8,6}.
+The signal electrode (peptide-MB only) is backfilled with MCH
+(6-mercapto-1-hexanol). The signal-plus-reference electrode (peptide-MB + Fc)
+has no MCH (Jaden Potishko, lab note April~2026). Adjemian~\cit{8} shows
+that PEG6 diluent reduces thrombin cleavage but not trypsin; the MMP-9
+effect on our PEG6-diluted system is an experimental unknown~\FLAG.
+
+\subsection{The measurement protocol}
+
+\begin{enumerate}[label=\arabic*.,noitemsep,leftmargin=*]
+  \item Take SWV voltammogram before incubation: record $A_{\rm MB}(0)$ (MB peak area) and $A_{\rm Fc}$ (Fc peak area).
+  \item Incubate electrode in wound-swab extract for time $T$.
+  \item Take second SWV voltammogram: record $A_{\rm MB}(T)$.
+  \item Compute ratiometric cleavage fraction:
+    $\Fk^{\rm rec} = 1 - \bigl[A_{\rm MB}(T)/A_{\rm Fc}\bigr] / \bigl[A_{\rm MB}(0)/A_{\rm Fc}\bigr]$.
+  \item Look up $[\text{MMP-9}]$ from the calibration curve.
+\end{enumerate}
+
+\subsection{The complete forward pipeline}
+
 \[
-  [\text{MMP-9}],\;t
-  \;\xrightarrow{\text{kinetics (Sec.~VII)}}\; \Fk
-  \;\xrightarrow{\text{tether + ET (Sec.~II--III)}}\; k_0(d),\;P(d)
-  \;\xrightarrow{\text{BV-SWV (Sec.~IV--V)}}\; \DI(E)
+\begin{array}{c}
+  [\text{MMP-9}],\;T
+  \;\xrightarrow{\text{L9: pseudo-1st order}}\;
+  \Fk
+  \;\xrightarrow{\text{L8: FJC}}\;
+  P(d)
+  \;\xrightarrow{\text{L10: Marcus}}\;
+  \kzero(d) \\[6pt]
+  \xrightarrow{\text{L11: BV-SWV ODE}}\;
+  \DI(E;\Fk)
+  \;\xrightarrow{\text{L12: Gauss fit}}\;
+  A_{\rm MB}
+  \;\xrightarrow{\text{L13: ratio}}\;
+  \Fk^{\rm rec}
+\end{array}
 \]
 
-\subsection{How to read this report}
-
-Each section opens with the physical picture, then derives the equations that
-formalise it, and closes with a \textbf{Key result} box. Every equation is
-followed by a plain-English gloss beginning with \textit{This says.} Parameters
-are tabulated at the section where they first appear. The code implementing
-all steps is in \texttt{swv\_forward\_model.py}.
-
-All parameter values are confirmed from papers physically present in
-\texttt{papers/swv\_forward\_model/} or cross-referenced from other layer paper
-folders as noted. Values that remain unconfirmed are labelled \FLAG{}.
-
-%=======================================================================
-\section{Tether Geometry: Where Does MB Sit?}
-\label{sec:pd}
-
-\subsection{Physical picture}
-
-The gold electrode surface is coated with a mixed self-assembled monolayer (SAM).
-The active component is our peptide probe: a PEG6 spacer (six ethylene oxide units)
-anchors to the gold via a thiol group, the ten-residue peptide SGKIPRTLTA extends
-from the PEG6 tip, and MB is attached at the far end. When only the peptide probe is
-present, 6-mercaptohexanol (MCH) passivates the background surface; when the Fc
-reference is co-deposited, MCH is omitted (Lab note, Jaden Potishko, Apr 2026).
-
-At body temperature in wound fluid, the peptide chain is flexible. Rather than
-sitting at a fixed distance, MB thermally fluctuates across a range of distances
-from the gold surface. Figure~\ref{fig:valid}C shows this: $P(d)$ is the probability
-density of finding MB at distance $d$ from the gold.
-
-\textbf{Why does this matter?} Because electron transfer probability falls
-exponentially with distance. A probe with MB 10~\AA\ from the gold has a rate
-orders of magnitude higher than one with MB at 25~\AA. The voltammogram is the
-average over all these probes, and that average is dominated by the shape of $P(d)$.
-
-\subsection{Freely jointed chain (FJC) model}
-
-We model the peptide as a \textbf{freely jointed chain}: $N_K$ rigid segments of
-length $b$ joined at random orientations, like links in a necklace. This is the
-simplest polymer model that captures the key physics of an unstructured flexible
-chain. More elaborate models (worm-like chain, all-atom MD) are listed in
-Section~\ref{sec:limits} as future work.
-
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\toprule
-\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Source} \\
-\midrule
-Residue count & $N_{\text{res}}$ & 10 & SGKIPRTLTA \\
-Contour length per residue & $\ell_0$ & 0.38 nm & standard \\
-Kuhn length & $b$ & 0.76 nm & Kohn 2004~\cit{2} \\
-PEG6 spacer (Flory, dilute) & $d_{\text{PEG}}$ & 1.40 nm & Layer 8 model \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\vspace{0.5em}
-Since each Kuhn segment spans two residues ($b = 2\ell_0$), the number of Kuhn
-segments in the ten-residue peptide is $N_K = N_{\text{res}} / 2 = 5$.
-
-The mean-squared end-to-end distance of the chain:
-\begin{equation}
-  \langle r^2 \rangle = N_K\, b^2 = 5 \times (0.76)^2 = 2.888\;\text{nm}^2
-  \label{eq:r2}
-\end{equation}
-\says{a longer or stiffer chain (larger $N_K b^2$) pushes MB farther from the surface on average.}
-
-Because the chain is isotropic, the three spatial directions ($x$, $y$, $z$) are
-equivalent. The standard deviation of MB distance along the surface-normal axis
-($z$, pointing away from gold) is:
-\begin{equation}
-  \sigma_z = \sqrt{\langle r^2 \rangle / 3} = \sqrt{2.888/3} = 0.981\;\text{nm}
-  \label{eq:sigmaz}
-\end{equation}
-\says{$\sigma_z$ is the typical spread of MB positions above the PEG6 tip. It is roughly 1~nm, set by the peptide chain entropy.}
-
-\subsection{The distance distribution $P(d)$}
-
-The PEG6 spacer holds the base of the peptide at a mean height $d_{\text{PEG}} = 1.40$~nm
-above the gold surface (Flory radius in dilute regime, Layer 8 model at
-$\Gamma_p = 3$~pmol~cm$^{-2}$). This acts as an effective hard wall for the peptide FJC.
-Above this, the peptide chain end-position follows a 3D Gaussian shifted by $d_{\text{PEG}}$,
-giving a half-Gaussian:
-\begin{equation}
-  P(d) = \frac{\sqrt{2/\pi}}{\sigma_z}
-         \exp\!\left(-\frac{(d - d_{\text{PEG}})^2}{2\sigma_z^2}\right),
-         \qquad d \geq d_{\text{PEG}}
-  \label{eq:Pd}
-\end{equation}
-\says{the most likely position for MB is just above the PEG6 tip ($d_{\text{PEG}} = 14$~\AA);
-it becomes progressively less likely farther away, with spread $\sigma_z \approx 10$~\AA.}
-
-The mean distance (centre of mass of the distribution):
-\begin{equation}
-  \langle d \rangle = d_{\text{PEG}} + \sigma_z\sqrt{2/\pi}
-  = 1.398 + 0.784 = 2.182\;\text{nm} = 21.8\Ang
-  \label{eq:dmean}
-\end{equation}
-
-\begin{keyresult}
-\textbf{Key result:} MB sits at a mean distance of 21.8~\AA\ from the gold surface,
-with a spread of 9.8~\AA\ ($\sigma_z$). The distribution peaks at the PEG6 tip (14.0~\AA)
-and decays into a tail at larger distances. See Figure~\ref{fig:valid}C.
-\end{keyresult}
-
-%=======================================================================
-\section{Electron Transfer Kinetics: How Fast Does MB React?}
-\label{sec:ket}
-
-\subsection{Physical picture}
-
-For MB to undergo redox chemistry, an electron must tunnel through the molecular
-bridge between the electrode and MB. Tunnelling probability falls off exponentially
-with distance: every extra \AA ngstr\"{o}m makes tunnelling roughly $e^{-1} = 37$\%
-as likely. This means the electron transfer rate $k_0$ is extremely sensitive to
-exactly where MB sits, which is why the $P(d)$ distribution calculated above
-matters so much.
-
-The tunnelling rate also depends on the medium: electrons tunnel faster through
-conjugated aromatic systems than through saturated alkyl chains. The PEG6 spacer
-plus peptide backbone is an insulating bridge, so the decay is rapid. The exact
-$\beta$ for PEG-linked probes has not been confirmed from our paper set
-(Smalley 1995~\cit{3} characterises alkanethiol SAMs, not PEG). This is
-flagged as the key experimental parameter to measure at Layer 15 via EIS.
-
-\subsection{Tunnelling decay equation}
-
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\toprule
-\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Source} \\
-\midrule
-Tunnelling decay constant & $\beta$ & 1.0~\AA$^{-1}$ & Smalley 1995~\cit{3} \FLAG \\
-Rate at PEG6 tip & $k_{\text{ref}}$ & $\approx 127$~s$^{-1}$ & derived \FLAG \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The rate at any distance $d$ beyond the PEG6 tip:
-\begin{equation}
-  k_0(d) = k_{\text{ref}} \exp\!\bigl(-\beta (d - d_{\text{PEG}})\bigr)
-  \label{eq:kETd}
-\end{equation}
-\says{each additional \AA ngstr\"{o}m of distance beyond the PEG6 tip reduces the rate by a factor $e^{-1.0} = 0.37$. The FLAG on $\beta$ means this is an estimate until EIS is done.}
-
-The reference rate at the PEG6 tip, using $\beta = 1.0$~\AA$^{-1}$ (alkanethiol value as placeholder):
-\begin{equation}
-  k_{\text{ref}} = 1.5\times10^8 \times \exp\!\bigl(-1.0 \times 14.0\bigr)
-  = 127\;\text{s}^{-1}
-  \label{eq:kETmean}
-\end{equation}
-
-\textbf{Implication for $\kappa$:} At $d_{\text{PEG}}$ (PEG6 tip), $k_0 = 127$~s$^{-1}$
-and $\kappa = 4.2$ at 15~Hz (quasi-reversible, signal exists). At the mean peptide
-distance $\langle d \rangle = 21.8$~\AA, $k_0 = 0.05$~s$^{-1}$ and $\kappa = 0.002$
-(deep irreversible, negligible contribution). The SWV signal therefore comes
-predominantly from probes near $d_{\text{PEG}}$ (the P(d) peak), not from the
-mean-distance probes. This is the key difference from the C6 alkyl case: the PEG6
-spacer shifts the dominant signal population to the $P(d)$ peak rather than the mean.
-
-\subsection{The dimensionless kinetic parameter $\kappa$}
-
-\textbf{Whether MB responds measurably to the SWV waveform depends not on $k_0$
-alone, but on how fast it is relative to the SWV pulse duration.} This comparison
-is captured by the dimensionless parameter:
-\begin{equation}
-  \kappa = k_0 \times \tau = \frac{k_0}{2f}
-  \label{eq:kappa}
-\end{equation}
-\says{$\kappa$ is the number of redox events that can happen during one SWV half-pulse of duration $\tau = 1/(2f)$.}
-
-There are three regimes:
-\begin{itemize}[noitemsep,leftmargin=*]
-  \item $\kappa \gg 1$ (reversible): the reaction equilibrates fully during the pulse.
-    Net current $\DI \to 0$ because no charge accumulates between pulses. Sensitivity is low.
-  \item $\kappa \ll 1$ (irreversible): the reaction barely starts during the pulse.
-    Net current again small. Sensitivity is low.
-  \item $\kappa \approx 1$ (quasi-reversible): the reaction partially equilibrates.
-    This is where $\DI$ is maximised and most sensitive to changes in $k_0$.
-\end{itemize}
-
-With the corrected PEG6 spacer geometry \FLAG, the key $\kappa$ values are:
-\begin{equation}
-  \kappa_{\text{tip}} = \frac{k_{\text{ref}}}{2f} = \frac{127}{30} = 4.2
-  \qquad\text{(at PEG6 tip, quasi-reversible)}
-  \label{eq:kappa_val}
-\end{equation}
-\begin{equation}
-  \kappa_{\text{mean}} = \frac{k_0(\langle d \rangle)}{2f} = \frac{0.05}{30} = 0.002
-  \qquad\text{(at mean distance, deep irreversible)}
-  \label{eq:kappa_mean}
-\end{equation}
-
-The SWV signal is dominated by probes at $d \approx d_{\text{PEG}}$ (where $P(d)$
-peaks and $\kappa \approx 4$). Probes at the mean distance contribute negligibly.
-This changes how the optimum frequency is identified: the relevant $\kappa$ is
-$\kappa_{\text{tip}} \approx 4$, not $\kappa_{\text{mean}}$.
-The Fc reference operates at $\kappa_{\text{Fc}} = 9{,}000$ (reversible), unchanged.
-
-\begin{keyresult}
-\textbf{Key result (FLAG):} With PEG6 spacer and $\beta = 1.0$~\AA$^{-1}$ (alkanethiol
-placeholder), $k_{\text{ref}} = 127$~s$^{-1}$ at the PEG6 tip giving $\kappa = 4.2$
-(quasi-reversible). The signal comes from the tip of the $P(d)$ distribution, not
-the mean. $\beta$ for PEG6+peptide must be confirmed by EIS to resolve this.
-\end{keyresult}
-
-%=======================================================================
-\section{The BV-SWV Simulator: Waveform to Current}
-\label{sec:bvsim}
-
-\subsection{What SWV does}
-
-Square-wave voltammetry (SWV) applies a voltage that steps along a staircase, with
-a square pulse superimposed at each step. At each staircase potential $E_n$, the
-voltage toggles between $E_n + \Esw$ (forward half-pulse) and $E_n - \Esw$
-(backward half-pulse), each lasting $\tau = 1/(2f)$ seconds. The key measurement
-is the \textbf{difference} in current at the end of each forward and backward
-half-pulse:
-\[
-  \DI(E_n) = I_{\text{forward}} - I_{\text{backward}}
-\]
-Subtracting the two half-pulses cancels the background (capacitive) current and
-doubles the faradaic (redox) signal. The result is a peak-shaped voltammogram
-centred at the formal potential $E^{\circ\prime}$ of MB.
-
-\subsection{The ODE governing surface coverage}
-
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\toprule
-\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Source} \\
-\midrule
-Transfer coefficient & $\alpha$ & 0.37 & \cit{1} Table~1 \\
-Electron count & $n$ & 2 & Baker 2006~\cit{6} \\
-Formal potential (MB) & $E^{\circ\prime}$ & $-0.250$~V vs.\ Ag/AgCl & \cit{6} \\
-Probe surface density & $\Gtot$ & $3\times10^{-12}$~mol~cm$^{-2}$ & \cit{5} \\
-Electrode area & $A$ & 0.0177~cm$^2$ & 1.5~mm disc \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-During each half-pulse, the fraction of MB that is in the reduced form
-($\Gred$, mol~cm$^{-2}$) evolves according to a first-order ODE:
-\begin{equation}
-  \frac{d\Gred}{dt} = k_f \Gox - k_b \Gred
-  \label{eq:ode}
-\end{equation}
-\says{reduction (rate $k_f$) increases $\Gred$; oxidation (rate $k_b$) decreases it. $\Gox = \Gtot - \Gred$ is the oxidised fraction.}
-
-The rates $k_f$ and $k_b$ depend on the applied potential through the
-Butler--Volmer equations:
-\begin{align}
-  k_f(E) &= k_0 \exp\!\Bigl(-\frac{\alpha n F (E - E^{\circ\prime})}{RT}\Bigr)
-  \label{eq:kf}\\[4pt]
-  k_b(E) &= k_0 \exp\!\Bigl(\frac{(1-\alpha) n F (E - E^{\circ\prime})}{RT}\Bigr)
-  \label{eq:kb}
-\end{align}
-\says{At $E \ll E^{\circ\prime}$, $k_f \gg k_b$: reduction is fast and MB is fully reduced. At $E \gg E^{\circ\prime}$, $k_b \gg k_f$: MB is fully oxidised. The peak current arises in between, around $E^{\circ\prime}$.}
-
-\subsection{Exact solution for each half-pulse}
-
-Because Eq.~(\ref{eq:ode}) is linear in $\Gred$, it has an exact analytical
-solution over one half-pulse of duration $\tau$, starting from initial coverage
-$\Gred^{(0)}$:
-\begin{equation}
-  \Gred(\tau) = \Geq + \bigl(\Gred^{(0)} - \Geq\bigr)\,e^{-(k_f+k_b)\tau}
-  \label{eq:Gred_soln}
-\end{equation}
-\says{coverage relaxes exponentially toward the equilibrium value $\Geq$. The exponential decay constant $(k_f+k_b)\tau = \kappa$ sets how far it gets in time $\tau$.}
-
-where the equilibrium reduced coverage is:
-\begin{equation}
-  \Geq = \frac{k_f}{k_f + k_b}\,\Gtot
-  \label{eq:Geq}
-\end{equation}
-\says{at $E = E^{\circ\prime}$, $k_f = k_b$ so $\Geq = \Gtot/2$ (half reduced, half oxidised). Far from $E^{\circ\prime}$, one of $k_f, k_b$ dominates and $\Geq$ goes to 0 or $\Gtot$.}
-
-The exponent $(k_f + k_b)\tau$ is precisely $\kappa$. When $\kappa \gg 1$, the
-exponential $e^{-\kappa} \to 0$ and coverage fully reaches $\Geq$ during the pulse.
-When $\kappa \ll 1$, the exponential $\approx 1$ and almost no change occurs.
-
-\subsection{Sampled current and net $\DI$}
-
-The anodic current sampled at the end of each half-pulse:
-\begin{equation}
-  I = nFA\bigl(k_b\,\Gred(\tau) - k_f\,\Gox(\tau)\bigr)
-  \label{eq:Ianodic}
-\end{equation}
-\says{current is positive (anodic) when oxidation dominates. At equilibrium, $k_b \Gred = k_f \Gox$ exactly and $I = 0$. Current flows because the coverage has not fully relaxed to $\Geq$ by time $\tau$.}
-
-The forward and backward half-pulses are chained across the staircase: the
-coverage at the end of the forward pulse becomes the starting coverage for the
-backward pulse, and so on. The simulator runs a 5-pulse burn-in at the starting
-potential before scanning to ensure periodic steady state.
-
-Figure~\ref{fig:valid}A shows a unit test: the simulator run at $\kappa = 10$
-produces a peak with FWHM = 60.6~mV, within the expected 40--90~mV range for
-$n = 2$, $\Esw = 25$~mV.
-
-\begin{keyresult}
-\textbf{Key result:} The BV-SWV simulator converts $k_0$ and applied potential $E$
-into a current sample in one analytical step (no numerical ODE integration needed).
-Each half-pulse has an exact closed-form solution (Eq.~\ref{eq:Gred_soln}).
-The sensitivity to $k_0$ is maximal near $\kappa = 1$, which is where our peptide
-system operates.
-\end{keyresult}
-
-%=======================================================================
-\section{Distance-Averaged Voltammogram: Combining $P(d)$ and $\DI$}
-\label{sec:avg}
-
-\subsection{Physical picture}
-
-We now have $P(d)$ (Section~II) and know how to compute $\DI$ for any $k_0$
-(Sections~III--IV). The measured voltammogram is the sum over \emph{all} probes,
-each at its own distance $d$, each contributing its own current.
-
-Critically, probes with MB very close to the gold (small $d$, large $k_0$, large
-$\kappa$) are in the reversible limit and contribute \emph{almost no} net current.
-Probes near the PEG6 tip ($d \approx d_{\text{PEG}} = 14$~\AA, $\kappa \approx 4$) dominate
-the signal. This makes the measured voltammogram shape robust: even if a few probes
-sit unusually close to the gold, they do not dominate.
-
-\subsection{The averaging integral}
-
-After cleavage fraction $\Fk$ of probes have lost their MB label, only the remaining
-$(1 - \Fk)$ fraction contribute current. The total voltammogram:
-\begin{equation}
-  \DI(E;\,\Fk) = (1-\Fk)\,\Gtot\,A
-    \int_{d_{\text{PEG}}}^{\infty} P(d)\;\DI_{\text{norm}}\!\bigl(E;\,k_0(d)\bigr)\;dd
-  \label{eq:DI_avg}
-\end{equation}
-\says{the measured current is $(1-\Fk)$ times the integral over all probe distances. Each distance contributes proportionally to how many probes sit there [$P(d)$] and how much current each generates [$\DI_{\text{norm}}(E;\,k_0(d))$].}
-
-This is the \textbf{central equation of the model}. It connects the biological
-input ($\Fk$) to the electrochemical output ($\DI(E)$) through two layers of
-physics: the tether geometry $P(d)$ and the ET kinetics $k_0(d)$.
-
-The $(1-\Fk)$ factor is exact when cleavage is binary (each probe is either fully
-intact or fully cleaved). This is a good approximation because MMP-9 cleaves the
-Arg|Thr bond stoichiometrically, and the released TLTA-MB fragment diffuses away, leaving a PEG6-thiol stub with no MB label.
-
-\subsection{Numerical implementation}
-
-The integral in Eq.~(\ref{eq:DI_avg}) is evaluated over 80 distance points
-spanning $d_{\text{PEG}}$ to $d_{\text{PEG}} + 5\sigma_z$. At each point, the
-BV-SWV simulation runs the pulse chain described in Section~IV. Gauss quadrature
-over 80 points is sufficient because $P(d)$ is smooth and the integrand varies
-smoothly with $d$.
-
-Figure~\ref{fig:calib}A shows the resulting voltammograms for six values of
-$\Fk$: 0, 0.2, 0.4, 0.6, 0.8, and 0.95. The peak shrinks proportionally
-with $(1 - \Fk)$ while the peak position and width stay constant.
-
-\begin{keyresult}
-\textbf{Key result:} Cleavage reduces the peak area by exactly $(1 - \Fk)$ and
-leaves the peak shape (position, FWHM) unchanged. This is the foundation of the
-calibration in Section~VI.
-\end{keyresult}
-
-%=======================================================================
-\section{Calibration: Reading $\Fk$ from the Voltammogram}
-\label{sec:calib}
-
-\subsection{Extracting the peak area}
-
-The voltammogram $\DI(E;\,\Fk)$ is well described by a Gaussian in potential:
-\begin{equation}
-  \DI_{\text{fit}}(E) = A_{\text{peak}}
-    \exp\!\Bigl(-\frac{(E - E_{\text{peak}})^2}{2\sigma_E^2}\Bigr)
-  \label{eq:gauss}
-\end{equation}
-The integrated area $A_{\text{area}} = A_{\text{peak}}\,\sigma_E\sqrt{2\pi}$ (in
-A$\cdot$V) is more reproducible than peak height alone because it is insensitive
-to small shifts in $E_{\text{peak}}$ or FWHM across electrodes.
-
-\subsection{Calibration equation}
-
-Because the voltammogram amplitude is proportional to $(1-\Fk)$ (Eq.~\ref{eq:DI_avg}),
-the calibration is linear. The cleavage fraction is recovered by:
-\begin{equation}
-  \Fk = 1 - \frac{A_{\text{area}}(\text{after})}{A_{\text{area}}(\text{before})}
-  \label{eq:Fk_recovery}
-\end{equation}
-\says{the fractional drop in peak area equals the fraction of probes cleaved. A 30\% drop means 30\% of probes were cut.}
-
-Figure~\ref{fig:calib}B confirms this: the maximum deviation from linearity across
-$\Fk \in [0, 0.95]$ is only 2\%, confirming that Eq.~(\ref{eq:Fk_recovery}) is
-the correct readout equation.
-
-Figure~\ref{fig:calib}C confirms that the peak position $E_{\text{peak}}$ and FWHM
-do not drift with $\Fk$ (variation $<$ 3~mV). If these were shifting significantly,
-it would indicate non-binary cleavage behaviour or surface artefacts.
-
-\begin{keyresult}
-\textbf{Key result:} $A_{\text{area}}$ is linear in $(1 - \Fk)$ to within 2\%.
-Reading $\Fk$ from the voltammogram requires only the ratio of peak areas
-before and after incubation.
-\end{keyresult}
-
-%=======================================================================
-\section{Ferrocene Reference: Correcting for Surface Variability}
-\label{sec:ratio}
-
-\subsection{The problem}
-
-The absolute MB peak area varies $\pm$15\% between electrodes because SAM deposition
-is not perfectly reproducible. Without correction, this electrode-to-electrode
-variability would mask the cleavage signal. For example, a 15\% drop in area due
-to a poorly formed SAM looks identical to a 15\% drop due to cleavage.
-
-\subsection{The solution: an internal reference}
-
-Ferrocene (Fc) is co-deposited on the same electrode as a reference molecule. Fc
-is structurally simple, electrochemically stable, and completely insensitive to
-MMP-9 (it is not a peptide). Its peak area $A_{\text{Fc}}$ tracks the same SAM
-variability as MB but does not change when protease is added. Therefore, the ratio
-$A_{\text{MB}} / A_{\text{Fc}}$ cancels the common variability.
-
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\toprule
-\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Source} \\
-\midrule
-Fc transfer rate & $k_{0,\text{Fc}}$ & $2.7\times10^5$~s$^{-1}$ & \cit{1} Fig.~3 \\
-Fc formal potential & $E^{\circ\prime}_{\text{Fc}}$ & $+0.210$~V vs.\ Ag/AgCl & \cit{1} \\
-Fc $\kappa$ at 15~Hz & $\kappa_{\text{Fc}}$ & 9000 (reversible) & calculated \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The ratiometric signal, normalised to its value before protease addition:
-\begin{equation}
-  \rho(t) = \frac{R(t)}{R(0)}, \qquad R(t) = \frac{A_{\text{MB}}(t)}{A_{\text{Fc}}(t)}
-  \label{eq:rho}
-\end{equation}
-\says{$\rho = 1$ when no probes are cleaved; $\rho < 1$ after cleavage reduces the MB signal. The Fc signal appears in both $R(t)$ and $R(0)$ and cancels out, removing surface drift.}
-
-The recovered cleavage fraction:
-\begin{equation}
-  \Fk(t) = 1 - \rho(t)
-  \label{eq:Fk_rho}
-\end{equation}
-\says{a 20\% drop in $\rho$ means 20\% of probes were cleaved. This follows from Eq.~(\ref{eq:Fk_recovery}) with Fc providing the drift reference.}
-
-Because $\kappa_{\text{Fc}} = 9000 \gg 1$, the Fc peak is in the fully reversible
-regime: its area is insensitive to $k_{0,\text{Fc}}$ variations and frequency
-changes, making it a stable reference. White and Plaxco (2010)~\cit{7} confirmed
-that this ratiometric approach suppresses drift by two orders of magnitude in
-electrochemical aptamer sensors.
-
-Figure~\ref{fig:ratio} shows the Fc voltammogram and confirms that the recovered
-$\Fk$ matches the true $\Fk$ to within 3.4\% across the full range.
-
-\begin{keyresult}
-\textbf{Key result:} Ratiometric correction with Fc reduces electrode-to-electrode
-variability from $\pm$15\% to $<$3.4\%, enabling detection of cleavage fractions
-down to $\sim$10\%.
-\end{keyresult}
-
-%=======================================================================
-\section{From MMP-9 Concentration to Voltammogram}
-\label{sec:concmap}
-
-\subsection{Kinetic link: concentration to cleavage fraction}
-
-Given a free MMP-9 concentration and an incubation time, the cleavage fraction
-follows from pseudo-first-order kinetics:
-\begin{equation}
-  \Fk(t) = 1 - \exp\!\bigl(-k_{\text{eff,surf}}\,[\text{MMP-9}]\,t\bigr)
-  \label{eq:Fk_kinetics}
-\end{equation}
-\says{$\Fk$ starts at zero (no probes cleaved) and rises toward 1 as more probes are cut. It rises faster at higher MMP-9 concentration and with longer incubation.}
-
-This is the exact solution to the first-order cleavage ODE: the rate at which intact
-probes are cut is proportional to the MMP-9 concentration and to how many intact
-probes remain. ``Pseudo-first-order'' means we treat [MMP-9] as constant throughout
-the incubation, which is valid when enzyme concentration ($\geq$6~nM) is much larger
-than the surface peptide density ($\approx$10~pM at $\Gtot = 3\times10^{-12}$~mol~cm$^{-2}$,
-0.0177~cm$^2$ electrode).
-
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\toprule
-\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} & \textbf{Source} \\
-\midrule
-Solution $k_{\text{cat}}/K_m$ & --- & 67{,}500~M$^{-1}$s$^{-1}$ & Kridel 2001~\cit{4} \\
-Surface correction & $\eta$ & 0.20 & Layer 8 \FLAG \\
-Effective surface rate & $k_{\text{eff,surf}}$ & 13{,}500~M$^{-1}$s$^{-1}$ & derived \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The surface correction factor $\eta$ accounts for the fact that peptides on a
-surface are oriented, crowded, and partly blocked by the MCH background. The
-central estimate is $\eta = 0.20$ (20\% of solution activity). This is the
-largest unconfirmed number in the whole pipeline, and must be measured
-experimentally at Layer~15. The LOD scales inversely with $\eta$.
-
-\subsection{Validation against Dauphin-Ducharme 2017}
-
-\textbf{We tested the BV-SWV simulator against published experimental voltammograms
-from Dauphin-Ducharme et al.\ (2017)~\cit{1}.} Their system used MB on DNA
-(different tether, higher $k_0 = 5{,}000$~s$^{-1}$).
-
-An important subtlety: Dauphin-Ducharme model their MB as a \emph{diffusing}
-species in a 150~$\mu$m thin-layer cell (a COMSOL PDE simulation). Our BV-SWV
-simulator models MB as \emph{covalently attached} (no diffusion). The two models
-describe different physics and give different predictions when $\kappa \gg 1$.
-Specifically, in our surface-confined model, the sampled current scales as:
-\[
-  I_{\text{sampled}} \propto (\Gred^{(0)} - \Geq)\,e^{-\kappa}\,\kappa
-\]
-For $\kappa \gg 1$, $e^{-\kappa} \to 0$ and net current vanishes. This is
-physically correct for a covalently attached label. In the thin-layer cell,
-diffusion continues to drive current even at large $\kappa$, giving a non-zero
-signal. Therefore, we can only compare our model to theirs in the quasi-reversible
-regime ($\kappa \lesssim 12$).
-
-\begin{center}
-\begin{tabular}{@{}lrrrl@{}}
-\toprule
-\textbf{System} & $k_0$ (s$^{-1}$) & $f$ (Hz) & $\kappa$ & \textbf{Status} \\
-\midrule
-DD DNA at 1000 Hz & 5000 & 1000 & 2.5 & BV-ODE valid, FWHM 60~mV \\
-DD DNA at 500 Hz  & 5000 & 500  & 5.0 & BV-ODE valid, FWHM 60~mV \\
-DD DNA at 200 Hz  & 5000 & 200  & 12.5 & BV-ODE valid, FWHM 56~mV \\
-\midrule
-DD DNA at 100 Hz  & 5000 & 100  & 25 & Outside range: $e^{-25} \approx 0$ \\
-DD dithiol at 100 Hz & 50\,000 & 100 & 250 & Outside range \\
-\midrule
-Our peptide (15 Hz) & 31 & 15 & 1.04 & BV-ODE valid, FWHM 59~mV \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent
-In the valid range ($\kappa = 2.5$--$12.5$), our simulator reproduces the
-56--60~mV FWHM reported by Dauphin-Ducharme, the anodic sign, and the
-peak position within 5~mV. Figure~\ref{fig:conc}A shows the comparison.
-At 100~Hz ($\kappa = 25$), the BV-ODE correctly gives near-zero current for a
-surface-confined label, while their thin-layer cell gives a large current because
-diffusion drives it. These are consistent with their respective physical models.
-
-\begin{keyresult}
-\textbf{Key result:} At $\kappa \lesssim 12$, the surface-confined BV-SWV model
-agrees with Dauphin-Ducharme to within 4~mV FWHM. Our operating point
-($\kappa_{\text{tip}} = 4.2$, 15~Hz) is well within this valid range. The surface correction
-factor $\eta$ \FLAG{} is the only unconfirmed number.
-\end{keyresult}
-
-\subsection{Predicted voltammograms at clinical MMP-9 concentrations}
-
-Figure~\ref{fig:conc}B shows predicted voltammograms at 0, 1, 3, 6, 10, and
-30~nM MMP-9, at $t = 30$~min. The 6~nM healing/chronic wound boundary (Layer~0)
-produces $\Fk = 13.6\%$, a 13.6\% amplitude reduction detectable above the
-3.4\% noise threshold with the ratiometric correction.
-
-Figure~\ref{fig:conc}C shows the clinical calibration curves $A_{\text{MB}}(\%)$
-vs [MMP-9] at incubation times of 10--60~min. Longer incubation gives higher
-sensitivity (lower LOD) but also larger risk of surface drift.
-
-%=======================================================================
-\section{Figures}
-\label{sec:figs}
+This report derives and validates every arrow in this chain.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{../figures/fig_SWV1_validation.pdf}
+  \includegraphics[width=0.95\textwidth]{../figures/fig_SWV0_assembly.pdf}
   \caption{
-    \textbf{A: Simulator unit test.}
-    The BV-SWV simulator run at $\kappa = 10$ (solid red) overlaid on the
-    Laviron (1979) linear-potential LPSV peak shape (dashed black, the limiting
-    case $\Esw \to 0$). FWHM = 60.6~mV, within the expected 40--90~mV range.
-    The two curves differ in width because $\Esw = 25$~mV $\gg RT/(nF) = 12.8$~mV:
-    the SWV pulse is large enough to broaden the peak beyond the Laviron limit.
-    \textbf{B: Frequency dependence in the valid $\kappa$ regime.}
-    BV-SWV at MB-DNA parameters ($k_0 = 5{,}000$~s$^{-1}$, $\alpha = 0.37$,
-    $E^{\circ\prime} = -250$~mV) for three quasi-reversible frequencies:
-    1000~Hz ($\kappa = 2.5$), 500~Hz ($\kappa = 5$), 200~Hz ($\kappa = 12.5$).
-    FWHM is 56--60~mV across all three, matching Dauphin-Ducharme Fig.~5B.
-    Grey circles are digitised DD data at 100~Hz ($\kappa = 25$): they fall
-    outside the surface-confined ODE valid range (see Section~VII) and are
-    shown for regime comparison. At $\kappa_{\text{tip}} = 4.2$ (our peptide,
-    PEG6 tip, 15~Hz), FWHM~$= 58.6$~mV.
-    \textbf{C: Tether geometry.}
-    $P(d)$ (left axis, blue) and $k_0(d)$ (right axis, red dashed) as functions
-    of MB-to-gold distance. The half-Gaussian $P(d)$ peaks at the PEG6 tip
-    (14.0~\AA); the mean is at 21.8~\AA. The ET rate spans four decades across
-    the sampled range.
+    \textbf{Physical electrode assembly.}
+    \textbf{A}: Cross-section of the gold electrode showing the mixed SAM.
+    Signal probes (left): Au--S--PEG6--peptide--MB with MMP-9 cleaving the
+    peptide and releasing the MB fragment. Reference probes (right):
+    Au--S--C6--Fc, not cleavable.
+    \textbf{B}: The half-Gaussian distance distribution $P(d)$ (Eq.~\ref{eq:Pd})
+    with hard wall at $d_{\rm PEG}=14.0$~\AA, mean at 21.8~\AA,
+    and $\sigma_z = 9.8$~\AA\ marked.
+  }
+  \label{fig:assem}
+\end{figure}
+
+%=======================================================================
+\section{Tether Geometry: Where Is the MB Label?}
+\label{sec:geometry}
+
+\subsection{Why geometry matters}
+
+The SWV peak area is proportional to the number of electroactive MB labels
+that can transfer electrons to the gold surface within the half-pulse
+time $\tau = 1/(2\Fswv)$. Because the MB label sits at a flexible tether end,
+it samples a distribution of distances from the gold. The ET rate decays
+exponentially with distance (Section~\ref{sec:ET}), so only probes
+close to the gold contribute measurable current. Understanding the
+distance distribution $P(d)$ is therefore the key to understanding
+which probes produce signal.
+
+\subsection{PEG6 spacer: hard wall from the Flory radius}
+
+PEG6 has 6 ethylene oxide (EO) units. Each EO unit has a projected
+length $l_{\rm EO} = 0.35$~nm. The PEG Kuhn length is
+$l_{\rm Kuhn} = 0.76$~nm, giving:
+\begin{equation}
+  N_{K,\rm PEG} = \frac{N_{\rm EO}\,l_{\rm EO}}{l_{\rm Kuhn}}
+  = \frac{6 \times 0.35}{0.76} = 2.76
+  \quad\text{(Kuhn segments)}
+  \label{eq:NkPEG}
+\end{equation}
+\says{The number of Kuhn segments is the number of independent random-walk
+steps in the chain. 2.76 means PEG6 has fewer than 3 truly independent
+orientational units: not a long flexible chain but not a rigid rod either.}
+
+At the dilute probe densities used here
+($\Grtot = 3 \times 10^{-12}$~mol~cm$^{-2}$), PEG6 chains do not
+interact with each other. In this dilute ``mushroom'' regime, the
+end-to-end distance is characterised by the Flory radius:
+\begin{equation}
+  R_F = N_{K,\rm PEG}^{3/5}\,l_{\rm Kuhn}
+  = (2.76)^{0.60} \times 0.76
+  = 1.94 \times 0.76 = 1.398\;\text{nm}
+  \label{eq:RF}
+\end{equation}
+\says{The exponent $3/5$ is the Flory exponent for a polymer in a good
+solvent. For PEG in aqueous buffer (good solvent), the chain swells
+and the typical end-to-end distance scales as $N^{3/5}$ rather than
+$N^{1/2}$ (ideal chain) or $N$ (rod). This gives $d_{\rm PEG} = 14.0$~\AA\
+as the hard wall below which the peptide MB label cannot sit.}
+
+\subsection{Peptide tether: freely jointed chain derivation from first principles}
+
+The FJC model is derived from elementary statistical mechanics. Consider
+a chain of $N_K$ links each of length $b$. Each link can point in any direction
+with equal probability. The $z$-displacement of link $i$ is $b\cos\theta_i$,
+where $\theta_i$ is the angle with the $z$-axis.
+
+\subsubsection{From random walk to Gaussian distribution}
+
+The total $z$-displacement is:
+\begin{equation}
+  z = \sum_{i=1}^{N_K} b\cos\theta_i
+  \label{eq:zsum}
+\end{equation}
+Each term has mean zero (random orientation) and variance:
+\begin{equation}
+  \text{Var}(b\cos\theta_i) = b^2\,\langle\cos^2\theta\rangle = \frac{b^2}{3}
+  \label{eq:var_link}
+\end{equation}
+\says{The factor of 3 comes from isotropy: $\langle\cos^2\theta\rangle = 1/3$
+when directions are uniformly distributed on a sphere. This is why
+the $z$-variance is one-third of the total.}
+
+By the central limit theorem ($N_K$ independent terms), the distribution
+of $z$ is Gaussian with variance:
+\begin{equation}
+  \langle z^2 \rangle = N_K \cdot \frac{b^2}{3} = \frac{N_K b^2}{3}
+  \label{eq:varz}
+\end{equation}
+The full 3D variance ($\langle r^2 \rangle = 3\langle z^2\rangle$) gives:
+\begin{equation}
+  \langle r^2 \rangle = N_K b^2
+  \label{eq:r2}
+\end{equation}
+
+\subsubsection{FJC parameters for SGKIPRTLTA}
+
+From Kohn et~al.~(2004)~\cit{3}, unstructured peptides follow random-coil
+FJC scaling with $l_0 = 0.38$~nm per residue and $b = 0.76$~nm Kuhn length:
+\begin{align}
+  N_K &= \frac{N_r\,l_0}{b} = \frac{10 \times 0.38}{0.76} = 5
+  \label{eq:NK} \\
+  \langle r^2 \rangle &= N_K b^2 = 5 \times (0.76)^2 = 2.888\;\text{nm}^2
+  \label{eq:r2val} \\
+  \sigma_z &= \sqrt{\frac{\langle r^2 \rangle}{3}} = \sqrt{\frac{2.888}{3}} = 0.981\;\text{nm}
+  \label{eq:sigz}
+\end{align}
+\says{$\sigma_z = 9.81$~\AA\ is the standard deviation of the $z$-displacement
+of the peptide end above the PEG6 tip. Most probes sit within $\pm 9.81$~\AA\
+of the hard wall.}
+
+\subsection{The distance distribution $P(d)$}
+
+Let $d = d_{\rm PEG} + z$ be the total MB-to-gold distance, where
+$z \geq 0$ is the peptide $z$-displacement above the PEG6 tip.
+The half-Gaussian distribution (positive values of a zero-mean Gaussian):
+\begin{equation}
+  \boxed{
+  P(d) = \sqrt{\frac{2}{\pi}}\;\frac{1}{\sigma_z}
+  \exp\!\left(-\frac{(d - d_{\rm PEG})^2}{2\sigma_z^2}\right),
+  \quad d \geq d_{\rm PEG}
+  }
+  \label{eq:Pd}
+\end{equation}
+\says{The prefactor $\sqrt{2/\pi}$ is the normalisation constant for a
+half-Gaussian. It ensures $\int_{d_{\rm PEG}}^{\infty} P(d)\,dd = 1$.
+The distribution peaks at the hard wall $d_{\rm PEG}$, not at the mean.}
+
+The mean distance is:
+\begin{equation}
+  \langle d \rangle = d_{\rm PEG} + \sigma_z\sqrt{\frac{2}{\pi}}
+  = 14.0 + 9.81 \times 0.798 = 14.0 + 7.83 = 21.8\;\text{\AA}
+  \label{eq:dmean}
+\end{equation}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV1_geometry.pdf}
+  \caption{
+    \textbf{Tether geometry and kinetic regime.}
+    \textbf{A}: $P(d)$ (Eq.~\ref{eq:Pd}) with hard wall at $d_{\rm PEG}=14.0$~\AA,
+    mean at 21.8~\AA, and $\sigma_z=9.8$~\AA.
+    \textbf{B}: $k^0(d)$ (red, log scale) and $\kappa(d)$ (purple) at $f=15$~Hz.
+    Orange band: quasi-reversible zone. PEG6 tip: $k^0=127$~s$^{-1}$,
+    $\kappa_{\rm tip}=4.2$.
+    \textbf{C}: SWV waveform showing staircase, forward/backward pulses, and sampled endpoints.
+    \textbf{D}: Quasi-reversible optimum: $\DI_{\rm peak}$ vs $\kappa$ showing
+    maximum near $\kappa\approx1$; $\kappa_{\rm tip}=4.2$ is in the quasi-reversible zone.
+  }
+  \label{fig:geom}
+\end{figure}
+
+\begin{keyresult}
+\textbf{Key result (geometry):}
+The MB label samples a half-Gaussian distribution with hard wall at
+$d_{\rm PEG} = 14.0$~\AA\ and $\sigma_z = 9.8$~\AA.
+Because signal decays exponentially with distance, the sensor reads
+almost entirely from probes near $d_{\rm PEG}$, not from the mean distance.
+This is the fundamental reason the operating frequency of 15~Hz is optimal:
+at the PEG6 tip, $\kappa_{\rm tip} = 4.2$ (quasi-reversible maximum).
+\end{keyresult}
+
+%=======================================================================
+\section{Electron Transfer Kinetics}
+\label{sec:ET}
+
+\subsection{Marcus theory of outer-sphere electron transfer}
+
+The theoretical foundation for heterogeneous ET at our electrode is the
+Marcus outer-sphere theory~\cit{9}, which treats the reaction as:
+\[
+  \text{MB}^+({\rm ox}) + e^- \;\underset{\kb}{\overset{\kf}{\rightleftharpoons}}\;
+  \text{MBH}({\rm red})
+\]
+The free-energy surfaces for reactant (ox) and product (red) are two
+parabolas in the reaction coordinate $q$. At the intersection, the
+activation barrier is:
+\begin{equation}
+  \Delta G^\ddagger = \frac{(\Delta G^0 + \lambda)^2}{4\lambda}
+  \label{eq:Marcus_barrier}
+\end{equation}
+\says{$\lambda$ is the reorganisation energy: the energy required to
+distort the product geometry to the reactant geometry without transferring
+an electron. For Fc through alkyl SAMs on Au, $\lambda = 0.85$~eV
+(Chidsey 1991~\cit{10}). The parabola crossing defines the transition state.}
+
+At the formal potential ($E = E^{\circ\prime}$, $\Delta G^0 = 0$), the
+activation barrier is $\Delta G^\ddagger = \lambda/4$.
+
+\subsection{Butler-Volmer as the low-overpotential limit of Marcus}
+
+Expanding Eq.~\ref{eq:Marcus_barrier} to first order in overpotential
+$\eta = E - E^{\circ\prime}$:
+\begin{equation}
+  \Delta G^\ddagger(\eta) \approx
+  \frac{\lambda}{4} - \frac{\alpha\,n_e F\eta}{RT}
+  \label{eq:Marcus_BV}
+\end{equation}
+where the transfer coefficient $\alpha$ emerges from the geometry of the
+parabola crossing:
+\begin{equation}
+  \alpha = \frac{1}{2}\left(1 + \frac{n_e F\eta}{\lambda}\right)
+  \;\xrightarrow{\;\eta \to 0\;}\; \frac{1}{2}
+  \label{eq:alpha_Marcus}
+\end{equation}
+\says{In the symmetric Marcus model, $\alpha = 0.5$ exactly at $\eta = 0$.
+Dauphin-Ducharme (2017)~\cit{1} measured $\alpha = 0.37$ for MB through
+a thiol SAM, indicating a slightly asymmetric barrier.}
+
+This yields the Butler-Volmer rate expressions:
+\begin{align}
+  \kf(E) &= \kzero \exp\!\left(-\frac{\alpha\,n_e F(E - E^{\circ\prime})}{RT}\right)
+  \label{eq:kf} \\
+  \kb(E) &= \kzero \exp\!\left(\frac{(1-\alpha)\,n_e F(E - E^{\circ\prime})}{RT}\right)
+  \label{eq:kb}
+\end{align}
+At equilibrium ($E = E^{\circ\prime}$), $\kf = \kb = \kzero$ and the
+Nernst equation is recovered:
+\begin{equation}
+  \frac{\Grred}{\Grox} = e^{n_e F(E-E^{\circ\prime})/RT}
+  \label{eq:Nernst_check}
+\end{equation}
+
+\subsection{Electron tunnelling and the distance dependence}
+
+Electron transfer between MB and the gold electrode proceeds by quantum
+tunnelling through the molecular bridge. The wavefunction amplitude
+decays exponentially through a barrier of height $V_0$:
+\begin{equation}
+  \psi(d) \propto e^{-\kappa_{\rm tun}\,d}, \qquad
+  \kappa_{\rm tun} = \frac{\sqrt{2m_e V_0}}{\hbar}
+  \label{eq:psi_decay}
+\end{equation}
+The tunnelling probability (and hence the ET rate) scales as $|\psi|^2$:
+\begin{equation}
+  \kzero(d) = \kzero_0 \exp(-\beta\,d), \qquad
+  \beta = 2\kappa_{\rm tun} = \frac{2\sqrt{2m_e V_0}}{\hbar}
+  \label{eq:beta_gamow}
+\end{equation}
+\says{$\beta$ is the tunnelling decay constant: the exponential rate
+at which $k^0$ falls with distance. For a barrier height $V_0 \approx 2$~eV
+(typical organic SAM), $\beta \approx 0.95$~\AA$^{-1}$.}
+
+From Smalley et~al.~(1995)~\cit{4}, for ferrocene through alkyl SAMs:
+$\beta_n = 1.21 \pm 0.05$ per methylene, corresponding to
+$\beta = 1.21 / 1.27\,\text{\AA} = 0.95 \pm 0.04$~\AA$^{-1}$
+(\CONF\ for alkanethiol). The $k_0$ at zero distance extrapolates to
+$k^0_0 = 6 \times 10^8$~s$^{-1}$ (Smalley 1995~\cit{4}).
+
+Cross-check via Chidsey (1991)~\cit{10}: $k^0 = 1.3$~s$^{-1}$ for
+Fc-C16 alkyl chain at $d \approx 20.3$~\AA. Back-calculating:
+\[
+  k^0_0 = 1.3 \times e^{0.95 \times 20.3} = 1.3 \times 2.1\times10^8 = 2.7\times10^8\;\text{s}^{-1}
+\]
+This is consistent with Dauphin-Ducharme (2017)~\cit{1}: $k^0_0 = 1.5\times10^8$~s$^{-1}$.
+The anchor point gives:
+\begin{equation}
+  \kzero_{\rm ref} = k^0_0 \times e^{-\beta\,d_{\rm PEG}}
+  = 1.5 \times 10^8 \times e^{-0.95 \times 14.0/10}
+  = 1.5 \times 10^8 \times 8.4 \times 10^{-7} \approx 127\;\text{s}^{-1}
+  \label{eq:kref}
+\end{equation}
+(\FLAG\ on $k^0_{\rm ref}$ because $\beta_{\rm PEG}$ is unconfirmed.)
+
+\says{The 6-order-of-magnitude drop from $10^8$~s$^{-1}$ at contact
+to $127$~s$^{-1}$ at the PEG6 tip reflects 14~\AA\ of PEG6 that the
+electron must tunnel through. This FLAG means that if
+$\beta_{\rm PEG} < \beta_{\rm alkyl}$, the actual rate is higher and
+the signal is better.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV2_marcus.pdf}
+  \caption{
+    \textbf{From Marcus theory to the BV tunnelling model.}
+    \textbf{A}: Marcus free-energy parabolas for oxidised (reactant) and
+    reduced (product) states. Activation barrier $\Delta G^\ddagger = \lambda/4$
+    at $\Delta G^0 = 0$; reorganisation energy $\lambda = 0.85$~eV (Chidsey 1991~\cit{10}).
+    \textbf{B}: Tafel plot showing $\ln(k_f/k^0)$ and $\ln(k_b/k^0)$ vs overpotential.
+    Slopes $\pm\alpha n_e F/RT$ with $\alpha = 0.37$ (Dauphin-Ducharme~\cit{1}).
+    \textbf{C}: Wavefunction tunnelling decay $|\psi|^2 \propto e^{-2\beta d}$
+    through the molecular bridge. PEG6 tip at $d = 14.0$~\AA\ marked; \FLAG\ on
+    $\beta = 0.95$~\AA$^{-1}$ (alkanethiol value used as placeholder for PEG bridge).
+    \textbf{D}: $k^0(d)$ from our model (blue) vs Smalley 1995 (orange dashed),
+    with Chidsey 1991 data point ($k^0 = 1.3$~s$^{-1}$ at $d=20.2$~\AA).
+  }
+  \label{fig:marcus}
+\end{figure}
+
+\begin{keyresult}
+\textbf{Key result (ET kinetics):}
+At the PEG6 tip: $\kzero_{\rm ref} = 127$~s$^{-1}$, $\kappa_{\rm tip} = 4.2$ (quasi-reversible, optimal signal). At the mean distance: $\kzero_{\rm mean} = 0.05$~s$^{-1}$, $\kappa_{\rm mean} = 0.002$ (deep irreversible, negligible signal). The 15~Hz operating frequency is near-optimal for the peak of $P(d)$, not for the mean. All values carry \FLAG\ because $\beta$ for a PEG6 bridge has not been measured for our electrode.
+\end{keyresult}
+
+%=======================================================================
+\section{The Butler-Volmer Surface ODE: Derivation and Exact Solution}
+\label{sec:BV}
+
+\subsection{Why a surface ODE? The key simplification}
+
+Classical electrochemistry treats dissolved species that diffuse to
+the electrode (Fick diffusion PDE). MB is \emph{surface-confined}:
+it cannot diffuse to or from the electrode. The governing equation
+is therefore a first-order ODE in time only, with no spatial coordinate.
+This single simplification makes the system exactly solvable.
+
+\subsection{Setting up the ODE}
+
+Let $\Grred$ be the surface coverage of reduced MB (mol~cm$^{-2}$).
+The total coverage $\Grtot$ is conserved: $\Grred + \Grox = \Grtot$.
+The rate of change of $\Grred$ is:
+\begin{equation}
+  \frac{d\Grred}{dt}
+  = \kf(\Grtot - \Grred) - \kb\,\Grred
+  \label{eq:ODE_raw}
+\end{equation}
+\says{The first term is the rate of reduction (conversion of oxidised to
+reduced form); the second is the rate of oxidation (conversion of reduced
+to oxidised form). Both are first order in their respective coverages.}
+
+Collecting terms:
+\begin{equation}
+  \frac{d\Grred}{dt}
+  = \kf\,\Grtot - (\kf + \kb)\,\Grred
+  \label{eq:ODE}
+\end{equation}
+
+\subsection{Step-by-step solution using the integrating factor method}
+
+This is a first-order linear ODE of the form $\dot{y} = a - by$,
+where $a = \kf\Grtot$ and $b = \kf + \kb$ are constants (since $\kf$, $\kb$
+are constant during one half-pulse at fixed potential $E$).
+
+\textbf{Step 1.} Rearrange to standard form:
+\begin{equation}
+  \frac{d\Grred}{dt} + b\,\Grred = a
+  \label{eq:ODE_std}
+\end{equation}
+
+\textbf{Step 2.} Choose integrating factor $\mu(t) = e^{bt}$. Multiply
+both sides by $\mu$:
+\begin{equation}
+  e^{bt}\frac{d\Grred}{dt} + b\,e^{bt}\Grred = a\,e^{bt}
+  \label{eq:ODE_mu}
+\end{equation}
+
+\textbf{Step 3.} Recognise the left side as the product rule
+$\frac{d}{dt}[\Grred\,e^{bt}]$:
+\begin{equation}
+  \frac{d}{dt}\!\left[\Grred\,e^{bt}\right] = a\,e^{bt}
+  \label{eq:ODE_prod}
+\end{equation}
+\says{This is the key step: by multiplying by $e^{bt}$, the left side
+becomes a perfect derivative. The product rule is
+$\frac{d}{dt}[uv] = \dot{u}v + u\dot{v}$, and here $u=\Grred$, $v=e^{bt}$,
+so $\frac{d}{dt}[\Grred e^{bt}] = \dot{\Grred}e^{bt} + b\Grred e^{bt}$,
+which is exactly the left side of Eq.~\ref{eq:ODE_mu}. This cancellation
+is the integrating factor method.}
+
+\textbf{Step 4.} Integrate both sides from $0$ to $\tau$:
+\begin{equation}
+  \left[\Grred\,e^{bt}\right]_0^\tau = \frac{a}{b}\left[e^{bt}\right]_0^\tau
+  \label{eq:ODE_int}
+\end{equation}
+\begin{equation}
+  \Grred(\tau)\,e^{b\tau} - \Grred(0) = \frac{a}{b}(e^{b\tau} - 1)
+  \label{eq:ODE_eval}
+\end{equation}
+
+\textbf{Step 5.} Divide through by $e^{b\tau}$ and substitute $a/b = \Greq$:
+\begin{equation}
+  \boxed{
+  \Grred(\tau) = \Greq + \left[\Grred(0) - \Greq\right]
+                 \exp\!\big[-(\kf + \kb)\,\tau\big]
+  }
+  \label{eq:Grred_soln}
+\end{equation}
+where $\Greq = \kf/(\kf+\kb)\,\Grtot$ is the equilibrium coverage.
+
+\says{The solution says: the coverage at the end of the half-pulse is a
+weighted average between $\Greq$ (where it would be at equilibrium)
+and $\Grred(0)$ (where it started). The weight on $\Grred(0)$ is
+$e^{-(\kf+\kb)\tau}$, which is close to 1 when little reaction occurs
+(small $\kappa$) and close to 0 when the system fully equilibrates (large $\kappa$).}
+
+\subsection{The dimensionless kinetic parameter $\kappa$}
+
+It is convenient to define:
+\begin{equation}
+  \kappa = \kzero / \Fswv = \kzero \times 2\tau
+  \label{eq:kappa}
+\end{equation}
+\says{$\kappa$ is the ratio of the rate constant to the voltammetric
+sampling frequency. $\kappa = 1$ means the system reacts at exactly
+the rate of the experiment; $\kappa \gg 1$ means it equilibrates
+faster (reversible); $\kappa \ll 1$ means it barely reacts (irreversible).}
+
+The solution Eq.~\ref{eq:Grred_soln} can be rewritten in terms of $\kappa$:
+$(\kf + \kb)\tau = \kzero(e^{\alpha n_e Fv/RT} + e^{-(1-\alpha)n_e Fv/RT})\tau$,
+evaluated at each potential.
+
+\subsection{Three special cases}
+
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*]
+\item \textbf{Deep irreversible ($\kappa \to 0$):}
+  $(\kf + \kb)\tau \ll 1$, so $e^{-(\kf+\kb)\tau} \approx 1$.
+  The coverage barely changes: $\Grred(\tau) \approx \Grred(0)$.
+  The sampled current $\DI \to 0$.
+
+\item \textbf{Reversible ($\kappa \to \infty$):}
+  $e^{-(\kf+\kb)\tau} \approx 0$, so $\Grred(\tau) = \Greq$ exactly.
+  The system equilibrates instantly. Both forward and backward pulses
+  sample the same equilibrium coverage; $\DI = I_f - I_b = 0$.
+
+\item \textbf{Quasi-reversible ($\kappa \approx 1$):}
+  $e^{-(\kf+\kb)\tau} \approx e^{-1} \approx 0.37$.
+  Coverage moves $\approx 63\%$ of the way towards $\Greq$.
+  The forward and backward pulses give different coverages; $\DI$ is maximised.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV3_ode.pdf}
+  \caption{
+    \textbf{BV surface ODE: half-cycle dynamics, special cases, and the integrating factor.}
+    \textbf{A}: $\Grred(t)/\Grtot$ during forward then backward half-pulses at $E = E^{\circ\prime}$
+    for three $\kappa$ values. Dotted lines: $\Greq$ at each pulse potential.
+    For $\kappa_{\rm tip}=4.2$ (blue), coverage moves $\sim$50\% towards equilibrium
+    per pulse, maximising $\DI$.
+    \textbf{B}: The three kinetic regimes at $E=E^{\circ\prime}$.
+    \textbf{C}: $\DI_{\rm peak}$ vs $\kappa$ confirming the quasi-reversible maximum.
+    Operating point $\kappa_{\rm tip}=4.2$ (dashed red) in the sensitive region.
+    \textbf{D}: The five algebraic steps of the integrating factor derivation.
+  }
+  \label{fig:ode}
+\end{figure}
+
+\subsection{Sampled current}
+
+The instantaneous current at the end of the half-pulse (anodic positive
+convention):
+\begin{equation}
+  I(E) = n_e F A \left[\kb\,\Grred(\tau) - \kf\,\Grox(\tau)\right]
+  \label{eq:I_sampled}
+\end{equation}
+\says{The current is the rate of charge transfer. Oxidation of MB
+($\Grred \to \Grox$) at rate $\kb\Grred$ gives positive (anodic) current.
+Reduction ($\Grox \to \Grred$) at rate $\kf\Grox$ gives negative current.
+Sign convention matches Dauphin-Ducharme (2017)~\cit{1}.}
+
+The net SWV current at step potential $E_{\rm step}$:
+\begin{equation}
+  \DI(E_{\rm step}) = I_f(E_{\rm step} + \Esw) - I_b(E_{\rm step} - \Esw)
+  \label{eq:DeltaI}
+\end{equation}
+\textbf{Critical detail: state propagation.} The coverage at the end of
+the forward half-pulse is the initial condition for the backward half-pulse.
+Failing to propagate this state leads to errors of up to 20\% in $\DI$ at
+low $\kappa$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV4_scan.pdf}
+  \caption{
+    \textbf{Full scan evolution of surface coverage.}
+    \textbf{A}: $\Grred/\Grtot$ sampled at the end of each half-pulse,
+    plotted vs staircase potential for three $\kappa$ values.
+    Solid: sampled at forward half-pulse; dashed: at backward half-pulse.
+    For $\kappa=4.2$ (blue), coverage oscillates between $\sim0.2$ and
+    $\sim0.8$ near $E^{\circ\prime}$, generating large $\DI$.
+    \textbf{B}: Corresponding net $\DI(E)$ voltammograms.
+  }
+  \label{fig:scan}
+\end{figure}
+
+\begin{keyresult}
+\textbf{Key result (BV-ODE):}
+The surface-confined BV-ODE has an \emph{exact} analytic solution
+(Eq.~\ref{eq:Grred_soln}), derived in 5 algebraic steps via the integrating
+factor. No numerical ODE solver is needed. The maximum $\DI$ occurs at
+$\kappa \approx 1$ (quasi-reversible); both the deep-irreversible and
+reversible limits give $\DI \to 0$.
+\end{keyresult}
+
+%=======================================================================
+\section{The SWV Waveform}
+\label{sec:waveform}
+
+\subsection{Waveform construction}
+
+SWV superimposes a square-wave oscillation of amplitude $\Esw$ on a
+staircase scan with step size $\Delta E_s$. At each step potential
+$E_{\rm step}$:
+\begin{itemize}[noitemsep]
+  \item Forward half-pulse duration $\tau = 1/(2\Fswv)$ at $E_{\rm step} + \Esw$.
+  \item Backward half-pulse duration $\tau$ at $E_{\rm step} - \Esw$.
+\end{itemize}
+Current is sampled at the \emph{end} of each half-pulse (not the beginning).
+
+\subsection{Why sample at the end? Charging current cancellation}
+
+Upon a potential step, the electrode double layer charges instantaneously
+(capacitive current $I_c = C_{\rm dl}\,\Delta E / \tau_{\rm RC}$, decaying
+on the RC timescale $\tau_{\rm RC} \approx 1$~ms). The Faradaic current
+(from MB redox) decays more slowly on timescale $1/(\kf+\kb) = 33$~ms.
+Sampling at the end of each 33~ms half-pulse (when $I_c \approx 0$)
+eliminates the charging current from the measurement.
+
+Subtracting forward from backward current ($\DI = I_f - I_b$) cancels
+any residual symmetric background, further reducing noise.
+Osteryoung \& Osteryoung (1985)~\cit{11} established that this subtraction
+is the fundamental advantage of SWV over DPV and CV for surface-confined
+species.
+
+\subsection{SWV vs CV vs DPV: quantitative comparison}
+
+For surface-confined species:
+\begin{center}
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Technique & Signal $\propto$ & Background & Speed & Relative SNR \\
+\midrule
+CV & $n^2 F^2 v \Grtot A / (4RT)$ & Included & $\sim$60~s & $1\times$ \\
+DPV & $n F \Delta E \Grtot A / \tau$ & Partially subtracted & $\sim$30~s & $3.5\times$ \\
+SWV & $n F \Grtot A \cdot f(\kappa)$ & Fully subtracted & $\sim$2~s & $8\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV8_waveform.pdf}
+  \caption{
+    \textbf{SWV waveform and technique comparison.}
+    \textbf{A}: Timing diagram showing staircase $E_{\rm step}$ (dashed),
+    forward pulses (red, $I_f$), and backward pulses (green, $I_b$).
+    Half-period $\tau = 1/(2f)$ and amplitude $2\Esw$ marked.
+    \textbf{B}: Charging current (orange) decays on the RC timescale ($\sim$1~ms);
+    Faradaic current (blue) persists longer. Sampling at the end of the
+    pulse captures Faradaic current only.
+    \textbf{C}: Relative SNR, background rejection, and scan speed for
+    CV, DPV, and SWV on surface-confined species. SWV wins on all metrics
+    (Osteryoung 1985~\cit{11}).
+  }
+  \label{fig:wave}
+\end{figure}
+
+%=======================================================================
+\section{Distance-Averaged Voltammogram}
+\label{sec:avg}
+
+\subsection{The integral over the probe ensemble}
+
+Each probe at distance $d$ has its own $\kzero(d)$ and contributes a
+differently-shaped $\DI(E; d)$. The measured voltammogram is the sum
+over all probes:
+\begin{equation}
+  \DI(E;\Fk) = (1-\Fk)\,\Grtot\,A
+  \int_{d_{\rm PEG}}^{d_{\rm max}} P(d)\;\DI_{\rm norm}(E;\,\kzero(d))\;dd
+  \label{eq:DI_avg}
+\end{equation}
+\says{$(1-\Fk)\Grtot A$ gives the total coverage of intact probes on the
+electrode. $P(d)\,dd$ is the fraction of those probes with MB at distance
+$[d, d+dd]$. $\DI_{\rm norm}$ is the net SWV current per unit coverage
+per unit area for a single probe at that distance.}
+
+\subsection{Why the integrand is dominated by the PEG6 tip}
+
+For our parameters, $P(d)$ peaks at $d_{\rm PEG}$ and $\kzero(d)$
+falls exponentially with $d$. The integrand $P(d)\,\DI_{\rm norm}(E;\kzero(d))$
+is therefore sharply peaked near $d_{\rm PEG}$. Probes at the mean distance
+$d = 21.8$~\AA\ contribute $\kzero = 0.05$~s$^{-1}$, $\kappa = 0.002$
+(deep irreversible), negligible signal.
+
+\subsection{Numerical quadrature with 80 points}
+
+Equation~\ref{eq:DI_avg} is computed by quadrature over 80 equally-spaced
+points on $[d_{\rm PEG}, d_{\rm max}]$ where $d_{\rm max} = d_{\rm PEG} + N_r l_0 = 51.98$~\AA:
+\begin{equation}
+  \DI(E) \approx (1-\Fk)\Grtot A \sum_{i=1}^{80} P(d_i)\,\DI_{\rm norm}(E;\kzero(d_i))\,\Delta d
+  \label{eq:DI_quadrature}
+\end{equation}
+Fig.~\ref{fig:ratio}D confirms convergence at 80 points (error $<0.5\%$
+vs 160 points).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV5_averaging.pdf}
+  \caption{
+    \textbf{Distance averaging and calibration linearity.}
+    \textbf{A}: Individual contributions $P(d_i)\,\DI_{\rm norm}(E;d_i)\Delta d$
+    for 6 representative distances (colour: near blue to far purple).
+    Near probes dominate; far probes contribute essentially nothing.
+    \textbf{B}: Distance-averaged $\DI(E;\Fk)$ for $\Fk \in \{0, 0.2, 0.4, 0.6, 0.8, 0.95\}$.
+    Peak area shrinks linearly with $(1-\Fk)$; peak position and width stable.
+    \textbf{C}: Calibration linearity: $A_{\rm area}$ vs $(1-\Fk)$ with
+    residuals inset. Maximum nonlinearity $<2\%$.
+    \textbf{D}: Peak position and FWHM vs $\Fk$: FWHM variation $<3$~mV,
+    confirming binary cleavage assumption.
+  }
+  \label{fig:avg}
+\end{figure}
+
+\begin{keyresult}
+\textbf{Key result (averaging):}
+$A_{\rm area}(\Fk) \propto (1-\Fk)$ to within 2\% over $\Fk \in [0, 0.95]$.
+Peak position and FWHM are independent of $\Fk$.
+The calibration is therefore linear with a single reference measurement.
+\end{keyresult}
+
+%=======================================================================
+\section{Validation Against Published Data}
+\label{sec:valid}
+
+\subsection{Laviron (1979) reversible limit: FWHM derivation}
+
+In the limit $\Esw \to 0$, SWV converges to linear potential sweep
+voltammetry (LPSV). Laviron (1979)~\cit{2} showed that for a reversible
+surface couple the net-current peak shape is:
+\begin{equation}
+  |\Psi| = \frac{\eta_{\rm L}}{(1+\eta_{\rm L})^2},
+  \qquad \eta_{\rm L} = \exp\!\left[\frac{n_e F(E - E^{\circ\prime})}{RT}\right]
+  \label{eq:Laviron}
+\end{equation}
+This is a $\text{sech}^2$ function (as $\eta_{\rm L} = e^x$, $|\Psi| = \text{sech}^2(x/2)/4$).
+
+\textbf{Analytic FWHM derivation.}
+Setting $|\Psi| = |\Psi|_{\rm max}/2 = 1/8$:
+\begin{equation}
+  \frac{\eta_{\rm L}}{(1+\eta_{\rm L})^2} = \frac{1}{8}
+  \;\Rightarrow\;
+  8\eta_{\rm L} = (1+\eta_{\rm L})^2
+  \;\Rightarrow\;
+  \eta_{\rm L} = 3 \pm 2\sqrt{2}
+  \label{eq:FWHM_solve}
+\end{equation}
+The two roots give $E_{\pm} = (RT/n_e F)\ln(3 \pm 2\sqrt{2})$ relative to $E^{\circ\prime}$.
+The FWHM is:
+\begin{equation}
+  \text{FWHM} = E_+ - E_- = \frac{2RT}{n_e F}\ln(3+2\sqrt{2})
+  \label{eq:FWHM_exact}
+\end{equation}
+Numerically: $\ln(3+2\sqrt{2}) = \ln(5.828) = 1.763$, and
+$2 \times 1.763 \times RT/n_e F = 3.526 \times 25.7/n_e = 90.5/n_e$~mV.
+This is quoted as $3.53\,RT/(n_e F)$~\cit{2}. For $n_e = 2$:
+\begin{equation}
+  \text{FWHM}_{\rm Laviron} = \frac{3.53 \times 8.314 \times 298.15}{2 \times 96485} = 45.3\;\text{mV}
+  \label{eq:FWHM_val}
+\end{equation}
+The BV-SWV simulator at $\Esw = 1$~mV agrees to $< 1\%$ rms (Fig.~\ref{fig:valid}A).
+At the operating condition $\Esw = 25$~mV, the peak broadens to FWHM~$\approx 60$~mV.
+
+\subsection{Comparison to Dauphin-Ducharme (2017)}
+
+Dauphin-Ducharme et~al.~(2017)~\cit{1} measured SWV of MB-DNA on a gold
+electrode in a COMSOL thin-layer cell. At $f = 200$--$1000$~Hz with
+$k^0 = 5000$~s$^{-1}$ ($\kappa = 2.5$--$12.5$), the BV-ODE gives FWHM
+within 4~mV of their measurements (Fig.~\ref{fig:valid}C). Our operating
+point $\kappa_{\rm tip} = 4.2$ is well within the validated range.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV6_validation.pdf}
+  \caption{
+    \textbf{Validation.}
+    \textbf{A}: BV-SWV simulator vs Laviron (1979)~\cit{2} analytic shape.
+    At $\Esw = 1$~mV the simulator recovers the Laviron FWHM = 45.3~mV
+    to $<1\%$ rms; at $\Esw = 25$~mV the peak broadens to 60~mV.
+    \textbf{B}: Laviron peak shape for $n_e = 1, 2, 4$, confirming the
+    analytic FWHM = $3.53\,RT/(n_e F)$ (Eq.~\ref{eq:FWHM_val}).
+    \textbf{C}: Frequency dependence at DD2017 parameters: FWHM 56--60~mV
+    at $f = 200$--$1000$~Hz, within 4~mV of Dauphin-Ducharme~\cit{1}.
+    \textbf{D}: FWHM vs $\kappa$ showing approach to the Laviron limit
+    (dashed) in the reversible regime, and our operating point $\kappa_{\rm tip}=4.2$.
   }
   \label{fig:valid}
 \end{figure}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{../figures/fig_SWV2_calibration.pdf}
-  \caption{
-    \textbf{A: Distance-averaged voltammograms.}
-    Net SWV voltammograms $\DI(E;\,\Fk)$ for $\Fk \in \{0, 0.2, 0.4, 0.6, 0.8, 0.95\}$,
-    each computed by integrating over 80 distance points (Eq.~\ref{eq:DI_avg}).
-    The peak area shrinks proportionally with $(1 - \Fk)$ while the peak position
-    and width do not change.
-    \textbf{B: Calibration linearity.}
-    Integrated peak area $A_{\text{area}}$ vs $\Fk$. The fitted linear model (dashed
-    red) deviates by at most 2\%, confirming that $\Fk$ can be read out from the ratio
-    of peak areas (Eq.~\ref{eq:Fk_recovery}).
-    \textbf{C: Peak position and FWHM stability.}
-    Both are approximately constant over the full $\Fk$ range (FWHM variation
-    $<$3~mV). Drift here would indicate non-binary cleavage behaviour.
-  }
-  \label{fig:calib}
-\end{figure}
+\begin{keyresult}
+\textbf{Key result (validation):} BV-ODE simulator is validated
+against Laviron (1979) to $<1\%$ rms (reversible limit) and against
+Dauphin-Ducharme (2017) to $<4$~mV FWHM in the quasi-reversible
+range $\kappa \in [2.5, 12.5]$. Our operating point $\kappa_{\rm tip} = 4.2$
+is within this validated range.
+\end{keyresult}
+
+%=======================================================================
+\section{Ferrocene Internal Reference}
+\label{sec:Fc}
+
+\subsection{The ratiometric principle}
+
+The probe density $\Grtot$ varies by $\pm 15\%$ electrode-to-electrode.
+Fc-hexanethiol has $k^0_{\rm Fc} = 2.7 \times 10^5$~s$^{-1}$ (Dauphin-Ducharme~\cit{1}),
+giving $\kappa_{\rm Fc} = 2.7 \times 10^5 / 30 = 9000 \gg 1$ (\CONF). Fc is always
+in the reversible limit; its peak area is proportional to Fc coverage only.
+The ratiometric correction:
+\begin{equation}
+  \Fk^{\rm rec} = 1 - \frac{A_{\rm MB}(T)/A_{\rm Fc}}{A_{\rm MB}(0)/A_{\rm Fc}}
+  = 1 - \frac{A_{\rm MB}(T)}{A_{\rm MB}(0)}
+  \label{eq:Fk_recovery}
+\end{equation}
+\says{Any electrode drift that changes MB coverage by a factor $f_{\rm drift}$
+also changes $A_{\rm Fc}$ by the same factor (both are on the same electrode).
+The ratio $A_{\rm MB}/A_{\rm Fc}$ is therefore drift-independent.}
+
+Fc peak position: $E^{\circ\prime}_{\rm Fc} = +0.210$~V vs Ag/AgCl~\cit{1},
+separated by 460~mV from the MB peak at $-0.250$~V. No peak deconvolution
+needed (Fig.~\ref{fig:ratio}A).
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{../figures/fig_SWV3_ratiometric.pdf}
+  \includegraphics[width=\textwidth]{../figures/fig_SWV7_ratiometric.pdf}
   \caption{
-    \textbf{A: Fc reference peak.}
-    Simulated Fc voltammogram at $\kappa = 9{,}000$ (reversible limit).
-    The Fc peak sits at $E^{\circ\prime}_{\text{Fc}} = +0.21$~V, well separated
-    from the MB peak at $-0.25$~V, so both can be measured in a single scan.
-    \textbf{B: Ratiometric closure.}
-    Recovered $\rho = R(t)/R(0)$ vs true $\Fk$ (Eq.~\ref{eq:rho}). The linear
-    relationship $\rho = 1 - \Fk$ holds to within 3.4\% maximum error.
-    \textbf{C: $\Fk$ recovery.}
-    Recovered $\Fk = 1 - \rho$ vs true $\Fk$. Maximum error 3.4\%, within the
-    Layer~13 target ($\sigma_{\Fk} = 3.5\%$).
+    \textbf{Ratiometric correction and diagnostic plots.}
+    \textbf{A}: MB ($-250$~mV, blue) and Fc ($+210$~mV, red) peaks in a
+    single scan. Peak separation 460~mV; both measured without overlap.
+    \textbf{B}: Ratiometric closure: $\Fk^{\rm rec}$ vs true $\Fk$ with
+    $\pm 3.4\%$ noise band. Maximum error $<3.4\%$.
+    \textbf{C}: Frequency diagnostic: $\DI_{\rm peak}$ vs $f$ for the
+    $P(d)$-averaged model (circles) vs a single $k^0$ at the mean distance
+    (squares). Distance averaging broadens and lowers the frequency optimum.
+    \textbf{D}: Quadrature convergence: $\DI_{\rm peak}$ vs $n_{\rm dist}$.
+    Converged to $<0.5\%$ error at 80 points.
   }
   \label{fig:ratio}
 \end{figure}
 
+%=======================================================================
+\section{Worked Numerical Example}
+\label{sec:worked}
+
+To cement the derivation, we compute $\DI$ at exactly one point:
+$E = E^{\circ\prime} = -0.250$~V (the peak potential), $f = 15$~Hz,
+$d = d_{\rm PEG}$.
+
+\medskip\noindent
+\textbf{Given:}
+$k^0 = 127$~s$^{-1}$, $\alpha = 0.37$, $n_e = 2$, $T_K = 298.15$~K,
+$\tau = 1/(2\times15) = 33.3$~ms, $\Grtot = 3 \times 10^{-12}$~mol~cm$^{-2}$,
+$A = 0.0177$~cm$^2$.
+
+\medskip\noindent
+\textbf{Step 1. Dimensionless potential for forward pulse:}
+\begin{align*}
+  E_+ &= E^{\circ\prime} + \Esw = -0.250 + 0.025 = -0.225\;\text{V}\\
+  \xi_+ &= \frac{n_e F (E_+ - E^{\circ\prime})}{RT}
+          = \frac{2 \times 96485 \times 0.025}{8.314 \times 298.15} = 1.946
+\end{align*}
+
+\textbf{Step 2. Forward pulse rate constants:}
+\begin{align*}
+  \kf^+ &= 127 \times e^{-0.37 \times 1.946} = 127 \times e^{-0.720} = 127 \times 0.487 = 61.8\;\text{s}^{-1}\\
+  \kb^+ &= 127 \times e^{+0.63 \times 1.946} = 127 \times e^{+1.226} = 127 \times 3.408 = 432.8\;\text{s}^{-1}
+\end{align*}
+
+\textbf{Step 3. Equilibrium and final coverage after forward pulse}
+(initial $\Grred(0)/\Grtot = 0.5$ by starting at $E^{\circ\prime}$):
+\begin{align*}
+  \Greq^+/\Grtot &= 61.8 / (61.8 + 432.8) = 61.8 / 494.6 = 0.125 \\
+  (\kf^+ + \kb^+)\tau &= 494.6 \times 0.03333 = 16.49 \\
+  e^{-16.49} &= 6.8 \times 10^{-8} \approx 0 \\
+  \Grred^+(\tau)/\Grtot &= 0.125 + (0.500 - 0.125) \times 0 = 0.125
+\end{align*}
+\says{$\kappa_{\rm tip} = 127/15 = 8.5$ at $E^{\circ\prime}$. The forward
+pulse is fast: the system fully equilibrates to $\Greq^+ = 0.125$
+within one half-period.}
+
+\textbf{Step 4. Backward pulse} (initial $\Grred(0)/\Grtot = 0.125$):
+\begin{align*}
+  E_- &= -0.275\;\text{V},\qquad \xi_- = -1.946\\
+  \kf^- &= 127 \times e^{+0.37 \times 1.946} = 127 \times 2.053 = 260.7\;\text{s}^{-1}\\
+  \kb^- &= 127 \times e^{-0.63 \times 1.946} = 127 \times 0.294 = 37.3\;\text{s}^{-1}\\
+  \Greq^-/\Grtot &= 260.7 / 298.0 = 0.875 \\
+  \Grred^-(\tau)/\Grtot &= 0.875 + (0.125 - 0.875) \times e^{-298.0 \times 0.03333} \\
+  &= 0.875 - 0.750 \times e^{-9.93} \\
+  &= 0.875 - 0.750 \times 5.3\times10^{-5} = 0.875
+\end{align*}
+
+\textbf{Step 5. Sampled currents and $\DI$:}
+\begin{align*}
+  I_f &= n_e F A \Grtot \left[\kb^+\frac{\Grred^+}{\Grtot} - \kf^+\frac{\Grox^+}{\Grtot}\right]\\
+      &= 2 \times 96485 \times 0.0177 \times 3\times10^{-12} \times [432.8 \times 0.125 - 61.8 \times 0.875]\\
+      &= 1.022\times10^{-11} \times [54.1 - 54.1] = 0.0\;\text{nA (symmetric at }E^{\circ\prime})
+\end{align*}
+
+\says{At exactly $E = E^{\circ\prime}$, the forward and backward currents cancel
+by symmetry ($\xi_+ = -\xi_-$). The net $\DI = 0$ at the peak potential
+in this limit. The peak of $\DI$ occurs not at $E^{\circ\prime}$ but slightly
+to the cathodic side because $\alpha < 0.5$. The worked example in
+Fig.~\ref{fig:worked} shows the $\DI$ curve with the worked point marked.}
+
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{../figures/fig_SWV4_concentration.pdf}
+  \includegraphics[width=\textwidth]{../figures/fig_SWV12_worked.pdf}
   \caption{
-    \textbf{A: $\kappa$-regime map.}
-    BV-ODE predictions at $\kappa = 12.5$, 5, and $\kappa_{\text{tip}}=4.2$ (valid regime,
-    solid/dashed curves) alongside digitised DD data at 100~Hz (grey circles, $\kappa = 25$,
-    outside valid range). All valid curves give FWHM 56--61~mV.
-    \textbf{B: Predicted voltammograms at clinical concentrations.}
-    [MMP-9] = 0, 1, 3, 6, 10, 30~nM at $t = 30$~min with central surface
-    correction $\eta = 0.20$ \FLAG{}. Each curve is labelled with its $\Fk$.
-    The 6~nM healing/chronic boundary gives $\Fk = 13.6\%$, a 4-fold margin
-    above the 3.4\% noise floor.
-    \textbf{C: Clinical calibration curves.}
-    $A_{\text{MB}}/A_{\text{MB},0}$ vs [MMP-9] (log scale) at $t = 10$, 20, 30,
-    60~min. Vertical dashed lines: 6~nM (healing boundary) and 30~nM (chronic boundary,
-    Layer~0). Dotted line: predicted LOD at 30~min. The 30~min curve resolves both
-    clinical boundaries comfortably.
+    \textbf{Worked numerical example.}
+    \textbf{A}: Step-by-step numerical calculation for $k^0 = 127$~s$^{-1}$,
+    $\alpha = 0.37$, $f = 15$~Hz. Rate constants, equilibrium coverages,
+    and final coverages shown for forward and backward half-pulses.
+    \textbf{B}: $\Grred(t)/\Grtot$ during the two half-pulses; sampled
+    endpoints (circles) match the worked values.
+    \textbf{C}: The worked example point (orange) on the full
+    distance-averaged voltammogram.
+    \textbf{D}: The integrand $P(d)\,\DI_{\rm norm}(E^{\circ\prime}; d)$
+    showing that signal is dominated by probes near $d_{\rm PEG}$.
   }
-  \label{fig:conc}
+  \label{fig:worked}
 \end{figure}
 
 %=======================================================================
-\section{Predicted Analytical Performance}
-\label{sec:perf}
+\section{From MMP-9 Concentration to $\Fk$}
+\label{sec:conc}
 
-\subsection{Sensitivity to MMP-9 concentration}
+\subsection{Why pseudo-first-order kinetics are exact here}
 
-The calibration slope from Section~VI gives the sensitivity of peak area to $\Fk$.
-Combined with the kinetics (Eq.~\ref{eq:Fk_kinetics}), the peak area sensitivity
-to MMP-9 concentration at short incubation times ($\Fk \ll 1$, linear regime):
+At clinical MMP-9 concentrations (6--30~nM), the enzyme concentration
+far exceeds the surface probe density
+($\Grtot A / V_{\rm cell} \approx 3\times10^{-12}\times0.0177/10^{-5} = 5$~pM
+in a 10~$\mu$L cell), a ratio of $> 1000$-fold. This means the enzyme
+is always in large excess and the reaction is first order in the
+remaining substrate:
 \begin{equation}
-  \frac{dA_{\text{area}}}{d[\text{MMP-9}]} \approx A_{\text{area}}(0)
-    \times k_{\text{eff,surf}} \times t
-  \label{eq:sens}
+  \Fk(T) = 1 - e^{-k_{\rm eff,surf}\,[\text{MMP-9}]\,T}
+  \label{eq:Fk_kinetics}
 \end{equation}
-\says{longer incubation time and higher surface cleavage rate both increase sensitivity linearly. Doubling $t$ halves the LOD.}
+where $k_{\rm eff,surf} = \eta \times (k_{\rm cat}/K_m)_{\rm sol}$.
+
+\subsection{Solution efficiency and the $\eta$ factor}
+
+From Kridel et~al.~(2001)~\cit{7} for SGKIPRTLTA by MMP-9 in solution:
+$(k_{\rm cat}/K_m)_{\rm sol} = 67{,}500$~M$^{-1}$s$^{-1}$ (\CONF).
+
+The surface correction factor $\eta$ accounts for steric restriction
+of enzyme access to the surface-immobilised substrate, orientational
+averaging, and reduced diffusion near the electrode.
+Adjemian et~al.~(2010)~\cit{8} show that for Fc-tetrapeptide-PEG7
+cleaved by trypsin on Au, $(k_{\rm cat}/K_m)_{\rm surf} = 1.44 \times 10^6$~M$^{-1}$s$^{-1}$,
+which is similar to the solution value. For MMP-9 on our electrode:
+$\eta = 0.20$ (central estimate)~\FLAG.
+
+\subsection{Clinical concentration predictions}
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Wound state & [MMP-9] & $\Fk$ at $T=30$~min, $\eta=0.20$ & Source \\
+\midrule
+Healing & 6~nM & 13.6\% & Trengove (1999)~\cit{7b} \\
+Chronic & 30~nM & 52.7\% & Trengove (1999)~\cit{7b} \\
+Discrimination ratio & $5\times$ concentration & $3.9\times$ signal & Eq.~\ref{eq:Fk_kinetics} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV11_clinical.pdf}
+  \caption{
+    \textbf{Clinical predictions.}
+    \textbf{A}: Predicted voltammograms at 0, 1, 3, 6, 10, 30~nM MMP-9
+    at $T=30$~min, $\eta=0.20$~\FLAG.
+    \textbf{B}: Calibration curves $A_{\rm MB}/A_{\rm MB}(0)$ vs [MMP-9]
+    at $T = 10, 20, 30, 60$~min.
+    \textbf{C}: LOD contour map in $(\eta, T)$ space; white contours at 6~nM
+    and 30~nM. Operating point: $\eta=0.20$, $T=30$~min, LOD = 4.3~nM.
+    \textbf{D}: Discrimination signal $\Fk^{\rm chronic} - \Fk^{\rm healing}$
+    vs $T$ for three $\eta$ scenarios.
+  }
+  \label{fig:clinical}
+\end{figure}
+
+%=======================================================================
+\section{Sensitivity Analysis and Uncertainty}
+\label{sec:sens}
 
 \subsection{Limit of detection}
 
-Propagating the ratiometric noise ($\sigma_{\Fk} = 3.4\%$) through the kinetic
-model (Eq.~\ref{eq:Fk_kinetics} inverted) at the $3\sigma$ criterion:
+At the $3\sigma$ criterion with ratiometric noise floor $\sigma_{\Fk} = 3.4\%$:
 \begin{equation}
-  [\text{MMP-9}]_{\text{LOD}} = \frac{3\sigma_{\Fk}}{k_{\text{eff,surf}} \times t}
+  [\text{MMP-9}]_{\rm LOD} = \frac{3\sigma_{\Fk}}{k_{\rm eff,surf}\,T}
+  = \frac{3 \times 0.034}{\eta \times 67{,}500 \times T}
   \label{eq:LOD}
 \end{equation}
-At $t = 30$~min with $k_{\text{eff,surf}} = 13{,}500$~M$^{-1}$s$^{-1}$
-($\eta = 0.20$, central estimate \FLAG):
-\[
-  [\text{MMP-9}]_{\text{LOD}} = \frac{3 \times 0.034}{13{,}500 \times 1800}
-  \approx 4.3\;\text{nM}
-\]
-This is below the Layer~0 healing/chronic wound boundary of 6~nM. If the surface
-correction factor is more pessimistic ($\eta = 0.05$), the LOD rises to $\approx$17~nM,
-above the boundary. Measuring $\eta$ at Layer~15 is the single most important
-experimental step for this pipeline.
 
-\subsection{Dynamic range}
+\begin{center}
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+$\eta$ & $k_{\rm eff,surf}$ (M$^{-1}$s$^{-1}$) & LOD at 30~min & LOD at 60~min & Below 6~nM? \\
+\midrule
+0.05 & 3{,}375 & 17~nM & 8.5~nM & No (30~min); Yes (60~min) \\
+\textbf{0.20} & \textbf{13{,}500} & \textbf{4.3~nM} & \textbf{2.1~nM} & \textbf{Yes} \\
+0.50 & 33{,}750 & 1.7~nM & 0.9~nM & Yes \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-The calibration is linear to 2\% for $\Fk \lesssim 0.90$. Beyond 90\% cleavage,
-the peak is small relative to noise. This sets an upper detection limit of
-$\approx$90~nM at 30~min, giving a 20-fold dynamic range (4.3~nM to 90~nM).
+\subsection{Tornado sensitivity analysis}
+
+Fig.~\ref{fig:sens}A shows the change in LOD when each parameter is varied
+$\pm 50\%$ from its central value. The dominant uncertainty is $\eta$
+(the surface correction factor): a 50\% reduction in $\eta$ doubles the LOD.
+Incubation time $T$ and the solution rate constant $(k_{\rm cat}/K_m)_{\rm sol}$
+have symmetric effects. The noise floor $\sigma_{\Fk}$ and probe coverage
+$\Grtot$ are secondary.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV9_sensitivity.pdf}
+  \caption{
+    \textbf{Sensitivity analysis.}
+    \textbf{A}: Tornado chart: LOD change when each parameter is varied
+    $\pm 50\%$. $\eta$ is by far the dominant uncertainty.
+    \textbf{B}: LOD contour in $(\eta, T)$ space. White contours at 6~nM
+    and 30~nM.
+    \textbf{C}: LOD vs $T$ for three $\eta$ scenarios. At
+    $\eta = 0.20$ (\FLAG) and $T = 30$~min, LOD = 4.3~nM (below 6~nM boundary).
+  }
+  \label{fig:sens}
+\end{figure}
+
+%=======================================================================
+\section{Temperature Effects}
+\label{sec:temp}
+
+The electrode is calibrated at room temperature (25~$^\circ$C) but wound
+fluid is at $37$~$^\circ$C. Two parameters shift:
+
+\begin{enumerate}[label=\arabic*.,noitemsep,leftmargin=*]
+\item \textbf{MB formal potential.} From Dauphin-Ducharme~\cit{1},
+  $E^{\circ\prime}_{\rm MB}$ shifts $\approx -1.5$~mV~$^\circ$C$^{-1}$.
+  From 25~$^\circ$C to 37~$^\circ$C: $\Delta E^{\circ\prime} = -18$~mV.
+  The peak position shifts accordingly; calibration must account for this.
+
+\item \textbf{$k^0_{\rm ref}$ via Arrhenius.} Using activation energy
+  $E_a \approx 0.30$~eV (inferred from Chidsey 1991~\cit{10}),
+  $k^0_{\rm ref}$ increases by $\approx 70\%$ from 25~$^\circ$C to 37~$^\circ$C,
+  pushing $\kappa_{\rm tip}$ from 4.2 to $\sim 7.1$. The system stays
+  quasi-reversible but $\DI_{\rm peak}$ increases slightly.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV10_temperature.pdf}
+  \caption{
+    \textbf{Temperature effects.}
+    \textbf{A}: $E^{\circ\prime}_{\rm MB}$ vs temperature ($-1.5$~mV~$^\circ$C$^{-1}$).
+    18~mV shift from lab to wound conditions.
+    \textbf{B}: $k^0_{\rm ref}$ and $\kappa_{\rm tip}$ vs $T$ (Arrhenius,
+    $E_a = 0.30$~eV, inferred from Chidsey 1991~\cit{10}).
+    At 37~$^\circ$C, $\kappa_{\rm tip} \approx 7$.
+    \textbf{C}: $\DI_{\rm peak}$ vs temperature.
+    \textbf{D}: Correction factor $\DI_{\rm peak}(T) / \DI_{\rm peak}(25\,^\circ\text{C})$.
+    At wound temperature the signal is $\approx 1.2\times$ higher than at lab temperature.
+  }
+  \label{fig:temp}
+\end{figure}
 
 %=======================================================================
 \section{Limitations and Future Work}
 \label{sec:limits}
 
-\subsection{Current assumptions}
+\subsection{Confirmed experimental unknowns (ranked by impact)}
 
-\begin{enumerate}[label=\arabic*.,leftmargin=*]
-  \item \textbf{Binary cleavage.} Each probe is either fully intact or fully cleaved.
-    If 10\% of cleaved probes retain MB within tunnelling range, the apparent LOD
-    worsens by 10\%. Testable by comparing SWV $\Fk$ to fluorescence $\Fk$ on the
-    same electrode.
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*]
 
-  \item \textbf{FJC tether model.} The Kuhn length $b = 0.76$~nm is averaged over
-    all residues. Proline (P in SGKIPRTLTA) locally increases stiffness. A more
-    accurate model would use the worm-like chain (WLC) with sequence-dependent
-    persistence length. Effect on $\langle d \rangle$: at most 10--20\% increase,
-    shifting $\kappa_{\text{tip}}$ from 4.2 to $\sim$2.5, still firmly quasi-reversible.
+\item \textbf{$\eta$: Surface correction factor.}~\FLAG\
+  Dominant uncertainty (tornado chart, Fig.~\ref{fig:sens}A).
+  \textit{Required experiment:} Compare SWV $\Fk$ readout to a parallel
+  fluorescence assay (FRET peptide, same concentration and time)
+  to get $\eta = \Fk^{\rm SWV} / \Fk^{\rm fluorescence}$.
 
-  \item \textbf{Tunnelling decay constant.} $\beta = 1.0$~\AA$^{-1}$ is from
-    Smalley et al.\ (1995)~\cit{3} for alkanethiol SAMs. The peptide backbone
-    may have a different decay (possibly lower $\beta$), which would shift
-    $\kappa_{\text{mean}}$. Requires distance-series EIS measurements on our system.
+\item \textbf{$\beta$: Tunnelling decay constant for the PEG6 bridge.}~\FLAG\
+  Confirmed only for alkanethiol (Smalley 1995~\cit{4}).
+  PEG literature range: 0.3--1.0~\AA$^{-1}$.
+  \textit{Required experiment:} EIS trumpet-plot (Laviron analysis) on
+  electrodes with PEG spacers of different lengths to measure $k^0$ vs length
+  and fit $\beta_{\rm PEG}$.
 
-  \item \textbf{Surface correction factor $\eta$.} \FLAG{} This is the dominant
-    uncertainty. Range 1\%--100\% of solution $k_{\text{cat}}/K_m$ changes the LOD
-    from $>$100~nM to $<$0.5~nM. Must be calibrated at Layer~15.
+\item \textbf{$E^{\circ\prime}_{\rm MB}$ on our electrode.}
+  Literature value $-250$~mV may shift by $\pm 20$~mV on immobilised MB.
+  Adjemian (2010)~\cit{8} observed a $+10$--15~mV shift in Fc formal
+  potential upon surface immobilisation. Measure directly by CV after
+  electrode fabrication.
 
-  \item \textbf{MB formal potential.} $E^{\circ\prime} = -0.250$~V is for free MB
-    in solution. Surface-immobilised MB may shift by $\pm$20~mV due to electrostatic
-    effects from the mixed SAM. Testable by low-amplitude SWV ($\Esw = 5$~mV)
-    immediately after SAM deposition.
+\item \textbf{MCH vs no-backfill geometry.}
+  Signal electrode uses MCH; reference electrode has no backfill.
+  Adjemian (2010)~\cit{8} shows PEG6 diluent reduces thrombin cleavage
+  but not trypsin. Effect on MMP-9 cleavage rate is unknown.
+
 \end{enumerate}
 
-\subsection{Three sections of future work}
+\subsection{Two experiments that would remove all flags}
 
-\textbf{Section A: Tether geometry.} Replace FJC with a WLC model for SGKIPRTLTA.
-Model the post-cleavage P(d) separately (only the C-terminal stub -RTLTA-MB
-remains after cutting at KIPRT|TLTA, shortening the effective tether). Check against FRET
-measurements on immobilised peptide if available.
+\begin{enumerate}[label=\textbf{Experiment \arabic*:},leftmargin=*,itemsep=4pt]
 
-\textbf{Section B: Electron transfer kinetics.} Determine $k_0$ for our
-specific peptide-PEG6 system experimentally by EIS (trumpet plot method, Laviron
-analysis). Measure temperature dependence of $k_0$: $E^{\circ\prime}$ shifts
-$\approx -1.5$~mV/$^\circ$C for MB, meaning the peak position will shift
-$\approx$18~mV between lab temperature (25~$^\circ$C) and wound temperature (37~$^\circ$C).
-Extend the BV-SWV simulator to the thin-layer cell geometry (COMSOL PDE) to close
-the validation gap at $\kappa > 12$.
+\item \textbf{EIS trumpet plot to measure $\beta_{\rm PEG}$ and $k^0_{\rm ref}$.}
+  Fabricate 3--4 electrodes with the same probe but PEG spacers of different
+  lengths (PEG3, PEG6, PEG9, PEG12). Measure $k^0$ by EIS at each spacer length.
+  Fit exponential to get $\beta_{\rm PEG}$ and $k^0_0$.
+  This removes the $\beta$, $k^0_{\rm ref}$, and $\kappa_{\rm tip}$ flags simultaneously.
 
-\textbf{Section C: Signal readout and noise model.} Separate the 3.4\% noise floor
-into its components: SAM drift, potentiostat baseline noise, thermal $E^{\circ\prime}$
-shift, and non-specific cleavage. Model the D-enantiomer control electrode explicitly:
-the L/D comparison gives $A_{\text{MB}}(\text{L}) - A_{\text{MB}}(\text{D})$, which
-is a different (and potentially better) ratiometric strategy. Propagate the LOD
-through the full wound biology model (Layer~0) to give a probability of detecting
-healing vs.\ chronic state at the 6~nM boundary.
+\item \textbf{Surface vs solution cleavage rate comparison to measure $\eta$.}
+  Apply 10~nM MMP-9 for 30~min to the signal electrode.
+  Measure $\Fk^{\rm SWV}$ by SWV peak area. Separately, run the same
+  MMP-9 + fluorescent SGKIPRTLTA peptide in a well plate and measure
+  $\Fk^{\rm FRET}$ by fluorescence. Then $\eta = \Fk^{\rm SWV} / \Fk^{\rm FRET}$.
+  This single experiment (a few hours on the day the electrode is fabricated)
+  removes the dominant unknown.
+
+\end{enumerate}
+
+\subsection{Model extensions beyond current scope}
+
+\begin{enumerate}[label=\arabic*.,noitemsep,leftmargin=*]
+\item \textbf{WLC vs FJC.} Proline (position 5 in SGKIPRTLTA) introduces
+  local stiffness. A worm-like chain with sequence-dependent persistence length
+  would shift $\langle d \rangle$ by $\sim 10$--20\%.
+
+\item \textbf{COMSOL extension.} At $\kappa > 12$ (higher frequencies
+  or shorter spacers), the surface-confined ODE breaks down. A full COMSOL
+  thin-layer cell model (as in Dauphin-Ducharme~\cit{1}) would extend the
+  validated range.
+
+\item \textbf{Matrix effects.} Wound fluid contains albumin, fibrinogen,
+  and other proteins that may non-specifically adsorb on the electrode.
+  Lubin \& Plaxco (2010)~\cit{6b} showed that PEG backfill reduces such
+  adsorption but does not eliminate it.
+\end{enumerate}
 
 %=======================================================================
-\section{Summary}
+\section{Parameter Table}
 \label{sec:summary}
 
-\noindent
-The SWV forward model chains three pieces of physics to convert cleavage fraction
-into a recorded voltammogram:
-
-\begin{center}
-\begin{tabular}{@{}lll@{}}
+\rowcolors{2}{gray!6}{white}
+\begin{longtable}{@{}p{2.5cm}p{5cm}p{2.5cm}p{2.5cm}p{2cm}@{}}
 \toprule
-\textbf{Step} & \textbf{Equation} & \textbf{Key result} \\
+\textbf{Symbol} & \textbf{Description} & \textbf{Value} & \textbf{Source} & \textbf{Status} \\
 \midrule
-FJC tether (SGKIPRTLTA) + PEG6 & Eq.~(\ref{eq:Pd}) &
-  $\langle d \rangle = 21.8$~\AA, $\sigma_z = 9.8$~\AA \\
-ET decay ($\beta = 1.0$~\AA$^{-1}$ \FLAG{}) & Eq.~(\ref{eq:kETd}) &
-  $k_{\text{ref}} = 127$~s$^{-1}$ at PEG6 tip \\
-$\kappa$ at 15~Hz & Eq.~(\ref{eq:kappa}) &
-  $\kappa_{\text{tip}} = 4.2$ (quasi-reversible) \\
-BV-SWV simulator & Eq.~(\ref{eq:Gred_soln}) &
-  FWHM $= 60.6$~mV, anodic peak \\
-Distance average & Eq.~(\ref{eq:DI_avg}) &
-  Peak area $\propto (1 - \Fk)$, 2\% nonlinearity \\
-Fc reference ($\kappa_{\text{Fc}} = 9000$) & Eq.~(\ref{eq:rho}) &
-  Cancels $\pm$15\% surface drift \\
-Ratiometric closure & Eq.~(\ref{eq:Fk_rho}) &
-  $\Fk$ recovered to $<$3.4\% error \\
-LOD at 30~min & Eq.~(\ref{eq:LOD}) &
-  4.3~nM $<$ 6~nM clinical target \\
+\endfirsthead
+\toprule
+\textbf{Symbol} & \textbf{Description} & \textbf{Value} & \textbf{Source} & \textbf{Status} \\
+\midrule
+\endhead
 \bottomrule
-\end{tabular}
-\end{center}
+\endlastfoot
+$n_e$ & Electrons per MB reaction & 2 & Baker 2006~\cit{6} & \CONF \\
+$\alpha$ & BV transfer coefficient & 0.37 & DD2017~\cit{1} & \CONF \\
+$E^{\circ\prime}_{\rm MB}$ & MB formal potential & $-0.250$~V & DD2017~\cit{1} & \CONF \\
+$\Fswv$ & SWV frequency & 15~Hz & Baker 2006~\cit{6} & \CONF \\
+$\Esw$ & SWV amplitude & 25~mV & Baker 2006~\cit{6} & \CONF \\
+$\Delta E_s$ & SWV staircase step & 2~mV & Osteryoung 1985~\cit{11} & \CONF \\
+$\Grtot$ & Total probe coverage & $3\times10^{-12}$~mol~cm$^{-2}$ & Adjemian 2010~\cit{8}; Lubin 2010~\cit{6b} & \CONF \\
+$A$ & Electrode area & 0.0177~cm$^2$ & 1.5~mm disc & \CONF \\
+$k^0_0$ & ET rate at $d=0$ & $1.5\times10^8$~s$^{-1}$ & DD2017~\cit{1} Fig.~4 & \CONF \\
+$k^0_{0,\rm Sm}$ & ET rate at $d=0$ (alkyl) & $6\times10^8$~s$^{-1}$ & Smalley 1995~\cit{4} & \CONF \\
+$k^0_{\rm Chidsey}$ & Fc through C16 alkyl & 1.3~s$^{-1}$ at 20.2~\AA & Chidsey 1991~\cit{10} & \CONF \\
+$k^0_{\rm Fc}$ & Fc standard rate constant & $2.7\times10^5$~s$^{-1}$ & DD2017~\cit{1} & \CONF \\
+$\kappa_{\rm Fc}$ & Fc kinetic parameter & 9000 & Derived & \CONF \\
+$E^{\circ\prime}_{\rm Fc}$ & Fc formal potential & $+0.210$~V & DD2017~\cit{1} & \CONF \\
+$\lambda$ & Marcus reorganisation energy & 0.85~eV & Chidsey 1991~\cit{10} & \CONF \\
+$l_0$ & Contour length per residue & 0.38~nm & Kohn 2004~\cit{3} & \CONF \\
+$b$ & Peptide Kuhn length & 0.76~nm & Kohn 2004~\cit{3} & \CONF \\
+$N_r$ & Residues in SGKIPRTLTA & 10 & sequence & \CONF \\
+$N_K$ & Kuhn segments (peptide) & 5 & Eq.~\ref{eq:NK} & \CONF \\
+$\sigma_z$ & Width of $z$-distribution & 0.981~nm & Eq.~\ref{eq:sigz} & \CONF \\
+$l_{\rm EO}$ & PEG EO unit length & 0.35~nm & standard & \CONF \\
+$N_{\rm EO}$ & EO units in PEG6 & 6 & probe synthesis & \CONF \\
+$d_{\rm PEG}$ & PEG6 hard wall (Flory $R_F$) & 1.398~nm & Eq.~\ref{eq:RF} & Unconfirmed \\
+$\langle d \rangle$ & Mean MB distance & 2.18~nm & Eq.~\ref{eq:dmean} & Derived \\
+$\beta$ & Tunnelling decay & 0.95~\AA$^{-1}$ & Smalley 1995~\cit{4} (alkyl) & \FLAG\ (PEG) \\
+$k^0_{\rm ref}$ & ET rate at PEG6 tip & 127~s$^{-1}$ & Eq.~\ref{eq:kref} & \FLAG \\
+$\kappa_{\rm tip}$ & $\kappa$ at PEG6 tip & 4.2 & Derived & \FLAG \\
+$(k_{\rm cat}/K_m)_{\rm sol}$ & Solution cleavage rate & 67{,}500~M$^{-1}$s$^{-1}$ & Kridel 2001~\cit{7} & \CONF \\
+$\eta$ & Surface correction factor & 0.20 (central) & Unconfirmed & \FLAG \\
+$\sigma_{\Fk}$ & Ratiometric noise floor & 3.4\% & Model (Fig.~\ref{fig:ratio}B) & \CONF \\
+$n_{\rm dist}$ & Quadrature points & 80 & Fig.~\ref{fig:ratio}D & \CONF \\
+\end{longtable}
 
-\vspace{0.5em}
-\noindent All parameters are confirmed from literature papers physically present in
-\texttt{papers/swv\_forward\_model/} and cross-referenced layer folders, with the
-exception of the surface correction factor $\eta$ \FLAG{}, the single most important
-experimental quantity to measure at Layer~15.
+\medskip
+\noindent
+\textbf{Model outputs:}
+$\DI(E;\Fk)$ (full voltammogram),
+$A_{\rm MB}$, $E_{\rm pk}$, FWHM (Gaussian fit),
+$\Fk^{\rm rec}$ (recovered cleavage fraction),
+LOD$(\eta, T)$ (from Eq.~\ref{eq:LOD}).
 
 %=======================================================================
 \section*{References}
-\begin{enumerate}[label={[\arabic*]},leftmargin=*]
-  \item \textit{nihms881272.pdf} --- Dauphin-Ducharme~P et al.\ (2017)
-    Langmuir 33:4407--4413. BV-SWV simulation of MB-DNA on gold; $k_0$,
-    $\alpha$, Fc reference parameters. [\texttt{papers/swv\_forward\_model/}]
 
-  \item \textit{kohn2004.pdf} --- Kohn~JE et al.\ (2004)
-    PNAS 101:12491--12496. Random coil dimensions of unfolded polypeptides;
-    Kuhn length $b = 0.76$~nm. [\texttt{papers/swv\_forward\_model/}]
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
 
-  \item \textit{smalley1995.pdf} --- Smalley~JF et al.\ (1995)
-    J Phys Chem 99:13141--13149. Distance-dependent ET rates on gold;
-    $\beta = 1.0$~\AA$^{-1}$. [\texttt{papers/layer\_10/}]
+\item Dauphin-Ducharme P, Ploense KL, Arroyo-Curras N, Kippin TE, Plaxco KW (2017).
+  Electrochemical kinetic evidence of high-affinity MB-surface interactions.
+  \textit{Langmuir} 33:4407--4413.
+  \textbf{nihms881272.pdf} (papers/swv\_forward\_model/)
 
-  \item \textit{kridel2001.pdf} --- Kridel~SJ et al.\ (2001)
-    J Biol Chem 276:28622--28628. MMP-9 kinetics on SGKIPRTLTA;
-    $k_{\text{cat}}/K_m = 67{,}500$~M$^{-1}$s$^{-1}$. [\texttt{papers/layer\_09/}]
+\item Laviron E (1979). General expression of the linear potential sweep voltammogram
+  in the case of diffusionless electrochemical systems.
+  \textit{J Electroanal Chem} 101:19--28.
+  \textbf{1-s2.0-S0022072879801679-main.pdf} (papers/swv\_forward\_model/)
 
-  \item \textit{lubin2010.pdf} --- Lubin~AA and Plaxco~KW (2010)
-    Acc Chem Res 43:496--505. Mixed-SAM probe density;
-    $\Gtot = 3\times10^{-12}$~mol~cm$^{-2}$. [\texttt{papers/layer\_11/}]
+\item Kohn JE, Millett IS, Jacob J, et~al.\ (2004). Random-coil behavior and the
+  dimensions of chemically unfolded proteins.
+  \textit{PNAS} 101:12491--12496.
+  \textbf{kohn2004.pdf} (papers/swv\_forward\_model/)
 
-  \item \textit{baker2006.pdf} --- Baker~BR et al.\ (2006)
-    J Am Chem Soc 128:3138--3139. MB $E^{\circ\prime}$, $n=2$, SWV parameters.
-    [\texttt{papers/layer\_11/}]
+\item Smalley JF, Finklea HO, Chidsey CED, et~al.\ (1995). Heterogeneous
+  electron-transfer kinetics for Ru and Fc through alkanethiol monolayers.
+  \textit{J Phys Chem} 99:13141--13149.
+  \textbf{smalley1995.pdf} (papers/layer\_10/)
+  [$\beta_n = 1.21\pm0.05$ per CH$_2$; $k^0_0 = 6\times10^8$~s$^{-1}$, alkanethiol]
 
-  \item \textit{white2010.pdf} --- White~RJ and Plaxco~KW (2010)
-    Anal Chem 82:73--76. Ratiometric SWV normalisation; drift suppression.
-    [\texttt{papers/layer\_13/}]
+\item O'Dea JJ, Osteryoung J, Osteryoung RA (1981). Theory of square wave
+  voltammetry for kinetic systems.
+  \textit{Anal Chem} 53:695--701.
+  \textbf{odea1981.pdf} (papers/layer\_11/)
 
-  \item \textit{1-s2.0-S0022072879801679-main.pdf} --- Laviron~E (1979)
-    J Electroanal Chem 100:263--270. Surface-confined LPSV peak theory;
-    FWHM $= 90.6/n$~mV. [\texttt{papers/swv\_forward\_model/}]
+\item Baker BR, Lai RY, Wood MS, Doctor EH, Heeger AJ, Plaxco KW (2006).
+  An electronic, aptamer-based small-molecule sensor for cocaine.
+  \textit{JACS} 128:3138--3139.
+  \textbf{baker2006.pdf} (papers/layer\_11/)
+  [6b] Lubin AA, Plaxco KW (2010). Folding-based electrochemical biosensors.
+  \textit{Acc Chem Res} 43:496--505.
+  \textbf{lubin2010.pdf} (papers/layer\_11/)
 
-  \item \textit{odea1981.pdf} --- O'Dea~JJ, Osteryoung~J, Osteryoung~RA (1981)
-    Anal Chem 53:695--701. SWV waveform theory; quasi-reversible surface kinetics.
-    [\texttt{papers/layer\_11/}]
+\item Kridel SJ, Chen E, Howard EW, Bhatt L, Strongin AY (2001).
+  Substrate hydrolysis by matrix metalloproteinase-9.
+  \textit{J Biol Chem} 276:20572--20578.
+  \textbf{kridel2001.pdf} (papers/layer\_09/)
+  [$k_{\rm cat}/K_m = 67{,}500$~M$^{-1}$s$^{-1}$ for SGKIPRTLTA by MMP-9]
+  [7b] Trengove NJ, Stacey MC, MacAuley S, et~al.\ (1999). Analysis of the
+  acute and chronic wound environments.
+  \textit{Wound Repair Regen} 7:442--452.
+  \textbf{trengove1999.pdf} (papers/layer\_00/)
+
+\item Adjemian J, Anne A, Cauet G, Demaille C (2010). Cleavage-sensing redox peptide
+  monolayers for the rapid measurement of the proteolytic activity of trypsin
+  and $\alpha$-thrombin enzymes.
+  \textit{Langmuir} 26:10347--10356.
+  \textbf{adjemian2010.pdf} (papers/layer\_11/)
+  [$\Grtot \leq 10^{-11}$~mol~cm$^{-2}$; PEG6 vs MCH backfill comparison confirmed]
+
+\item Marcus RA (1965). On the theory of electron-transfer reactions. VI.
+  Unified treatment for homogeneous and electrode reactions.
+  \textit{J Chem Phys} 43:679--701.
+  \textbf{marcus1965.pdf} (papers/layer\_10/)
+
+\item Chidsey CED (1991). Free energy and temperature dependence of electron
+  transfer at the metal-electrolyte interface.
+  \textit{Science} 251:919--922.
+  \textbf{chidsey1991.pdf} (papers/layer\_10/)
+  [$k^0 = 1.3$~s$^{-1}$ for Fc-C16-thiol at $d=20.2$~\AA; $\lambda = 0.85$~eV]
+
+\item Osteryoung JG, Osteryoung RA (1985). Square wave voltammetry.
+  \textit{Anal Chem} 57:101A--110A.
+  \textbf{osteryoung1985.pdf} (papers/layer\_11/)
+
 \end{enumerate}
 
 \end{document}
