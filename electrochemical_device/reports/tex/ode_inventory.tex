@@ -1,0 +1,496 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx,longtable}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
+\renewcommand\thesection{\Roman{section}}
+\numberwithin{equation}{section}
+
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Full Mathematics Inventory}}
+\fancyhead[R]{\small Eton iGEM Dry Lab 2026}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\FLAG}{\textcolor{red}{$\bigstar$\,FLAG}}
+\newcommand{\CONF}{\textcolor{teal}{\checkmark}}
+\newcommand{\file}[1]{\texttt{\small #1}}
+\newcommand{\DI}{\Delta I}
+\newcommand{\Fk}{F_k}
+\newcommand{\Grtot}{\Gamma_{\rm tot}}
+\newcommand{\Grred}{\Gamma_{\rm red}}
+\newcommand{\Grox}{\Gamma_{\rm ox}}
+\newcommand{\Greq}{\Gamma_{\rm eq}}
+\newcommand{\kzero}{k^0}
+
+\newenvironment{mathbox}{%
+  \begin{tcolorbox}[colback=black!4,colframe=black!20,boxrule=0.4pt,
+                    arc=2pt,left=5pt,right=5pt,top=4pt,bottom=4pt]
+  \small}{%
+  \end{tcolorbox}}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries Full Mathematics Inventory}\\[0.3em]
+{\large Every equation derived across all pipeline layers}\\[0.2em]
+{\small\color{gray}
+Eton iGEM 2026, Dry Lab \quad$|$\quad
+Layers 0, 3, 8, 9, 10, 11, 13, 15 \quad$|$\quad
+\FLAG\ = unconfirmed parameter \quad
+\CONF\ = confirmed from cited paper}
+\end{center}
+\vspace{0.3em}\hrule\vspace{0.6em}
+
+%=======================================================================
+\section{Layer 0: Wound Biology Cascade}
+\file{models/00\_wound\_biology/wound\_biology.py}
+
+\subsection{State vector}
+
+Nine species (all mol~L$^{-1}$): pro-MMP-9, free MMP-9, free TIMP-1,
+MMP9:TIMP1 complex, free HNE, free A1AT, HNE:A1AT, free SLPI, HNE:SLPI.
+MMP-3 and plasmin are fixed constants (large excess over pro-MMP-9).
+
+\subsection{Activation of pro-MMP-9}
+
+\begin{equation}
+  \frac{d[\text{proMMP9}]}{dt}
+  = -\underbrace{\left(\tfrac{k_{cat}}{K_m}\right)_{\text{MMP3}}\!C_{\text{MMP3}}}_{\text{MMP3 activation}}
+    [\text{proMMP9}]
+  - \underbrace{\left(\tfrac{k_{cat}}{K_m}\right)_{\text{plas}}\!C_{\text{plas}}}_{\text{plasmin activation}}
+    [\text{proMMP9}]
+\end{equation}
+
+\subsection{MMP-9 / TIMP-1 binding}
+
+\begin{align}
+  \frac{d[\text{MMP9}]}{dt}    &= +v_{\text{act}} - k_{\text{on,T1}}[\text{MMP9}][\text{TIMP1}] + k_{\text{off,T1}}[\text{MMP9:T1}] \\
+  \frac{d[\text{TIMP1}]}{dt}   &= -k_{\text{on,T1}}[\text{MMP9}][\text{TIMP1}] + k_{\text{off,T1}}[\text{MMP9:T1}] \\
+  \frac{d[\text{MMP9:T1}]}{dt} &= +k_{\text{on,T1}}[\text{MMP9}][\text{TIMP1}] - k_{\text{off,T1}}[\text{MMP9:T1}]
+\end{align}
+
+\subsection{HNE inhibition by A1AT (near-irreversible) and SLPI (reversible)}
+
+\begin{align}
+  \frac{d[\text{HNE}]}{dt} &=
+    -k_{\text{on,A1AT}}[\text{HNE}][\text{A1AT}]
+    -k_{\text{on,SLPI}}[\text{HNE}][\text{SLPI}]
+    +k_{\text{off,SLPI}}[\text{HNE:SLPI}] \\
+  \frac{d[\text{A1AT}]}{dt} &= -k_{\text{on,A1AT}}[\text{HNE}][\text{A1AT}] \\
+  \frac{d[\text{HNE:A1AT}]}{dt} &= +k_{\text{on,A1AT}}[\text{HNE}][\text{A1AT}]
+\end{align}
+(SLPI equations symmetric with $k_{\text{on/off,SLPI}}$.)
+
+\subsection{HNE half-life}
+
+At equilibrium $k_{\text{off,A1AT}} \approx 0$, so the A1AT pseudo-first-order
+inhibition gives:
+\begin{equation}
+  t_{1/2,\text{HNE}} = \frac{\ln 2}{k_{\text{on,A1AT}}[\text{A1AT}]}
+  = \frac{0.693}{6.5\times10^7 \times 1.9\times10^{-6}}
+  = 5.5\;\text{ms}
+\end{equation}
+
+\subsection{Key parameters}
+
+\begin{center}\small\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Parameter & Value & Units & Source & Status \\
+\midrule
+$k_{\text{on,TIMP1}}$  & $2.48\times10^5$ & M$^{-1}$s$^{-1}$ & Olson 1997 & \CONF \\
+$k_{\text{off,TIMP1}}$ & $2.1\times10^{-3}$ & s$^{-1}$ & Olson 1997 & \CONF \\
+$k_{\text{on,A1AT}}$   & $6.5\times10^7$  & M$^{-1}$s$^{-1}$ & Beatty 1980 & \CONF \\
+$k_{\text{off,A1AT}}$  & $10^{-6}$  & s$^{-1}$ & placeholder & \FLAG \\
+$k_{\text{on,SLPI}}$   & $10^5$  & M$^{-1}$s$^{-1}$ & & \FLAG \\
+$(k_{cat}/K_m)_{\text{MMP3}}$ & $5\times10^3$ & M$^{-1}$s$^{-1}$ & & \FLAG \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%=======================================================================
+\section{Layer 3: Mass Transport and Fouling}
+\file{models/03\_mass\_transport/}
+
+\subsection{3a. Enzyme diffusion to electrode (1D PDE + Robin BC)}
+
+Enzyme concentration $[E](z,t)$ in a channel of height $h = 100\,\mu$m:
+\begin{align}
+  \frac{\partial [E]}{\partial t} &= D_E\,\frac{\partial^2[E]}{\partial z^2},
+  \quad 0 < z < h \\[3pt]
+  \left.\frac{\partial [E]}{\partial z}\right|_{z=h} &= 0
+  \qquad\text{(no flux at lid)} \\[3pt]
+  D_E\left.\frac{\partial [E]}{\partial z}\right|_{z=0} &= \kappa(t)\,[E](0,t)
+  \qquad\text{(Robin sink at electrode)} \\[3pt]
+  \frac{d\Gamma}{dt} &= -\kappa(t)\,[E](0,t),
+  \qquad \kappa(t) = \frac{k_{cat}}{K_{m,\text{surf}}}\,\Gamma(t)
+\end{align}
+
+Damk\"{o}hler number: $\mathrm{Da} = \kappa(0)h/D_E \approx 0.03 \ll 1$
+(reaction-limited, diffusion not rate-limiting).
+
+Stokes-Einstein diffusivity for MMP-9 (MW = 92~kDa, $r_h = 5.0$~nm):
+\begin{equation}
+  D_E = \frac{k_B T}{6\pi\eta r_h}
+  = \frac{1.38\times10^{-23}\times298}{6\pi\times8.9\times10^{-4}\times5.0\times10^{-9}}
+  = 4.9\times10^{-11}\;\text{m}^2\text{s}^{-1}
+\end{equation}
+
+\subsection{3b. Three-species inhibitor reaction-diffusion}
+
+\begin{align}
+  \frac{\partial [E]}{\partial t} &= D_E\frac{\partial^2[E]}{\partial z^2} - k_{\text{on}}[E][I] \\
+  \frac{\partial [I]}{\partial t} &= D_I\frac{\partial^2[I]}{\partial z^2} - k_{\text{on}}[E][I] \\
+  \frac{\partial [C]}{\partial t} &= D_C\frac{\partial^2[C]}{\partial z^2} + k_{\text{on}}[E][I]
+\end{align}
+$[I]$ and $[C]$ have no-flux BCs at both walls; only $[E]$ carries the Robin surface sink.
+
+\subsection{3c. SAM fouling (Langmuir kinetics)}
+
+Fractional fouling coverage $\Theta_f \in [0,1]$:
+\begin{equation}
+  \frac{d\Theta_f}{dt} = k_f[P]_{\text{bulk}}(1-\Theta_f) - k_d\Theta_f
+\end{equation}
+Steady state: $\Theta_f^* = k_f[P]/(k_f[P]+k_d)$. Effect on cleavage fraction:
+\begin{equation}
+  F_k^{\text{fouled}}(T) = 1 - \exp\!\left(-k_{\text{obs}}\,\bar{\alpha}\,T\right),
+  \qquad
+  \bar{\alpha} = \frac{1}{T}\int_0^T\!\frac{h}{h+h_{f,\max}\Theta_f(t)}\,dt
+\end{equation}
+
+\subsection{3d. In-device inhibitor binding (well-mixed)}
+
+MMP-9/TIMP-1 (reversible):
+\begin{equation}
+  \frac{d[\text{MMP9}]}{dt} = \frac{d[\text{TIMP1}]}{dt}
+  = -k_{\text{on}}[\text{MMP9}][\text{TIMP1}] + k_{\text{off}}[\text{MMP9:T1}]
+\end{equation}
+HNE/A1AT (irreversible):
+\begin{equation}
+  \frac{d[\text{HNE}]}{dt} = \frac{d[\text{A1AT}]}{dt}
+  = -k_{\text{on,A1AT}}[\text{HNE}][\text{A1AT}]
+\end{equation}
+
+%=======================================================================
+\section{Layer 8: Probe Tether Geometry (FJC)}
+\file{models/swv\_forward\_model/swv\_forward\_model.py}
+
+\subsection{PEG6 spacer: Flory radius (hard wall)}
+
+PEG6 has $N_{\rm EO}=6$ ethylene oxide units, each of length $l_{\rm EO}=0.35$~nm,
+with Kuhn length $l_K = 0.76$~nm:
+\begin{equation}
+  N_{K,\text{PEG}} = \frac{N_{\rm EO}\,l_{\rm EO}}{l_K} = \frac{6\times0.35}{0.76} = 2.76
+\end{equation}
+In the dilute mushroom regime (good solvent), the Flory exponent is 3/5:
+\begin{equation}
+  d_{\rm PEG} = R_F = N_{K,\text{PEG}}^{3/5}\,l_K = (2.76)^{0.6}\times0.76 = 1.398\;\text{nm}
+\end{equation}
+
+\subsection{Peptide tether: freely jointed chain}
+
+For SGKIPRTLTA ($N_r = 10$ residues, $l_0 = 0.38$~nm/residue, $b = 0.76$~nm Kuhn length):
+\begin{align}
+  N_K &= \frac{N_r\,l_0}{b} = \frac{10\times0.38}{0.76} = 5 \\
+  \langle r^2\rangle &= N_K b^2 = 5\times(0.76)^2 = 2.888\;\text{nm}^2 \\
+  \sigma_z &= \sqrt{\frac{\langle r^2\rangle}{3}} = \sqrt{\frac{2.888}{3}} = 0.981\;\text{nm}
+\end{align}
+The $1/3$ factor comes from isotropy: $\langle\cos^2\theta\rangle = 1/3$ for
+a uniformly distributed random walk.
+
+\subsection{Distance distribution}
+
+The MB-to-gold distance $d = d_{\rm PEG} + z$ follows a half-Gaussian
+(positive half of a zero-mean Gaussian with std $\sigma_z$):
+\begin{equation}
+  \boxed{P(d) = \sqrt{\frac{2}{\pi}}\,\frac{1}{\sigma_z}
+  \exp\!\left(-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right),\quad d \geq d_{\rm PEG}}
+\end{equation}
+Mean distance:
+\begin{equation}
+  \langle d\rangle = d_{\rm PEG} + \sigma_z\sqrt{\frac{2}{\pi}}
+  = 14.0 + 9.81\times0.798 = 21.8\;\text{\AA}
+\end{equation}
+
+%=======================================================================
+\section{Layer 10: Electron Transfer Kinetics}
+\file{models/swv\_forward\_model/swv\_forward\_model.py}
+
+\subsection{Marcus theory: activation barrier}
+
+Free-energy surfaces are parabolas in reaction coordinate $q$.
+At overpotential $\eta = E - E^{\circ\prime}$:
+\begin{equation}
+  \Delta G^\ddagger = \frac{(\Delta G^0 + \lambda)^2}{4\lambda}
+  \xrightarrow{\;\Delta G^0 = 0\;} \frac{\lambda}{4}
+\end{equation}
+Reorganisation energy: $\lambda = 0.85$~eV~\CONF\ (Chidsey 1991).
+
+\subsection{Butler-Volmer as the Marcus low-$\eta$ limit}
+
+First-order expansion of $\Delta G^\ddagger$ in $\eta$:
+\begin{equation}
+  \Delta G^\ddagger(\eta) \approx \frac{\lambda}{4} - \frac{\alpha n_e F\eta}{RT}
+\end{equation}
+Transfer coefficient from Marcus geometry:
+\begin{equation}
+  \alpha = \frac{1}{2}\!\left(1 + \frac{n_e F\eta}{\lambda}\right)
+  \;\xrightarrow{\eta\to0}\; 0.5
+  \quad\text{(measured: }\alpha = 0.37\text{ for MB, \CONF\ DD2017)}
+\end{equation}
+Rate constants:
+\begin{align}
+  k_f(E) &= \kzero\exp\!\left(-\frac{\alpha n_e F(E-E^{\circ\prime})}{RT}\right) \\
+  k_b(E) &= \kzero\exp\!\left(+\frac{(1-\alpha)n_e F(E-E^{\circ\prime})}{RT}\right)
+\end{align}
+
+\subsection{Tunnelling decay and distance dependence}
+
+Wavefunction amplitude through a barrier of height $V_0$:
+\begin{equation}
+  \psi(d)\propto e^{-\kappa_{\rm tun}d},\qquad
+  \kappa_{\rm tun} = \frac{\sqrt{2m_e V_0}}{\hbar}
+\end{equation}
+Rate scales as $|\psi|^2$:
+\begin{equation}
+  \kzero(d) = \kzero_0\,e^{-\beta d},\qquad
+  \beta = \frac{2\sqrt{2m_e V_0}}{\hbar}
+\end{equation}
+From Smalley (1995): $\beta = 1.21/1.27\;\text{\AA} = 0.95\;\text{\AA}^{-1}$
+for alkanethiol~\CONF; value for PEG bridge~\FLAG.
+
+\subsection{Reference rate at PEG6 tip}
+
+\begin{equation}
+  \kzero_{\rm ref} = \kzero_0\,e^{-\beta d_{\rm PEG}}
+  = 1.5\times10^8 \times e^{-0.95\times1.40}
+  \approx 127\;\text{s}^{-1}
+\end{equation}
+(\FLAG\ on $k^0_{\rm ref}$: $\beta_{\rm PEG}$ not measured.)
+Cross-check: Chidsey (1991) reports $\kzero = 1.3$~s$^{-1}$ for Fc-C16 at
+$d = 20.3$~\AA, back-calculating $\kzero_0 = 1.3\,e^{0.95\times2.03} \approx
+2.7\times10^8$~s$^{-1}$, consistent with DD2017 value of $1.5\times10^8$~s$^{-1}$~\CONF.
+
+\subsection{Tafel plot slopes}
+
+From the BV expressions:
+\begin{equation}
+  \frac{\partial \ln k_f}{\partial E} = -\frac{\alpha n_e F}{RT},
+  \qquad
+  \frac{\partial \ln k_b}{\partial E} = +\frac{(1-\alpha) n_e F}{RT}
+\end{equation}
+At $T = 298$~K, $n_e = 2$, $\alpha = 0.37$:
+slope$_f = -0.37\times2\times38.9 = -28.8$~V$^{-1}$;
+slope$_b = +0.63\times2\times38.9 = +49.0$~V$^{-1}$.
+
+%=======================================================================
+\section{Layer 9: Three-State Surface Cleavage ODE}
+\file{models/09\_surface\_kinetics/surface\_kinetics.py}
+
+Mechanism: $E + \Gamma_S \underset{k_{-1}}{\overset{k_1}{\rightleftharpoons}} \Gamma_{ES}
+\xrightarrow{k_{cat}} E + \Gamma_P$.
+\begin{align}
+  \frac{d\Gamma_S}{dt}   &= k_{-1}\Gamma_{ES} - k_1[E]\Gamma_S \\
+  \frac{d\Gamma_{ES}}{dt}&= k_1[E]\Gamma_S - (k_{-1}+k_{cat})\Gamma_{ES} \\
+  \frac{d\Gamma_P}{dt}   &= k_{cat}\Gamma_{ES}
+\end{align}
+Conservation: $\Gamma_S + \Gamma_{ES} + \Gamma_P = \Gamma_0 = 3\times10^{-12}$~mol~cm$^{-2}$~\CONF.
+
+\textbf{Analytic pseudo-first-order limit} (valid when $k_1[E]\ll k_{cat}$, confirmed at clinical concentrations):
+\begin{equation}
+  \boxed{F_k(T) = 1 - e^{-k_{\rm eff,surf}[E]T}}
+\end{equation}
+where $k_{\rm eff,surf} = \eta\times(k_{cat}/K_m)_{\rm sol}$.
+From Kridel (2001): $(k_{cat}/K_m)_{\rm sol} = 67{,}500$~M$^{-1}$s$^{-1}$~\CONF.
+Surface efficiency $\eta = 0.20$ (central estimate)~\FLAG.
+
+%=======================================================================
+\section{Layer 11/13: SWV Forward Model}
+\file{models/swv\_forward\_model/swv\_forward\_model.py}
+
+\subsection{Butler-Volmer surface ODE}
+
+MB is surface-confined (no diffusion). One ODE per half-pulse:
+\begin{equation}
+  \frac{d\Grred}{dt}
+  = k_f\Grtot - (k_f+k_b)\Grred
+\end{equation}
+
+\subsection{Exact analytic solution (5-step integrating factor)}
+
+\textbf{Step 1.} Standard form: $\dot{\Grred} + b\Grred = a$, where
+$a = k_f\Grtot$, $b = k_f+k_b$.
+
+\textbf{Step 2.} Multiply by integrating factor $\mu = e^{bt}$:
+$e^{bt}\dot{\Grred} + be^{bt}\Grred = ae^{bt}$.
+
+\textbf{Step 3.} Recognise as product rule: $\tfrac{d}{dt}[\Grred e^{bt}] = ae^{bt}$.
+
+\textbf{Step 4.} Integrate from 0 to $\tau$:
+$\Grred(\tau)e^{b\tau} - \Grred(0) = (a/b)(e^{b\tau}-1)$.
+
+\textbf{Step 5.} Divide by $e^{b\tau}$, substitute $a/b = \Greq$:
+\begin{equation}
+  \boxed{
+  \Grred(\tau) = \Greq + \bigl[\Grred(0)-\Greq\bigr]\,e^{-(k_f+k_b)\tau}
+  }
+\end{equation}
+where $\Greq = k_f/(k_f+k_b)\,\Grtot$ and $\tau = 1/(2f) = 33.3$~ms.
+
+\subsection{Dimensionless kinetic parameter}
+
+\begin{equation}
+  \kappa = \kzero/f_{\rm SWV}
+\end{equation}
+Three regimes: $\kappa\ll1$ (irreversible, $\DI\to0$), $\kappa\approx1$ (quasi-reversible, $\DI$ maximised), $\kappa\gg1$ (reversible, $\DI\to0$). Operating point: $\kappa_{\rm tip} = 127/15 = 4.2$~\FLAG.
+
+\subsection{Sampled currents and net SWV difference}
+
+Current sampled at end of half-pulse (anodic positive):
+\begin{equation}
+  I(E) = n_e FA\bigl[k_b\Grred(\tau) - k_f\Grox(\tau)\bigr]
+\end{equation}
+Net SWV current at staircase step $E_{\rm step}$:
+\begin{equation}
+  \DI(E_{\rm step}) = I_f(E_{\rm step}+E_{\rm sw}) - I_b(E_{\rm step}-E_{\rm sw})
+\end{equation}
+
+\subsection{Distance-averaged voltammogram}
+
+\begin{equation}
+  \DI(E;F_k) = (1-F_k)\,\Grtot\,A
+  \int_{d_{\rm PEG}}^{d_{\rm max}} P(d)\,\DI_{\rm norm}(E;\,\kzero(d))\,dd
+\end{equation}
+Computed by 80-point quadrature. Probes near $d_{\rm PEG}$ dominate because $P(d)$ peaks at
+the hard wall and $\kzero(d)$ falls exponentially with $d$.
+
+\subsection{SWV charging-current cancellation}
+
+Double-layer charging current decays on RC timescale $\tau_{\rm RC}\sim1$~ms.
+Faradaic current persists on $1/(k_f+k_b)\sim33$~ms. Sampling at the end
+of the half-pulse eliminates $I_c$. Subtracting $I_f - I_b$ removes residual
+symmetric background. Net SNR $\approx8\times$ better than CV.
+
+%=======================================================================
+\section{Layer 13: Laviron Limit and FWHM}
+\file{models/swv\_forward\_model/swv\_forward\_model.py}
+
+\subsection{Reversible peak shape (Laviron 1979)}
+
+In the limit $E_{\rm sw}\to0$, SWV converges to:
+\begin{equation}
+  |\Psi| = \frac{\eta_L}{(1+\eta_L)^2},
+  \qquad
+  \eta_L = \exp\!\left[\frac{n_e F(E-E^{\circ\prime})}{RT}\right]
+\end{equation}
+Peak maximum at $E = E^{\circ\prime}$: $|\Psi|_{\rm max} = 1/4$.
+
+\subsection{Analytic FWHM derivation}
+
+Set $|\Psi| = |\Psi|_{\rm max}/2 = 1/8$:
+\begin{equation}
+  \frac{\eta_L}{(1+\eta_L)^2} = \frac{1}{8}
+  \;\Rightarrow\;
+  \eta_L = 3\pm2\sqrt{2}
+\end{equation}
+The two half-maximum points are at $E_\pm = (RT/n_eF)\ln(3\pm2\sqrt{2})$.
+\begin{equation}
+  \text{FWHM} = E_+ - E_- = \frac{2RT}{n_eF}\ln(3+2\sqrt{2})
+  = \frac{3.53\,RT}{n_eF}
+\end{equation}
+For $n_e=2$ at $T=298$~K: $\text{FWHM} = 45.3$~mV~\CONF\ (Laviron 1979).
+
+%=======================================================================
+\section{Layer 15: Calibration and Limit of Detection}
+\file{models/15\_calibration/calibration.py}
+
+\subsection{Ferrocene ratiometric correction}
+
+Fc is always reversible ($\kappa_{\rm Fc} = 9000\gg1$, \CONF):
+\begin{equation}
+  F_k^{\rm rec} = 1 - \frac{A_{\rm MB}(T)/A_{\rm Fc}}{A_{\rm MB}(0)/A_{\rm Fc}}
+\end{equation}
+Cancels $\pm15\%$ electrode-to-electrode drift in $\Grtot$.
+Residual noise: $\sigma_{F_k} = 3.4\%$.
+
+\subsection{Calibration linearity}
+
+From the distance-averaging integral, $A_{\rm area}(\Fk) \propto (1-F_k)$
+to $<2\%$ nonlinearity over $F_k\in[0,0.95]$:
+\begin{equation}
+  A_{\rm area}(F_k) = A_{\rm area}(0)\,(1-F_k)
+\end{equation}
+
+\subsection{Limit of detection}
+
+At $3\sigma$ criterion:
+\begin{equation}
+  [\text{MMP-9}]_{\rm LOD} = \frac{3\sigma_{F_k}}{k_{\rm eff,surf}\,T}
+  = \frac{3\times0.034}{\eta\times67{,}500\times T}
+\end{equation}
+
+\begin{center}\small\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+$\eta$ & $k_{\rm eff}$ (M$^{-1}$s$^{-1}$) & LOD (30 min) & LOD (60 min) & Below 6~nM? \\
+\midrule
+0.05 & 3{,}375 & 17~nM & 8.5~nM & No / Yes \\
+\textbf{0.20} & \textbf{13{,}500} & \textbf{4.3~nM} & \textbf{2.1~nM} & \textbf{Yes} \\
+0.50 & 33{,}750 & 1.7~nM & 0.9~nM & Yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Temperature corrections}
+
+MB formal potential: $\partial E^{\circ\prime}/\partial T = -1.5$~mV~K$^{-1}$
+(DD2017~\CONF). From lab (25~$^\circ$C) to wound (37~$^\circ$C): $\Delta E^{\circ\prime} = -18$~mV.
+
+$k^0_{\rm ref}$ via Arrhenius ($E_a = 0.30$~eV, inferred from Chidsey 1991):
+\begin{equation}
+  k^0(T) = k^0_{\rm ref}\exp\!\left[-\frac{E_a}{k_B}\!\left(\frac{1}{T}-\frac{1}{298}\right)\right]
+\end{equation}
+From 25~$^\circ$C to 37~$^\circ$C: $k^0$ increases $\approx70\%$, $\kappa_{\rm tip}:4.2\to7.1$.
+
+%=======================================================================
+\section*{System Summary}
+
+\rowcolors{2}{gray!6}{white}
+\begin{tabular}{@{}p{1.1cm}p{4.2cm}p{2.0cm}p{1.7cm}p{4.0cm}@{}}
+\toprule
+\textbf{Layer} & \textbf{Model} & \textbf{States} & \textbf{Type} & \textbf{Solver / solution} \\
+\midrule
+L0   & Wound biology cascade & 9 ODEs & nonlinear & \texttt{solve\_ivp} RK45 \\
+L3a  & Enzyme diffusion + depletion & PDE + 1 ODE & linear PDE & Crank-Nicolson FD \\
+L3b  & 3-species react.-diffusion & 3 PDEs & nonlinear PDE & op.-split FD \\
+L3c  & SAM fouling (Langmuir) & 1 ODE & nonlinear & \texttt{solve\_ivp} RK45 \\
+L3d  & In-device inhibition & $2\times3$ ODEs & nonlinear & \texttt{solve\_ivp} Radau \\
+L8   & FJC tether + $P(d)$ & algebraic & statistical & closed form \\
+L9   & 3-state surface MM & 3 ODEs & nonlinear & RK45 / analytic limit \\
+L10  & Marcus / BV / tunnelling & algebraic & & closed form \\
+L11/13 & BV surface ODE (SWV) & 1 per half-pulse & linear ODE & \textbf{exact analytic} \\
+L13  & Laviron FWHM & algebraic & & analytic ($3.53\,RT/n_eF$) \\
+L15  & LOD / ratiometric & algebraic & & closed form \\
+\bottomrule
+\end{tabular}
+
+\end{document}
