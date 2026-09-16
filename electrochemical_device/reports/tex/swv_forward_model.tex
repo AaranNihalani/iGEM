@@ -39,9 +39,10 @@
 \newcommand{\FLAG}{\textcolor{red}{$\bigstar$\,FLAG}}
 \newcommand{\CONF}{\textcolor{teal}{\checkmark\,confirmed}}
 
-\newenvironment{keyresult}{%
-  \begin{tcolorbox}[colback=black!5,colframe=black!25,boxrule=0.5pt,
-                    arc=2pt,left=5pt,right=5pt,top=4pt,bottom=4pt]
+\newenvironment{assump}{%
+  \begin{tcolorbox}[colback=orange!5,colframe=orange!40!black,boxrule=0.5pt,
+                    arc=2pt,left=5pt,right=5pt,top=4pt,bottom=4pt,
+                    title={\small\textbf{Assumptions}},fonttitle=\small]
   \small}{%
   \end{tcolorbox}\smallskip}
 
@@ -59,28 +60,17 @@ Layers 8, 10, 11, 13, 15 \quad$|$\quad
 
 \noindent\textbf{What this document is.}
 This is the working model of how our electrode turns MMP-9 activity into a
-signal we can read on a potentiostat. It is written to be read start to
-finish by anyone on the team, not just the person who built it: every
-result is stated in plain language first, with the supporting equation
-given but not re-derived line by line. Where a number comes from a
-published paper it is marked \CONF. Where it is a working assumption,
-not yet confirmed on our own electrodes, it is marked \FLAG\ and explained.
-
-\begin{keyresult}
-\textbf{Read this box first.} Several things this model used to assume have
-turned out not to match what we actually see on the bench (Max Li, lab
-notes, September 2026). This version corrects them. The headline changes:
-there is no MCH backfill (Section~\ref{sec:sam}); the ferrocene reference
-peak sits 100--150~mV positive of where the model expected
-(Section~\ref{sec:ratio}); and we have not yet resolved two separate peaks
-on a real scan at all, which is a real problem for the ratiometric strategy,
-not a detail (Section~\ref{sec:ratio}). None of this breaks the model's
-core logic, but the numbers and a few assumptions need to be treated
-as open questions, not settled facts, until we test them directly.
-\end{keyresult}
+signal we can read on a potentiostat. It is organised as six self-contained
+parts, one per physical step in the chain from probe to peak. Each part
+follows the same pattern: what it does, in plain language; what we're
+assuming to get there, stated explicitly and justified; the equation, with
+its physical meaning given before it appears, not after; the parameters it
+needs; and the result. Where a number comes from a published paper it is
+marked \CONF. Where it is a working assumption, not yet confirmed on our
+own electrodes, it is marked \FLAG.
 
 %=======================================================================
-\section{The Electrode and What Happens to It}
+\section{Overview: The Electrode and What Happens to It}
 \label{sec:story}
 
 Our sensor is a small gold disc (1.5~mm across) carrying two kinds of
@@ -95,14 +85,32 @@ molecule stuck to its surface by a thiol (sulfur) anchor, Figure~\ref{fig:assem}
 \item \textbf{The reference probe.} A short thiol carrying a ferrocene (Fc)
   group instead of MB. Fc is not cut by MMP-9 and gives its own, separate
   redox signal. We use its peak as an internal ruler to correct for how much
-  probe actually ended up on a given electrode (Section~\ref{sec:ratio}).
+  probe actually ended up on a given electrode (Part~E).
 \end{itemize}
 
-The two probes are deposited together in \textbf{one pot} (Section~\ref{sec:sam}).
-As MMP-9 activity increases, more MB is lost, and the MB peak in the
+The two probes are deposited together in \textbf{one pot} (Part~B). As
+MMP-9 activity increases, more MB is lost, and the MB peak in the
 voltammogram shrinks. Measuring how much it shrinks over a known incubation
 time is how we read out enzyme activity, and from there, estimate
 [MMP-9] in the wound sample.
+
+The document is organised as six parts, each covering one physical step in
+that chain:
+\begin{center}
+\small
+\begin{tabular}{@{}cll@{}}
+\toprule
+Part & Question & Section \\
+\midrule
+A & What's actually on the electrode surface? & \ref{sec:sam} \\
+B & Where does the MB label sit above the gold? & \ref{sec:geom} \\
+C & How does one MB label's signal arise? & \ref{sec:core} \\
+D & Why square-wave voltammetry specifically? & \ref{sec:wave} \\
+E & How do we turn a peak into a cleavage fraction? & \ref{sec:ratio} \\
+F & How does [MMP-9] map to a predicted signal? & \ref{sec:conc} \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \begin{figure}[H]
   \centering
@@ -110,54 +118,63 @@ time is how we read out enzyme activity, and from there, estimate
   \caption{\textbf{Left:} the two probe types on the gold surface --
     the MB-peptide (cleavable) and the Fc reference (not cleavable).
     \textbf{Right:} the range of distances the MB label can sit at above
-    the gold, set by the flexibility of its tether (Section~\ref{sec:geom}).}
+    the gold, set by the flexibility of its tether (Part~\ref{sec:geom}).}
   \label{fig:assem}
 \end{figure}
 
 %=======================================================================
-\section{The Surface Chemistry: What's Actually There}
+\section{Part A: The Surface Chemistry}
 \label{sec:sam}
 
-\textbf{This section replaces an earlier, incorrect description.} Previous
-versions of this report and related layer reports described an
-MCH backfill step, where a small inert molecule (6-mercapto-1-hexanol)
-fills in gaps between the probes. \textbf{This is not what we do.} Per
-Max Li's lab note (September 2026):
+\subsection{Overview}
 
-\begin{itemize}[leftmargin=*]
-\item Both probes, MB-peptide and Fc-thiol, are deposited together in a
-  \textbf{single one-pot reaction}. There is no separate MCH step, and no
-  MCH at all.
-\item Fc plays the role MCH used to play in older versions of this model:
-  it dilutes the MB-peptide probe density, spacing the signal probes apart.
-\item We do \textbf{not} know the resulting surface composition matches the
-  ratio the two thiols were mixed in solution. The peptide probe is
-  thermodynamically favoured to stick to bare gold over the Fc-thiol, so it
-  may end up over-represented on the surface relative to what was mixed in.
-  This is an open question \FLAG, not a design parameter we control precisely.
-\item Because there is no MCH filling the remaining gaps, bare gold may be
-  exposed between probes, which is a plausible route for non-specific protein
-  adsorption from wound fluid (fouling). This was not a concern under the old
-  MCH-backfill picture and needs its own check.
+Before anything electrochemical can be modelled, we need to know what is
+physically on the electrode. \textbf{This section replaces an earlier,
+incorrect description.} Previous versions of this report and related layer
+reports described an MCH backfill step, where a small inert molecule
+(6-mercapto-1-hexanol) fills in gaps between the probes. \textbf{This is
+not what we do.} The current protocol \cit{12} co-deposits both probes,
+MB-peptide and Fc-thiol, together in a single one-pot reaction. There is no
+separate MCH step, and no MCH at all. Fc plays the role MCH used to play in
+older versions of this model: it dilutes the MB-peptide probe density,
+spacing the signal probes apart.
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{One-pot, two-component deposition (no MCH).} Confirmed
+  protocol \cit{12}; this is a fact about the fabrication process, not a
+  modelling choice.
+\item \textbf{Surface composition may not match the solution mixing ratio.}
+  The peptide probe is thermodynamically favoured to stick to bare gold
+  over the Fc-thiol, so it may end up over-represented on the surface
+  relative to what was mixed in solution \FLAG. This is an open question,
+  not a design parameter we control precisely, and has not been measured.
+\item \textbf{Total probe coverage $\Grtot = 3\times10^{-12}$~mol~cm$^{-2}$.}
+  This is \emph{not} a measured value for our electrodes: it is an
+  engineering placeholder in the range reported for a comparable
+  Fc-peptide-PEG system in the literature \cit{8} \FLAG. Our SAMs are not
+  yet reproducible enough to trust a specific number here; it should be
+  measured directly (e.g. by integrating the Fc peak charge) once the
+  one-pot protocol is finalised.
+\item \textbf{Bare gold exposure between probes.} Because there is no MCH
+  filling the remaining surface, bare gold may be exposed between probes,
+  which is a plausible route for non-specific protein adsorption from
+  wound fluid (fouling). This was not a concern under the old MCH-backfill
+  picture and has not been checked \FLAG.
 \end{itemize}
+\end{assump}
 
-\textbf{Why this matters for the model.} The distance distribution $P(d)$
-used in Section~\ref{sec:geom} was derived assuming a clean, PEG6-spaced
-probe with nothing else nearby. It has not been re-derived or validated for
-the real, MCH-free, competitively-adsorbed surface. Treat $P(d)$ as a
-reasonable working shape, not a measured one.
-
-\textbf{Surface coverage.} The model uses a total probe coverage of
-$\Grtot = 3\times10^{-12}$~mol~cm$^{-2}$. This is \textbf{not} a measured
-value for our electrodes: it is an engineering placeholder in the range
-reported for a similar Fc-peptide-PEG system elsewhere in the literature
-\cit{8}. Our SAMs are not yet reproducible enough to trust a specific number
-here \FLAG; it should be measured directly (e.g. by integrating the Fc peak
-charge) once the one-pot protocol is finalised.
+\textbf{Why this matters downstream.} The distance distribution $P(d)$
+used in Part~\ref{sec:geom} was derived assuming a clean, PEG6-spaced probe
+with nothing else nearby. It has not been re-derived or validated for the
+real, MCH-free, competitively-adsorbed surface described above. Treat
+$P(d)$ as a reasonable working shape, not a measured one.
 
 %=======================================================================
-\section{Where Does the MB Label Actually Sit?}
+\section{Part B: Where Does the MB Label Sit?}
 \label{sec:geom}
+
+\subsection{Overview}
 
 The MB label is not rigidly fixed above the gold: it sits at the end of a
 flexible tether (PEG6 spacer plus the peptide itself), so it wobbles around
@@ -167,9 +184,25 @@ exponentially with distance -- this is standard Marcus/tunnelling theory
 \cit{9,10}), so only probes sitting close to the gold contribute meaningfully
 to the signal.
 
-Treating the tether as a flexible chain (a standard polymer-physics model,
-the freely-jointed chain) gives a distance distribution that peaks right at
-the PEG6 spacer length and falls off further out:
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{The tether behaves as a freely-jointed chain (FJC).} This is
+  a standard polymer-physics model for a flexible, non-rigid linker, used
+  here for the peptide segment of the tether. It is a modelling choice, not
+  a measurement on our specific peptide.
+\item \textbf{This geometry has not been validated on the real (MCH-free)
+  surface.} See Part~\ref{sec:sam}: the calculation below assumes a clean,
+  isolated PEG6-spaced probe, which may not hold once competitive
+  peptide/Fc adsorption is accounted for \FLAG.
+\end{itemize}
+\end{assump}
+
+\subsection{Equation and parameters}
+
+Treating the tether as an FJC gives a distance distribution that peaks
+right at the PEG6 spacer length and falls off further out:
 \[
   P(d) \propto \exp\!\left(-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right),
   \qquad d \geq d_{\rm PEG}
@@ -177,8 +210,10 @@ the PEG6 spacer length and falls off further out:
 with $d_{\rm PEG} \approx 14$~\AA\ (from the PEG6 spacer) and
 $\sigma_z \approx 9.8$~\AA\ (from the peptide's flexibility). The
 electron-transfer rate at the near end of that range works out to
-$\kzero_{\rm ref} \approx 127$~s$^{-1}$ \FLAG\ (see Section~\ref{sec:sam}
-caveat on $P(d)$).
+$\kzero_{\rm ref} \approx 127$~s$^{-1}$ \FLAG\ (carries the same $P(d)$
+caveat above).
+
+\subsection{Result}
 
 \begin{figure}[H]
   \centering
@@ -195,21 +230,40 @@ caveat on $P(d)$).
 \end{figure}
 
 %=======================================================================
-\section{The Core Model: One Equation}
+\section{Part C: The Core Signal Model}
 \label{sec:core}
+
+\subsection{Overview}
 
 Each MB label switches between an oxidised and reduced state at a rate set
 by the applied potential (Butler-Volmer kinetics, the standard model for
 electrode reactions \cit{9}). Because MB is stuck to the surface rather than
 floating free in solution, this reduces to a single, exactly solvable
-equation for the fraction of MB in the reduced state, $\Grred$:
+equation -- no numerical simulation needed -- for the fraction of MB in the
+reduced state.
+
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{Butler-Volmer kinetics apply to surface-confined MB.} This is
+  the standard, textbook model for a redox species attached to an
+  electrode, not specific to our device, and is not in question here.
+\item \textbf{The potential is held fixed within each SWV half-pulse.} This
+  is true by construction of the SWV waveform (Part~\ref{sec:wave}) and is
+  what makes the equation below exactly solvable.
+\end{itemize}
+\end{assump}
+
+\subsection{Equations}
+
+The rate of change of reduced-MB coverage $\Grred$ follows:
 \begin{equation}
   \frac{d\Grred}{dt} = k_f\,(\Grtot - \Grred) - k_b\,\Grred
   \label{eq:ode}
 \end{equation}
-This has a closed-form solution -- no numerical simulation needed --
-because during each SWV pulse the potential (and therefore $k_f$, $k_b$) is
-held fixed:
+Because $k_f$, $k_b$ are constant during a half-pulse, this has a
+closed-form solution:
 \begin{equation}
   \boxed{\;\Grred(\tau) = \Greq + \bigl[\Grred(0) - \Greq\bigr]\,e^{-(k_f+k_b)\tau}\;}
   \label{eq:soln}
@@ -222,6 +276,22 @@ equilibrates before the next pulse and forward/backward currents cancel
 the coverage moves partway to equilibrium each pulse -- this is why there is
 an optimal scan frequency (Fig.~\ref{fig:geom}D).
 
+Scanning this across a full range of potentials, and adding up the
+contribution from every MB label at every distance $d$ (weighted by $P(d)$
+from Part~\ref{sec:geom}), gives the full predicted voltammogram $\DI(E)$ --
+a peak centred near the MB formal potential, whose height scales with how
+much intact probe remains on the electrode:
+\begin{equation}
+  \DI(E;\Fk) \;\propto\; (1-\Fk)\,\Grtot
+  \label{eq:DI_Fk}
+\end{equation}
+where $\Fk$ is the fraction of probe that has been cut by MMP-9. This
+proportionality was checked numerically and holds to within 2\% across
+the full range of $\Fk$ -- the peak shrinks in proportion to cleavage, and
+its position and width barely move.
+
+\subsection{Results}
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV3_ode.pdf}
@@ -233,20 +303,6 @@ an optimal scan frequency (Fig.~\ref{fig:geom}D).
     Eq.~\eqref{eq:ode}), for reference.}
   \label{fig:ode}
 \end{figure}
-
-Scanning this across a full range of potentials, and adding up the
-contribution from every MB label at every distance $d$ (weighted by
-$P(d)$ from Section~\ref{sec:geom}), gives the full predicted voltammogram
-$\DI(E)$ -- a peak centred near the MB formal potential, whose height
-scales with how much intact probe remains on the electrode:
-\begin{equation}
-  \DI(E;\Fk) \;\propto\; (1-\Fk)\,\Grtot
-  \label{eq:DI_Fk}
-\end{equation}
-where $\Fk$ is the fraction of probe that has been cut by MMP-9. This
-proportionality was checked numerically and holds to within 2\% across
-the full range of $\Fk$ -- the peak shrinks in proportion to cleavage, and
-its position and width barely move.
 
 \begin{figure}[H]
   \centering
@@ -269,29 +325,7 @@ its position and width barely move.
   \label{fig:avg}
 \end{figure}
 
-\textbf{Why SWV and not a simpler technique.} Square-wave voltammetry
-samples the current only at the end of each pulse, by which point the
-electrode's background charging current has died away, and then subtracts
-the forward and backward readings. Both steps remove background signal
-that a simpler technique (e.g.\ cyclic voltammetry) would keep, giving SWV
-substantially better sensitivity for a surface-bound probe like ours
-\cit{11}.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{../figures/fig_SWV8_waveform.pdf}
-  \caption{\textbf{A:} the SWV pulse sequence -- a staircase with a square
-    wave superimposed, forward and backward currents sampled at the end of
-    each half-pulse. \textbf{B:} background charging current dies away
-    quickly; the real (Faradaic) signal persists, so sampling late removes
-    background. \textbf{C:} SWV's sensitivity advantage over CV and DPV for
-    a surface-bound probe.}
-  \label{fig:wave}
-\end{figure}
-
-%=======================================================================
-\section{Checking the Model Against Published Data}
-\label{sec:valid}
+\subsection{Validation against published data}
 
 Before trusting this model's predictions, we checked it against two
 independent published results. In the limit of a very slow scan, the model
@@ -302,7 +336,8 @@ et al.\ (2017) \cit{1} on a comparable MB-on-gold system; our simulator's
 predicted peak width matches their measured values to within 4~mV across
 their tested frequency range. Both checks land in the same kinetic regime
 our device operates in, which gives reasonable confidence in the ODE
-solution itself, independent of the surface-chemistry open questions above.
+solution itself, independent of the surface-chemistry open questions in
+Parts~\ref{sec:sam}--\ref{sec:geom}.
 
 \begin{figure}[H]
   \centering
@@ -317,10 +352,47 @@ solution itself, independent of the surface-chemistry open questions above.
 \end{figure}
 
 %=======================================================================
-\section{The Ratiometric Correction, and Why It's Currently an Open Problem}
+\section{Part D: Why Square-Wave Voltammetry}
+\label{sec:wave}
+
+\subsection{Overview}
+
+Square-wave voltammetry samples the current only at the end of each pulse,
+by which point the electrode's background charging current has died away,
+and then subtracts the forward and backward readings. Both steps remove
+background signal that a simpler technique (e.g.\ cyclic voltammetry)
+would keep, giving SWV substantially better sensitivity for a
+surface-bound probe like ours \cit{11}.
+
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{SWV's sensitivity advantage over CV/DPV for surface-bound
+  probes is standard electroanalytical theory} \cit{11}, not specific to
+  our device.
+\end{itemize}
+\end{assump}
+
+\subsection{Result}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/fig_SWV8_waveform.pdf}
+  \caption{\textbf{A:} the SWV pulse sequence -- a staircase with a square
+    wave superimposed, forward and backward currents sampled at the end of
+    each half-pulse. \textbf{B:} background charging current dies away
+    quickly; the real (Faradaic) signal persists, so sampling late removes
+    background. \textbf{C:} SWV's sensitivity advantage over CV and DPV for
+    a surface-bound probe.}
+  \label{fig:wave}
+\end{figure}
+
+%=======================================================================
+\section{Part E: The Ratiometric Correction}
 \label{sec:ratio}
 
-\subsection{What the ratiometric correction is trying to do, in plain terms}
+\subsection{Overview: what it's trying to do, in plain terms}
 
 Every electrode we make ends up with a slightly different amount of probe on
 it. If we just measured the MB peak area, a bigger MB peak might mean more
@@ -333,39 +405,41 @@ scan. Because Fc isn't cut by MMP-9, its peak size should track how much
 total probe landed on that electrode, regardless of enzyme activity. Taking
 the ratio $A_{\rm MB}/A_{\rm Fc}$ is meant to cancel out the electrode-to-
 electrode variation and leave a number that depends only on how much MB was
-cleaved:
+cleaved. That's the whole idea: compare the MB peak to the Fc peak before
+and after incubation, and any electrode-specific scaling factor cancels
+out of the ratio.
+
+\subsection{Equation}
+
 \begin{equation}
   \Fk^{\rm rec} = 1 - \frac{A_{\rm MB}(T)/A_{\rm Fc}}{A_{\rm MB}(0)/A_{\rm Fc}}
   \label{eq:Fk_ratio}
 \end{equation}
-That's the whole idea: compare the MB peak to the Fc peak before and after
-incubation, and any electrode-specific scaling factor cancels out of the
-ratio.
 
-\subsection{Why this is currently flagged, not trusted}
+\subsection{Assumptions -- and why this is currently an open problem, not a
+trusted result}
 
 \textbf{This cancellation is an assumption, not a demonstrated fact for our
 device.} Three separate problems have come up:
 
-\begin{enumerate}[leftmargin=*]
+\begin{assump}
+\begin{itemize}[leftmargin=*]
 \item \textbf{The Fc peak position doesn't match what the model expected.}
   We had modelled the Fc formal potential at $+0.210$~V vs.\ Ag/AgCl, taken
-  from a comparable system in the literature \cit{1}. Max Li's actual
-  measurements put it nearer \textbf{+0.300 to +0.350~V} \FLAG\ -- a
+  from a comparable system in the literature \cit{1}. Our own electrode
+  measurements put it nearer \textbf{+0.300 to +0.350~V} \cit{12} \FLAG\ -- a
   100--150~mV shift. This isn't fatal on its own, but it means the
   literature anchor doesn't transfer cleanly to our chemistry, and the real
   value needs a dedicated single-component Fc scan to pin down.
-
 \item \textbf{We have not actually seen two separate peaks.} The model
   assumes the MB and Fc peaks are well separated and can both be read off
   cleanly in one scan. \textbf{On real voltammograms, no distinct dual peak
-  has been observed.} We don't yet know if this is because the peaks
+  has been observed} \FLAG. We don't yet know if this is because the peaks
   genuinely overlap, because the MB signal is too weak to see next to the
   Fc signal at current coverages, or something else in the protocol. Until
   this is resolved (e.g.\ with probe-only and Fc-only control scans, or a
   peak-fitting approach to separate overlapping peaks), the ratiometric
   correction as written cannot actually be applied to a real scan.
-
 \item \textbf{The correlation the ratio depends on is unverified.} Equation
   \eqref{eq:Fk_ratio} only works if Fc coverage and MB coverage scale
   together electrode-to-electrode, since they're co-deposited. That's a
@@ -373,7 +447,10 @@ device.} Three separate problems have come up:
   preliminary data may not support it \FLAG. It should be tested directly:
   deliberately vary total probe loading and check whether the ratio still
   behaves as predicted.
-\end{enumerate}
+\end{itemize}
+\end{assump}
+
+\subsection{Result}
 
 \begin{figure}[H]
   \centering
@@ -393,33 +470,51 @@ Separately from the ratiometric question, the current plan is to convert a
 measured signal into [MMP-9] via a single calibration curve built from a
 reference set of electrodes. This works well for a large, reusable
 industrial electrode, where the same physical surface is measured
-repeatedly and stays consistent. Our electrodes are small and
-single-use, and electrode-to-electrode variation in probe coverage is
-already a known issue (Section~\ref{sec:sam}). \textbf{A single fixed
-calibration curve may not be robust to that variation} \FLAG\ -- this is a
-design risk worth testing directly (e.g.\ checking how much the calibration
-curve shifts across a batch of nominally identical electrodes) rather than
-assuming the ratiometric correction alone will handle it.
+repeatedly and stays consistent. Our electrodes are small and single-use,
+and electrode-to-electrode variation in probe coverage is already a known
+issue (Part~\ref{sec:sam}). \textbf{A single fixed calibration curve may
+not be robust to that variation} \FLAG\ -- this is a design risk worth
+testing directly (e.g.\ checking how much the calibration curve shifts
+across a batch of nominally identical electrodes) rather than assuming the
+ratiometric correction alone will handle it.
 
 %=======================================================================
-\section{From MMP-9 Concentration to Predicted Signal}
+\section{Part F: From MMP-9 Concentration to Predicted Signal}
 \label{sec:conc}
 
-At the enzyme concentrations expected in a wound sample (roughly 6--30~nM),
-MMP-9 is present in large excess over the surface probe, so the cleavage
-fraction follows simple first-order kinetics:
+\subsection{Overview}
+
+At the enzyme concentrations expected in a wound sample (roughly
+6--30~nM), MMP-9 is present in large excess over the surface probe, so the
+cleavage fraction follows simple first-order kinetics.
+
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{MMP-9 is in large excess over surface probe, so cleavage is
+  pseudo-first-order.} Consistent with clinical concentration ranges
+  (6--30~nM) against a surface probe density orders of magnitude lower.
+\item \textbf{Surface efficiency $\eta = 0.20$.} A central estimate, not a
+  measured value for our device \FLAG. It corrects for cleavage on a
+  surface typically being slower than in free solution (steric hindrance,
+  orientation effects), and still needs to be measured directly (e.g.\ by
+  comparing electrode readout to a parallel solution-phase fluorescence
+  assay).
+\end{itemize}
+\end{assump}
+
+\subsection{Equation and parameters}
+
 \begin{equation}
   \Fk(T) = 1 - e^{-k_{\rm eff}\,[\text{MMP-9}]\,T}
   \label{eq:Fk_kin}
 \end{equation}
 where $k_{\rm eff} = \eta \times (k_{\rm cat}/K_m)_{\rm sol}$, and
 $(k_{\rm cat}/K_m)_{\rm sol} = 67{,}500$~M$^{-1}$s$^{-1}$ is the measured
-solution-phase cleavage rate for this exact peptide \cit{7} \CONF. The
-factor $\eta$ corrects for the fact that cleavage on a surface is usually
-slower than in free solution (steric hindrance, orientation effects); we
-use $\eta = 0.20$ as a central estimate \FLAG, still to be measured on our
-device (e.g.\ by comparing electrode readout to a parallel solution-phase
-fluorescence assay).
+solution-phase cleavage rate for this exact peptide \cit{7} \CONF.
+
+\subsection{Results}
 
 \begin{center}
 \small\renewcommand{\arraystretch}{1.25}
@@ -437,7 +532,7 @@ At the $3\sigma$ detection criterion, this gives a predicted limit of
 detection around \textbf{4~nM} at 30 minutes, below the 6~nM healing/chronic
 boundary -- \emph{provided} the ratiometric noise floor used in that
 calculation ($\sim$3\%) is achievable, which depends on resolving the
-dual-peak issue in Section~\ref{sec:ratio} first.
+dual-peak issue in Part~\ref{sec:ratio} first.
 
 \begin{figure}[H]
   \centering
@@ -456,33 +551,33 @@ dual-peak issue in Section~\ref{sec:ratio} first.
 
 \begin{center}
 \small\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{@{}p{4.3cm}p{9cm}l@{}}
+\begin{tabular}{@{}p{2cm}p{4.3cm}p{7.5cm}l@{}}
 \toprule
-\textbf{Component} & \textbf{Status} & \\
+\textbf{Part} & \textbf{Component} & \textbf{Status} & \\
 \midrule
-The BV-ODE and its solution & Exact maths, validated against two published datasets & \CONF \\
-SWV beats CV/DPV for this probe & Standard, well-established result & \CONF \\
-Solution cleavage rate (Kridel) & Directly measured for this peptide & \CONF \\
-One-pot, no-MCH deposition & Confirmed current protocol (Max Li) & \CONF \\
-$P(d)$ tether geometry & Derived for a clean surface, not validated for the real one & \FLAG \\
-Surface coverage $\Grtot$ & Engineering placeholder, not measured on our SAMs & \FLAG \\
-C6FC formal potential & Literature value doesn't match observed +300--350~mV & \FLAG \\
-Two resolvable peaks (MB, Fc) & \textbf{Not observed on real scans yet} & \FLAG \\
-Ratiometric drift-cancellation & Assumed, not demonstrated on our device & \FLAG \\
-Single calibration curve & May not suit small, single-use, variable electrodes & \FLAG \\
-Surface efficiency $\eta$ & Central estimate, needs direct measurement & \FLAG \\
+C, D & The BV-ODE and its solution & Exact maths, validated against two published datasets & \CONF \\
+D    & SWV beats CV/DPV for this probe & Standard, well-established result & \CONF \\
+F    & Solution cleavage rate (Kridel) & Directly measured for this peptide & \CONF \\
+A    & One-pot, no-MCH deposition & Confirmed current protocol \cit{12} & \CONF \\
+B    & $P(d)$ tether geometry & Derived for a clean surface, not validated for the real one & \FLAG \\
+A    & Surface coverage $\Grtot$ & Engineering placeholder, not measured on our SAMs & \FLAG \\
+E    & C6FC formal potential & Literature value doesn't match observed +300--350~mV & \FLAG \\
+E    & Two resolvable peaks (MB, Fc) & \textbf{Not observed on real scans yet} & \FLAG \\
+E    & Ratiometric drift-cancellation & Assumed, not demonstrated on our device & \FLAG \\
+E    & Single calibration curve & May not suit small, single-use, variable electrodes & \FLAG \\
+F    & Surface efficiency $\eta$ & Central estimate, needs direct measurement & \FLAG \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Bottom line.} The core electrochemistry (Sections~\ref{sec:core}
-and \ref{sec:valid}) rests on standard, validated theory and isn't in
-question. What needs direct experimental attention before the device can be
-trusted end to end is everything to do with the real surface: what's
-actually on it (Section~\ref{sec:sam}), whether the two reporter peaks can
-even be told apart (Section~\ref{sec:ratio}), and whether a single
-calibration curve is the right strategy for electrodes this small and this
-variable (Section~\ref{sec:ratio}).
+\textbf{Bottom line.} The core electrochemistry (Parts~\ref{sec:core} and
+\ref{sec:wave}) rests on standard, validated theory and isn't in question.
+What needs direct experimental attention before the device can be trusted
+end to end is everything to do with the real surface: what's actually on
+it (Part~\ref{sec:sam}), whether the two reporter peaks can even be told
+apart (Part~\ref{sec:ratio}), and whether a single calibration curve is the
+right strategy for electrodes this small and this variable
+(Part~\ref{sec:ratio}).
 
 %=======================================================================
 \section*{References}
@@ -536,10 +631,11 @@ variable (Section~\ref{sec:ratio}).
 \item Osteryoung JG, Osteryoung RA (1985). Square wave voltammetry.
   \textit{Anal Chem} 57:101A--110A. \textbf{osteryoung1985.pdf} (papers/layer\_11/)
 
-\item[--] Max Li, lab notes (September 2026): one-pot co-immobilisation
-  protocol (no MCH), observed C6FC formal potential, absence of a resolved
-  dual peak on real voltammograms. Cited throughout as the source of the
-  corrections in this version of the report.
+\item Dry lab team, internal electrode characterisation notes (September
+  2026): one-pot co-immobilisation protocol (no MCH), observed C6FC formal
+  potential, and voltammogram peak-resolution observations from the
+  fabricated device. Cited throughout as the source of the protocol and
+  measurement corrections in this version of the report.
 
 \end{enumerate}
 
