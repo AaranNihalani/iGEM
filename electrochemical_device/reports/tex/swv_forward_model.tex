@@ -396,7 +396,7 @@ surface-bound probe like ours \cit{11}.
 \subsection{Overview: what it's trying to do, in plain terms}
 
 Every electrode we make ends up with a slightly different amount of probe on
-it. If we just measured the MB peak area, a bigger MB peak might mean more
+it. If we just measured the MB signal, a bigger MB peak might mean more
 MMP-9 cleaved less probe, or it might just mean that electrode happened to
 get more probe deposited in the first place. There's no way to tell those
 apart from the MB signal alone.
@@ -404,27 +404,51 @@ apart from the MB signal alone.
 The fix is to also measure the Fc peak on the same electrode, in the same
 scan. Because Fc isn't cut by MMP-9, its peak size should track how much
 total probe landed on that electrode, regardless of enzyme activity. Taking
-the ratio $A_{\rm MB}/A_{\rm Fc}$ is meant to cancel out the electrode-to-
-electrode variation and leave a number that depends only on how much MB was
-cleaved. That's the whole idea: compare the MB peak to the Fc peak before
-and after incubation, and any electrode-specific scaling factor cancels
-out of the ratio.
+the ratio of the two peaks is meant to cancel out the electrode-to-electrode
+variation and leave a number that depends only on how much MB was cleaved.
+That's the whole idea: compare the MB peak to the Fc peak before and after
+incubation, and any electrode-specific scaling factor cancels out of the
+ratio.
 
 \subsection{Equation}
 
 \begin{equation}
-  \Fk^{\rm rec} = 1 - \frac{A_{\rm MB}(T)/A_{\rm Fc}}{A_{\rm MB}(0)/A_{\rm Fc}}
+  \Fk^{\rm rec} = 1 - \frac{\DI_{\rm MB}(T)/\DI_{\rm Fc}}{\DI_{\rm MB}(0)/\DI_{\rm Fc}}
   \label{eq:Fk_ratio}
 \end{equation}
+where $\DI_{\rm MB}$ and $\DI_{\rm Fc}$ are the net SWV peak \emph{heights}
+(the $\DI_{\rm peak}$ quantity used throughout Parts~\ref{sec:core}--\ref{sec:wave}),
+not the integrated peak area used in earlier versions of this report -- see
+the first assumption below for why that change matters.
 
 \subsection{Assumptions -- and why this is currently an open problem, not a
 trusted result}
 
 \textbf{This cancellation is an assumption, not a demonstrated fact for our
-device.} Three separate problems have come up:
+device.} Four separate problems have come up:
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
+\item \textbf{Peak height, not peak area, is the right quantity here --
+  and even height isn't fully clean.} Earlier versions of this report
+  defined the ratio using integrated peak \emph{area} (height times width),
+  by analogy with CV, where integrated charge is a physically meaningful
+  quantity directly tied to coverage by Faraday's law. That analogy doesn't
+  hold for SWV: the net SWV peak has no equivalent charge interpretation,
+  and its width tracks the kinetic regime $\kappa$ (Part~\ref{sec:core}),
+  not coverage. On small, low-reproducibility SAM electrodes, fouling can
+  change the electron-transfer kinetics at the Fc reference itself, not
+  just the amount of Fc present -- which distorts peak \emph{shape}
+  (width) independently of coverage. An area-based ratio cannot
+  distinguish "coverage changed" from "kinetics/shape changed due to
+  fouling," so it silently assumes fouling only ever scales peak
+  amplitude. Peak height is closer to the standard SWV observable and
+  more directly tied to coverage at the peak potential, but it is still
+  affected by $\kappa$, so it is not immune to this problem either --
+  distinguishing a real coverage change from a fouling-driven kinetics
+  shift requires comparing height \emph{and} width separately, not folding
+  them into one number \FLAG. This has not yet been checked on our
+  electrodes.
 \item \textbf{The Fc peak position doesn't match what the model expected.}
   We had modelled the Fc formal potential at $+0.210$~V vs.\ Ag/AgCl, taken
   from a comparable system in the literature \cit{1}. Our own electrode
@@ -458,12 +482,18 @@ device.} Three separate problems have come up:
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV7_ratiometric.pdf}
-  \caption{The ratiometric correction \emph{as modelled} (assuming clean
-  peak separation and stable Fc coverage). \textbf{A:} predicted separate MB
-  and Fc peaks -- \textbf{not yet observed on real scans, see text.}
-  \textbf{B:} recovered vs.\ true cleavage fraction under this model.
+  \caption{The ratiometric correction \emph{as modelled}. \textit{Figure
+  regeneration pending:} the generating code has been updated to use the
+  corrected Fc potential range (Part~\ref{sec:ratio}) and to mark panel~A
+  explicitly as not-yet-observed, but the PDF itself has not been
+  re-rendered as of this version of the report -- treat the image below as
+  the previous render until it is updated. \textbf{A:} MB and Fc peaks as
+  modelled -- \textbf{a distinct dual peak has not been observed on real
+  scans, see text.} \textbf{B:} recovered vs.\ true cleavage fraction under
+  an idealised noise model, independent of the area/height question.
   \textbf{C, D:} frequency and quadrature diagnostics for the underlying
-  simulator, independent of the ratiometric open questions above.}
+  simulator (already peak-height-based), independent of the ratiometric
+  open questions above.}
   \label{fig:ratio}
 \end{figure}
 

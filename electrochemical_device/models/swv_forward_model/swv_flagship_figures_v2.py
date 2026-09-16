@@ -818,13 +818,16 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
     axes = axes.flatten()
 
     f_op = 15.0
-    # Fc parameters
-    E0_Fc = 0.210
+    # Fc parameters. E0_Fc updated to the observed range on the fabricated
+    # device (+300 to +400 mV vs Ag/AgCl, itself variable electrode-to-
+    # electrode; internal electrode characterisation notes, Sept 2026) --
+    # 350 mV used here as the midpoint, not a confirmed single value.
+    E0_Fc = 0.350
     k0_Fc = 2.7e5
     kap_Fc = k0_Fc / (2 * f_op)
     A_Fc = 0.0177
     Gamma_Fc = 3e-12
-    E_wide = np.linspace(-0.40, 0.40, 600)
+    E_wide = np.linspace(-0.40, 0.50, 600)
 
     # A: MB + Fc peaks
     ax = axes[0]
@@ -834,14 +837,22 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
     ax.plot(E_wide * 1000, DI_MB * 1e9, color=C0, lw=2, label="MB ($F_k=0$)")
     ax.plot(E_wide * 1000, DI_Fc * 1e9, color=C1, lw=2, label="Fc (reference)")
     ax.axvline(-250, color=C0, ls=":", lw=0.8, alpha=0.5)
-    ax.axvline(210, color=C1, ls=":", lw=0.8, alpha=0.5)
-    ax.annotate("", xy=(210, 0.3), xytext=(-250, 0.3),
+    ax.axvline(E0_Fc * 1000, color=C1, ls=":", lw=0.8, alpha=0.5)
+    sep_mV = E0_Fc * 1000 - (-250)
+    ax.annotate("", xy=(E0_Fc * 1000, 0.3), xytext=(-250, 0.3),
                 arrowprops=dict(arrowstyle="<->", color="#555", lw=1.5))
-    ax.text(-20, 0.32, "460 mV", ha="center", fontsize=8)
+    ax.text((E0_Fc * 1000 - 250) / 2, 0.32, f"{sep_mV:.0f} mV (modelled)",
+            ha="center", fontsize=8)
+    ax.text(0.02, 0.96,
+            "As originally modelled -- a distinct dual peak has not yet\n"
+            "been observed experimentally on the fabricated device.",
+            transform=ax.transAxes, ha="left", va="top", fontsize=7,
+            style="italic", color="#a33",
+            bbox=dict(boxstyle="round", fc="#fff3f3", ec="#a33", lw=0.6))
     ax.set_xlabel("Potential (mV vs Ag/AgCl)")
     ax.set_ylabel(r"$\Delta I$ (nA)")
-    ax.set_title("A  MB and Fc peaks in a single scan")
-    ax.legend(fontsize=8)
+    ax.set_title("A  MB and Fc peaks (modelled)")
+    ax.legend(fontsize=8, loc="upper right")
 
     # B: Ratiometric recovery
     ax = axes[1]

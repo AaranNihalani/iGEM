@@ -536,17 +536,20 @@ def run_all(save=True):
             E0_MB=-0.250, alpha=0.37, ne=2,
             f_swv=F_SWV, E_sw=E_SW, n_dist=80)
 
-    # ── Gaussian fits → A_area vs F_k ────────────────────────────────────────
+    # ── Gaussian fits → A_area, A_pk vs F_k ──────────────────────────────────
     A_areas = []
+    A_pks   = []
     E_peaks = []
     FWHMs   = []
     for fk in FK_VALS:
         A_pk, E_pk, sigma_E, A_area = fit_gaussian(E_SCAN, DI_Fk[fk])
         A_areas.append(A_area)
+        A_pks.append(A_pk)
         E_peaks.append(E_pk)
         FWHMs.append(sigma_E * 2.355 * 1000.0 if not np.isnan(sigma_E) else np.nan)
 
     A_areas = np.array(A_areas, dtype=float)
+    A_pks   = np.array(A_pks,   dtype=float)
     E_peaks = np.array(E_peaks, dtype=float)
     FWHMs   = np.array(FWHMs,   dtype=float)
     fk_arr  = np.array(FK_VALS, dtype=float)
@@ -563,11 +566,19 @@ def run_all(save=True):
     DI_Fc = swv_voltammogram(E_SCAN_FC, k0=K0_FC, Gamma_tot=GAMMA_FC,
                               A_cm2=A_ELEC, E0=E0_FC, alpha=0.5, ne=1,
                               f_swv=F_SWV, E_sw=E_SW)
-    _, _, sigma_Fc, A_area_Fc = fit_gaussian(E_SCAN_FC, DI_Fc)
+    A_pk_Fc, _, sigma_Fc, A_area_Fc = fit_gaussian(E_SCAN_FC, DI_Fc)
     kappa_Fc = K0_FC / (2.0 * F_SWV)
 
     # ── Ratiometric closure ───────────────────────────────────────────────────
-    R_vals = A_areas / A_area_Fc             # R(F_k) = A_MB / A_Fc
+    # Uses peak HEIGHT, not integrated peak area: on SWV (unlike CV) integrated
+    # area has no direct physical meaning tied to coverage, and its width
+    # component tracks the kinetic regime kappa. On small, low-reproducibility
+    # SAM electrodes, fouling can shift kappa (and therefore peak shape) at the
+    # Fc reference independently of how much Fc is actually present, which an
+    # area-based ratio cannot distinguish from a real coverage change. Peak
+    # height is closer to the standard SWV observable and more directly tied
+    # to coverage at the peak potential (see swv_forward_model.tex, Part E).
+    R_vals = A_pks / A_pk_Fc                # R(F_k) = DeltaI_MB_peak / DeltaI_Fc_peak
     R_0    = R_vals[0]                       # R at F_k = 0
     rho    = R_vals / R_0                    # normalised ratio
     Fk_recovered = 1.0 - rho                # recovered F_k (single electrode)
