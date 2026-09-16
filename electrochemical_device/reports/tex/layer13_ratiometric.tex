@@ -128,16 +128,27 @@ is a device-level constant that cancels when we subsequently take $R(T)/R(0)$
 
 (2) The coverage ratio $\Gtot/\Gamma_\text{Fc}$.
 The Fc SAM and the aptamer-MB SAM are co-deposited, so their surface densities
-are correlated: electrodes with more Fc also have more MB. If the Fc coverage
-is stable (Fc molecules do not desorb during the assay, as confirmed by
-Layer~12 diagnostics), then $\Gamma_\text{Fc}$ is a constant for a given
-electrode and the ratio $\Gtot/\Gamma_\text{Fc}$ evolves purely due to
+are \emph{assumed} to be correlated: electrodes with more Fc also have more MB.
+If the Fc coverage is stable (Fc molecules do not desorb during the assay, as
+confirmed by Layer~12 diagnostics), then $\Gamma_\text{Fc}$ is a constant for a
+given electrode and the ratio $\Gtot/\Gamma_\text{Fc}$ evolves purely due to
 changes in $\Gtot$ (i.e., cleavage or folding of the aptamer probe).
+
+\textbf{Status of this assumption on the current device (FLAG).} White and
+Plaxco~\cit{1} validated this cancellation on a different aptamer-beacon
+system, not on our co-immobilised probe-peptide/C6FC SAM. It has not been
+independently confirmed for this device, and Max Li's lab note (September
+2026) suggests the team's own preliminary data may \emph{not} show the clean
+cancellation this section assumes. The co-deposition correlation above should
+therefore be treated as an unverified working assumption, not an established
+result, until tested directly (e.g.\ by deliberately varying total probe
+coverage electrode-to-electrode and checking whether $R$ still tracks
+$\Gtot/\Gamma_\text{Fc}$ as predicted).
 
 White and Plaxco~\cit{1} confirmed experimentally that taking this ratio
 eliminates electrode-to-electrode amplitude variation by over 10-fold
 in a chip with deliberate variation in electrode size, validating the
-$A_\text{true}$ cancellation.
+$A_\text{true}$ cancellation on their system.
 
 \subsection{Uncertainty on $R$}
 

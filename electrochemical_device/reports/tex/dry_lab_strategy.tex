@@ -207,13 +207,20 @@ moving from the reversible to the quasi-reversible regime: $\kappa_{\text{tip}} 
 The sensor still works; signal now comes from the peak of $P(d)$ at the PEG6 tip
 rather than from probes at the mean distance.
 
-\subsection{MCH backfill: only on the peptide-only electrode}
+\subsection{No MCH: one-pot co-immobilisation with Fc as diluent}
 
-Per lab protocol (Jaden, April 2026): the MCH backfill is present only on the
-peptide-only electrode (no Fc). The peptide + Fc electrode has no MCH. This
-distinction matters because MCH changes the surface packing and therefore $P(d)$.
-The model currently uses the same $P(d)$ for both electrodes; this is a FLAG for
-experimental refinement.
+\textbf{Superseded.} An earlier lab note (Jaden, April 2026) described an MCH
+backfill present only on the peptide-only electrode. Per Max Li (lab note,
+September 2026), this is not the current protocol: both probe types are
+co-immobilised in a single one-pot deposition, with \textbf{no MCH at all}.
+Fc-hexanethiol itself acts as the diluent for the MB-peptide probe. It is also
+not established that the two components adsorb in the ratio they are mixed in
+solution: the peptide is thermodynamically favoured to adsorb onto gold over
+Fc-hexanethiol, so the resulting surface composition is an open question, not
+an engineered ratio \FLAG. The model currently uses a single $P(d)$ derived
+assuming a clean PEG6-spaced probe geometry; this has not been validated
+against the actual (MCH-free) surface and remains a FLAG for experimental
+refinement.
 
 \subsection{$\beta$ for PEG6 is unconfirmed}
 
@@ -240,9 +247,22 @@ and $\kappa_{\text{tip}} = 4.2$ carry a FLAG.
     $k_0 = 5{,}000$~s$^{-1}$ (from Dauphin-Ducharme for MB-DNA) applies to our
     MB-peptide-PEG6 system.
 
-  \item \textbf{$P(d)$ with MCH vs without MCH.} Two different surface geometries
-    need two different $P(d)$ runs. FJC model is the same; the hard-wall
-    boundary may shift if MCH compresses the PEG6 layer.
+  \item \textbf{$P(d)$ on the real (MCH-free) surface.} The FJC model's hard-wall
+    boundary was derived assuming a clean PEG6-spaced probe; it has not been
+    validated on the actual one-pot, MCH-free surface, where peptide/Fc
+    competitive adsorption may change the effective packing.
+
+  \item \textbf{Resolving the MB/Fc dual peak.} No distinct MB and Fc peaks
+    have been observed on real voltammograms to date (Max Li, September
+    2026), in contrast to the clean $\sim$460~mV separation assumed by the
+    ratiometric model (Layer~13). Needs a probe-only vs.\ Fc-only control
+    scan, and/or a peak-fitting (deconvolution) approach, before the
+    ratiometric correction can be trusted.
+
+  \item \textbf{C6FC formal potential.} Modelled at $+0.210$~V vs.\ Ag/AgCl
+    (literature analogue, Dauphin-Ducharme 2017); observed on the fabricated
+    device at $+0.300$ to $+0.350$~V (Max Li lab note). Needs a clean
+    single-component Fc CV to pin down.
 \end{enumerate}
 
 %=======================================================================

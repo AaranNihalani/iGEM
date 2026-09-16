@@ -43,7 +43,9 @@
 %=======================================================================
 \begin{center}
 {\LARGE\bfseries Layer 7: SAM Chemistry}\\[0.4em]
-{\large Three-Component Probe-Thiol/C6FC/MCH Monolayer: Deposition, Stability, and Ca$^{2+}$ Artefact}\\[0.25em]
+{\large Probe-Thiol/C6FC Monolayer: Deposition, Stability, and Ca$^{2+}$ Artefact\\
+\normalsize\color{gray}(original three-component MCH characterisation below; protocol
+since updated to two-component, see note)}\\[0.25em]
 {\small\color{gray} Eton iGEM 2026, Dry Lab \quad$|$\quad
 Layer 7 of 17-Layer Biosensor Pipeline \quad$|$\quad
 \texttt{sam\_loading.py}, \texttt{sam\_stability.py}, \texttt{calcium\_artefact.py}}
@@ -59,6 +61,28 @@ quantitative account of the Ca$^{2+}$ artefact and its ratiometric cancellation.
 
 Every parameter value must be confirmed from a paper physically present in
 \texttt{papers/layer\_07/}; values without a paper source are explicitly flagged throughout.
+
+\begin{center}
+\fbox{\begin{minipage}{0.94\textwidth}
+\small
+\textbf{Protocol update (Max Li, lab note, September 2026).} The deposition
+protocol described in Section~\ref{sec:architecture} below is a
+\emph{three-component} system (probe-thiol + C6FC + MCH). The team has since
+moved to a \textbf{two-component one-pot co-immobilisation}: probe-thiol and
+C6FC only, deposited together from a single solution, with \textbf{no MCH}.
+C6FC itself now plays the diluent role that MCH played in the original
+characterisation below. It is also not yet established that the two
+components adsorb in the solution deposition ratio: the peptide probe is
+thermodynamically favoured to adsorb onto bare gold over C6FC, so the
+resulting surface composition may differ substantially from the mixing
+ratio used. This is an open question, not a design parameter. The
+Langmuir packing analysis and $\Gamma_{\max}$ figures in this section were
+derived for the three-component system and have \textbf{not} been
+re-derived for the two-component protocol; they are retained here as
+historical characterisation work and as an order-of-magnitude reference,
+not as confirmed values for the current device.
+\end{minipage}}
+\end{center}
 
 %=======================================================================
 \section{Mixed SAM Architecture}
@@ -92,19 +116,31 @@ Packing compatibility of all three components in a mixed SAM must be verified
 on the fabricated electrode. The ferrocene (Fc) headgroup gives a reversible one-electron redox signal.
 Adj\'{e}mian et~al.\ (2010)~\cit{12} report a formal potential of
 $\sim$150--155~mV vs.\ SCE ($\approx +0.20$~V vs.\ Ag/AgCl) for an alkyl-ferrocene
-label on an analogous Fc-peptide-PEG monolayer on gold (p.~10350 of \cit{12});
-this value is expected to be close to the C6FC formal potential but must be confirmed
-directly on the fabricated device. The Fc signal is well positive of the MB reduction
-peak; the two peaks are resolved in a single SWV scan without additional switching
-(Section~\ref{sec:c6fc}). The MB formal potential in the assay buffer is not confirmed
-from any paper in \texttt{papers/layer\_07/} and must be determined by cyclic
-voltammetry on the fabricated electrode.
+label on an analogous Fc-peptide-PEG monolayer on gold (p.~10350 of \cit{12}).
+This literature value does \textbf{not} match what is observed on the fabricated
+device: Max Li's cyclic voltammetry (lab note, September 2026) places the C6FC
+peak nearer \textbf{+300 to +350~mV vs.\ Ag/AgCl}, roughly 100--150~mV positive of
+the Adj\'{e}mian analogue system. The literature value should therefore be treated
+as an order-of-magnitude prior only, not a confirmed formal potential for this
+device; the directly measured range is the one to use downstream.
+Critically, \textbf{no distinct dual peak (separate MB and C6FC peaks) has been
+observed} on the team's real voltammograms to date, in contrast to the clean
+separation assumed in earlier modelling. Whether this is because the peaks
+genuinely overlap, because the MB peak is too weak to resolve against the Fc
+peak at current coverages, or because of an instrumental/protocol issue is not
+yet established; a two-component peak-fitting (e.g. dual-Gaussian deconvolution)
+or a probe-only vs.\ Fc-only control scan is needed to resolve this before the
+ratiometric strategy in Layer~13 can be relied upon.
 
-The diluent is 6-mercapto-1-hexanol (MCH, HS--(CH$_2$)$_6$--OH). All three components
-are co-deposited simultaneously from a single mixed solution (one-pot deposition); MCH
-occupies gold sites not taken up by probe-thiol or C6FC, presenting a chemically inert
-surface to the wound fluid and preventing non-specific adsorption of wound proteins to
-the bare gold.
+The diluent, in this original three-component characterisation, is 6-mercapto-1-hexanol
+(MCH, HS--(CH$_2$)$_6$--OH). All three components are co-deposited simultaneously from a
+single mixed solution (one-pot deposition); MCH occupies gold sites not taken up by
+probe-thiol or C6FC, presenting a chemically inert surface to the wound fluid and
+preventing non-specific adsorption of wound proteins to the bare gold. As noted above,
+the current protocol has dropped MCH and uses C6FC as the sole diluent; that surface no
+longer has an inert alkanethiol component filling unoccupied gold sites, so non-specific
+protein adsorption onto bare gold gaps is an open risk that this three-component
+characterisation does not address.
 
 \subsection{Close-packed monolayer density}
 
