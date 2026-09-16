@@ -152,10 +152,11 @@ spacing the signal probes apart.
 \item \textbf{Total probe coverage $\Grtot = 3\times10^{-12}$~mol~cm$^{-2}$.}
   This is \emph{not} a measured value for our electrodes: it is an
   engineering placeholder in the range reported for a comparable
-  Fc-peptide-PEG system in the literature \cit{8} \FLAG. Our SAMs are not
-  yet reproducible enough to trust a specific number here; it should be
-  measured directly (e.g. by integrating the Fc peak charge) once the
-  one-pot protocol is finalised.
+  Fc-peptide-PEG system in the literature \cit{8} \FLAG. This is not
+  measurable with the instrumentation currently available to the team
+  \cit{12}, so it remains a placeholder for the foreseeable future rather
+  than a near-term fix; any prediction that depends sensitively on the
+  exact value of $\Grtot$ should be treated with that in mind.
 \item \textbf{Bare gold exposure between probes.} Because there is no MCH
   filling the remaining surface, bare gold may be exposed between probes,
   which is a plausible route for non-specific protein adsorption from
@@ -427,10 +428,12 @@ device.} Three separate problems have come up:
 \item \textbf{The Fc peak position doesn't match what the model expected.}
   We had modelled the Fc formal potential at $+0.210$~V vs.\ Ag/AgCl, taken
   from a comparable system in the literature \cit{1}. Our own electrode
-  measurements put it nearer \textbf{+0.300 to +0.350~V} \cit{12} \FLAG\ -- a
-  100--150~mV shift. This isn't fatal on its own, but it means the
-  literature anchor doesn't transfer cleanly to our chemistry, and the real
-  value needs a dedicated single-component Fc scan to pin down.
+  measurements put it nearer \textbf{+0.300 to +0.400~V} \cit{12} \FLAG\ -- a
+  90--190~mV shift, and the value itself varies electrode-to-electrode
+  rather than sitting at one fixed potential. This isn't fatal on its own,
+  but it means the literature anchor doesn't transfer cleanly to our
+  chemistry, and the real value needs a dedicated single-component Fc scan
+  to pin down more precisely.
 \item \textbf{We have not actually seen two separate peaks.} The model
   assumes the MB and Fc peaks are well separated and can both be read off
   cleanly in one scan. \textbf{On real voltammograms, no distinct dual peak
@@ -472,11 +475,15 @@ reference set of electrodes. This works well for a large, reusable
 industrial electrode, where the same physical surface is measured
 repeatedly and stays consistent. Our electrodes are small and single-use,
 and electrode-to-electrode variation in probe coverage is already a known
-issue (Part~\ref{sec:sam}). \textbf{A single fixed calibration curve may
-not be robust to that variation} \FLAG\ -- this is a design risk worth
-testing directly (e.g.\ checking how much the calibration curve shifts
-across a batch of nominally identical electrodes) rather than assuming the
-ratiometric correction alone will handle it.
+issue (Part~\ref{sec:sam}): measured signal amplitude has varied by up to
+a factor of 100 between nominally identical electrodes \cit{12}.
+\textbf{A single fixed calibration curve is very unlikely to be robust to
+variation of this size} \FLAG. This is the strongest argument in this
+report for relying on the ratiometric correction (Eq.~\ref{eq:Fk_ratio})
+rather than a fixed calibration curve, once the dual-peak problem above is
+resolved -- a within-electrode ratio is far less exposed to
+electrode-to-electrode variation than a curve built from a separate
+reference batch.
 
 %=======================================================================
 \section{Part F: From MMP-9 Concentration to Predicted Signal}
@@ -560,11 +567,11 @@ D    & SWV beats CV/DPV for this probe & Standard, well-established result & \CO
 F    & Solution cleavage rate (Kridel) & Directly measured for this peptide & \CONF \\
 A    & One-pot, no-MCH deposition & Confirmed current protocol \cit{12} & \CONF \\
 B    & $P(d)$ tether geometry & Derived for a clean surface, not validated for the real one & \FLAG \\
-A    & Surface coverage $\Grtot$ & Engineering placeholder, not measured on our SAMs & \FLAG \\
-E    & C6FC formal potential & Literature value doesn't match observed +300--350~mV & \FLAG \\
+A    & Surface coverage $\Grtot$ & Engineering placeholder; not measurable with available instrumentation & \FLAG \\
+E    & C6FC formal potential & Literature value doesn't match observed +300--400~mV, itself variable & \FLAG \\
 E    & Two resolvable peaks (MB, Fc) & \textbf{Not observed on real scans yet} & \FLAG \\
 E    & Ratiometric drift-cancellation & Assumed, not demonstrated on our device & \FLAG \\
-E    & Single calibration curve & May not suit small, single-use, variable electrodes & \FLAG \\
+E    & Single calibration curve & Unlikely to be robust: up to 100$\times$ electrode-to-electrode variation & \FLAG \\
 F    & Surface efficiency $\eta$ & Central estimate, needs direct measurement & \FLAG \\
 \bottomrule
 \end{tabular}
