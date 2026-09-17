@@ -419,7 +419,7 @@ def fig2_marcus():
                label=f"Chidsey 1991 ($d={d_Chidsey:.0f}$Å, Fc-C16)")
     ax.axvline(D_PEG_NM * 10, color=C2, ls=":", lw=1, alpha=0.7)
     ax.scatter([D_PEG_NM * 10], [K0_REF_S1], color=C0, s=60, zorder=5,
-               marker="*", label=f"$k^0_{{\\rm ref}}={K0_REF_S1:.0f}$ s$^{{-1}}$ at PEG6 tip (FLAG)")
+               marker="*", label=f"$k^0_{{\\rm ref}}={K0_REF_S1:.0f}$ s$^{{-1}}$ at PEG6 tip (unconfirmed)")
     ax.set_xlabel(r"Distance $d$ (Å)")
     ax.set_ylabel(r"$k^0$ (s$^{-1}$)")
     ax.set_title("D  $k^0(d)$: model vs published data")
@@ -699,7 +699,7 @@ def fig5_averaging(DI_Fk, fk_arr, A_areas, E_peaks, FWHMs,
 # FIG 6 — Validation: Laviron limit + FWHM derivation + DD comparison
 # ═══════════════════════════════════════════════════════════════════════════════
 def fig6_validation():
-    print("[6/12] Fig 6: Validation (honest version -- see swv_forward_model.tex Part C) ...")
+    print("[6/12] Fig 6: Validation (see swv_forward_model.tex Part C) ...")
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     axes = axes.flatten()
 
@@ -768,18 +768,18 @@ def fig6_validation():
                     alpha=0.12, color="#a33", label="Unexplained gap")
     ax.set_xlabel(r"$\kappa = k^0/(2f)$")
     ax.set_ylabel("FWHM (mV)")
-    ax.set_title("C  Gap vs Laviron limit (stated honestly)")
+    ax.set_title("C  Gap vs Laviron limit")
     ax.legend(fontsize=7)
 
     # D: Plain-text summary of what is / isn't validated
     ax = axes[3]
     ax.axis("off")
     lines = [
-        ("Laviron (1979) FWHM formula", "CONFIRMED -- read directly from paper, used as-is", "#1a7a1a"),
-        ("Dauphin-Ducharme (2017) k$^0$, $\\alpha$ for MB-gold", "CONFIRMED -- read directly from paper", "#1a7a1a"),
-        ("Simulator shape vs Laviron limit", "NOT matched (24% RMS); different\nmathematical objects, see text", "#a33"),
-        ("Simulator vs DD2017 data ($\\kappa\\approx250$)", "NOT possible -- simulator unstable\nat their operating $\\kappa$", "#a33"),
-        ("Simulator in our own operating range\n($\\kappa=3.2$--$6.4$)", "STABLE and well-behaved\n(panel B)", "#1a7a1a"),
+        ("Laviron (1979) FWHM formula", "Confirmed: read directly from paper, used as published", "#1a7a1a"),
+        ("Dauphin-Ducharme (2017) k$^0$, $\\alpha$ for MB-gold", "Confirmed: read directly from paper", "#1a7a1a"),
+        ("Simulator shape vs Laviron limit", "Not matched (24% RMS); different\nmathematical objects, see text", "#a33"),
+        ("Simulator vs DD2017 data ($\\kappa\\approx250$)", "Not possible: simulator unstable\nat their operating $\\kappa$", "#a33"),
+        ("Simulator in operating range\n($\\kappa=3.2$--$6.4$)", "Stable and well-behaved\n(panel B)", "#1a7a1a"),
     ]
     y = 0.95
     for label, status, col in lines:
@@ -847,7 +847,7 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
                label="Recovered (noise-free)")
     ax.text(0.05, 0.90,
             "Noise floor for this simpler measurement has not yet\n"
-            "been derived -- not shown here, see Part E.",
+            "been derived; not shown here, see Part E.",
             transform=ax.transAxes, ha="left", va="top", fontsize=7,
             style="italic", color="#a33")
     ax.set_xlabel("True $F_k$")
@@ -1081,7 +1081,7 @@ def fig9_sensitivity():
     ax = axes[2]
     T_arr_min = np.linspace(2, 90, 200)
     eta_scenarios = [0.05, 0.20, 0.50]
-    labs_s = ["$\\eta=0.05$ (pessimistic)", "$\\eta=0.20$ (central, FLAG)",
+    labs_s = ["$\\eta=0.05$ (pessimistic)", "$\\eta=0.20$ (central, unconfirmed)",
               "$\\eta=0.50$ (optimistic)"]
     for eta_s, lab_s, col in zip(eta_scenarios, labs_s, [C1, C0, C2]):
         lod_s = 3 * sigma_Fk / (eta_s * k_cat_sol * T_arr_min * 60) * 1e9
@@ -1221,7 +1221,7 @@ def fig11_clinical():
                 label=f"{c} nM ($F_k={Fk_c:.2f}$)")
     ax.set_xlabel("Potential (mV)")
     ax.set_ylabel(r"$\Delta I$ (nA)")
-    ax.set_title(f"A  Voltammograms at $T={T_min}$ min, $\\eta={eta}$ (FLAG)")
+    ax.set_title(f"A  Voltammograms at $T={T_min}$ min, $\\eta={eta}$ (unconfirmed)")
     ax.legend(fontsize=7)
 
     # B: Calibration curves
