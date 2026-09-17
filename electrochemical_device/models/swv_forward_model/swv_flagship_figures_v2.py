@@ -211,7 +211,7 @@ def fig1_geometry():
     # B: k0(d) and kappa(d)
     ax = axes[1]
     ax2b = ax.twinx()
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
     d_plot_A = np.linspace(d_peg_A, 70, 300)
     d_plot_nm = d_plot_A / 10
     k0_arr = k0_of_d(d_plot_nm)
@@ -433,7 +433,7 @@ def fig3_ode_derivation():
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     axes = axes.flatten()
 
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
     tau  = 1.0 / (2 * f_op)
     t_arr = np.linspace(0, tau, 300)
     E0 = 0.0
@@ -572,7 +572,7 @@ def fig4_scan_evolution():
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
     E_scan_full = np.linspace(-0.50, 0.10, 300)
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
     tau = 1.0 / (2 * f_op)
     alpha, ne, E0 = 0.37, 2, -0.25
 
@@ -637,7 +637,7 @@ def fig5_averaging(DI_Fk, fk_arr, A_areas, E_peaks, FWHMs,
     for j, d in enumerate(d_repr):
         k0_d = k0_of_d(d)
         DI_d = swv_voltammogram(E_SCAN, k0=k0_d, ne=2, alpha=0.37, E0=-0.25,
-                                 f_swv=15.0, E_sw=0.025)
+                                 f_swv=10.0, E_sw=0.025)
         w = P_d_norm(d) * (D_MAX_NM - D_PEG_NM) / len(d_repr)
         col = cmap(j / (len(d_repr) - 1))
         ax.plot(E_SCAN * 1000, DI_d * w * 1e9, color=col, lw=1.5,
@@ -699,7 +699,7 @@ def fig6_validation():
     axes = axes.flatten()
 
     E_lav = np.linspace(-0.15, 0.15, 600)
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
 
     # A: Laviron limit (small Esw)
     ax = axes[0]
@@ -817,16 +817,21 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     axes = axes.flatten()
 
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
     # Fc parameters. E0_Fc updated to the observed range on the fabricated
     # device (+300 to +400 mV vs Ag/AgCl, itself variable electrode-to-
     # electrode; internal electrode characterisation notes, Sept 2026) --
     # 350 mV used here as the midpoint, not a confirmed single value.
+    # k0_Fc is the literature value (Dauphin-Ducharme, different construct);
+    # at kappa_Fc = 13500 this predicts an essentially zero net SWV peak,
+    # contradicted by the real observed Fc peak -- see swv_forward_model.tex
+    # Part E. Left at the literature value; not yet replaced with a
+    # confirmed device-specific rate constant.
     E0_Fc = 0.350
     k0_Fc = 2.7e5
     kap_Fc = k0_Fc / (2 * f_op)
     A_Fc = 0.0177
-    Gamma_Fc = 3e-12
+    Gamma_Fc = 1.5e-12  # matches GAMMA_FC in swv_forward_model.py
     E_wide = np.linspace(-0.40, 0.50, 600)
 
     # A: MB + Fc peaks
@@ -1128,7 +1133,7 @@ def fig10_temperature():
 
     T_C = np.linspace(15, 45, 100)
     T_Ks = T_C + 273.15
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
 
     # A: E0' vs T
     ax = axes[0]
@@ -1320,7 +1325,7 @@ def fig12_worked_example():
     k0_ex = K0_REF_S1  # 127 s-1
     alpha = 0.37
     ne = 2
-    f_op = 15.0
+    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
     tau = 1.0 / (2 * f_op)
     Gamma_tot = 3e-12
     A_cm2 = 0.0177

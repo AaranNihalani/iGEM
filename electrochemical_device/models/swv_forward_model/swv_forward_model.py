@@ -336,7 +336,7 @@ def k0_of_d(d_nm):
 def dist_averaged_voltammogram(E_arr, F_k,
                                 Gamma_0=3e-12, A_cm2=0.0177,
                                 E0_MB=-0.250, alpha=0.37, ne=2,
-                                f_swv=15.0, E_sw=0.025,
+                                f_swv=10.0, E_sw=0.025,
                                 n_dist=80):
     """
     Distance-averaged SWV voltammogram.
@@ -438,7 +438,7 @@ def concentration_to_Fk(conc_nM, T_min, keff_surf_frac=0.20):
 
 def concentration_to_voltammogram(conc_nM, T_min, keff_surf_frac=0.20,
                                    E0_MB=-0.250, alpha=0.37, ne=2,
-                                   f_swv=15.0, E_sw=0.025,
+                                   f_swv=10.0, E_sw=0.025,
                                    Gamma_0=3e-12, A_cm2=0.0177,
                                    n_dist=80):
     """
@@ -491,18 +491,40 @@ DD_FIG5B_NORM = np.array([0.00, 0.01, 0.08, 0.38, 0.70, 0.88,
                            0.07, 0.01, 0.00])
 
 # SWV parameters (Layer 11 operating point)
-F_SWV    = 15.0    # Hz (FLAG: confirm with potentiostat)
-E_SW     = 0.025   # V  (25 mV amplitude, Baker 2006 [6])
+# F_SWV: team confirmed operating frequency is 10 or 20 Hz (internal
+# electrode characterisation notes, Sept 2026), NOT the 15 Hz previously
+# assumed here from a borrowed literature protocol. 10 Hz used as the
+# representative default below; 20 Hz gives kappa_tip = 3.18 instead of 6.35
+# (see swv_forward_model.tex Part B for both).
+F_SWV    = 10.0    # Hz (confirmed range 10-20 Hz; 10 Hz used as default)
+# E_SW, A_ELEC: values below are the pre-existing working assumptions
+# (Baker 2006 / Layer 6 respectively). Both are currently being checked
+# against the fabricated device and potentiostat settings -- treat as
+# FLAG (pending field confirmation), not settled, until confirmed.
+E_SW     = 0.025   # V  (25 mV amplitude, Baker 2006 [6]; FLAG: pending field confirmation)
 GAMMA_0  = 3.0e-12 # mol cm-2 (Lubin 2010, papers/layer_11/)
-A_ELEC   = 0.0177  # cm2 (1.5 mm diameter, Layer 6)
+A_ELEC   = 0.0177  # cm2 (1.5 mm diameter, Layer 6; FLAG: pending field confirmation)
 
 # ─── M5: Fc REFERENCE PEAK ───────────────────────────────────────────────────
-# Ferrocene-hexanethiol on C6 SAM: k0_Fc = 2.7×10^5 s-1 at 8 Å
-# (Dauphin-Ducharme [1] Fig. 3 → κ = k0/(2f) = 2.7e5/30 = 9000 >> 1 → always reversible)
-K0_FC   = 2.7e5    # s-1  (confirmed, Dauphin-Ducharme [1] Fig. 3)
-E0_FC   = 0.21     # V vs Ag/AgCl (Dauphin-Ducharme [1] — oxidation peak)
+# Ferrocene-hexanethiol on C6 SAM.
+# K0_FC below (2.7e5 s-1, Dauphin-Ducharme [1] Fig. 3) is a LITERATURE VALUE
+# FOR A DIFFERENT CONSTRUCT (MB-DNA electrode), not confirmed for this
+# Fc-hexanethiol/PEG6-peptide device -- "confirmed" in the original comment
+# here meant only "correctly transcribed from that paper," not "applicable
+# to this device." At this k0 and the real 10-20 Hz operating frequency,
+# kappa_Fc = 6,750-13,500, which the BV-ODE predicts as an essentially zero
+# net SWV signal -- contradicted by direct observation (a real Fc peak has
+# been seen, height 5e-8 to 1e-5 A). Back-calculating from the worst-case
+# observed height (5e-8 A) at Gamma_Fc=1.5e-12 and f=20 Hz gives an optimal
+# k0_Fc ~ 23 s-1 (kappa ~ 0.57, near the quasi-reversible optimum) -- roughly
+# four orders of magnitude slower than the borrowed value. NOT YET CONFIRMED;
+# needs a dedicated Fc-only characterisation. K0_FC left at the literature
+# value below since no confirmed replacement exists yet; do not treat it as
+# reliable for absolute Fc signal predictions.
+K0_FC   = 2.7e5    # s-1  (FLAG: literature value for a different construct, likely wrong for this device -- see note above)
+E0_FC   = 0.35     # V vs Ag/AgCl (FLAG: observed range +0.30 to +0.40 V, itself variable electrode-to-electrode; midpoint used here, not a confirmed single value)
 GAMMA_FC = 1.5e-12 # mol cm-2 (internal Fc SAM fraction; FLAG: confirm at Layer 15)
-E_SCAN_FC = np.linspace(0.05, 0.40, 200)
+E_SCAN_FC = np.linspace(0.15, 0.55, 200)
 
 
 # ─── MAIN: RUN ALL MODULES AND GENERATE FIGURES ──────────────────────────────
