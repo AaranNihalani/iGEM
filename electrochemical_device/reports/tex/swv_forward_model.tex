@@ -63,15 +63,15 @@ Layers 8, 10, 11, 13, 15 \quad$|$\quad
 This is the working model of how our electrode turns MMP-9 activity into a
 signal we can read on a potentiostat. It is organised as six self-contained
 parts, one per physical step in the chain from probe to peak. Each part
-follows the same pattern: what it does, in plain language; what we're
-assuming to get there, stated explicitly and justified; the equation, with
+follows the same pattern: what it does, in plain language; the assumptions
+required to reach that result, stated explicitly and justified; the equation, with
 its physical meaning given before it appears, not after; the parameters it
 needs; and the result. Where a number comes from a published paper it is
 marked \CONF. Where it is a working assumption, not yet confirmed on our
 own electrodes, it is marked \FLAG.
 
 %=======================================================================
-\section{Overview: The Electrode and What Happens to It}
+\section{Overview: Electrode Structure and Operating Principle}
 \label{sec:story}
 
 Our sensor is a small gold electrode with a geometric area of
@@ -79,15 +79,16 @@ Our sensor is a small gold electrode with a geometric area of
 1.5~mm-diameter design spec (0.0177~cm$^2$), a $\sim$4\% difference too
 small to change any qualitative conclusion in this report. It carries a
 single probe type
-stuck to its surface by a thiol (sulfur) anchor, Figure~\ref{fig:assem}:
-a short peptide (SGKIPRTLTA) that MMP-9 cuts, with a spacer (PEG6) holding
-it away from the gold, and a methylene blue (MB) dye stuck on the far end.
-MB can pass an electron to the gold and back, which is what we detect.
-When MMP-9 cuts the peptide, the MB-carrying half floats away and that
-probe goes electrically silent. \textbf{An earlier version of this device
-also carried a ferrocene (Fc) reference probe alongside MB, used for a
-ratiometric correction; Fc has since been dropped from the protocol
-entirely} \cit{12} -- see Part~E for why, and what that costs.
+attached to its surface via a thiol (sulfur) anchor, Figure~\ref{fig:assem}:
+a short peptide (SGKIPRTLTA) that MMP-9 cleaves, with a spacer (PEG6) holding
+it away from the gold, and a methylene blue (MB) dye conjugated to the far
+end. MB is capable of transferring an electron to and from the gold
+surface, which constitutes the measured signal. When MMP-9 cleaves the
+peptide, the MB-bearing fragment is released into solution and the probe
+becomes electrochemically silent. \textbf{An earlier version of this
+device also carried a ferrocene (Fc) reference probe alongside MB, used
+for a ratiometric correction; Fc has since been removed from the protocol
+entirely} \cit{12} -- see Part~E for the rationale and its consequences.
 
 As MMP-9 activity increases, more MB is lost, and the MB peak in the
 voltammogram shrinks. Measuring how much it shrinks over a known incubation
@@ -102,7 +103,7 @@ that chain:
 \toprule
 Part & Question & Section \\
 \midrule
-A & What's actually on the electrode surface? & \ref{sec:sam} \\
+A & What is actually on the electrode surface? & \ref{sec:sam} \\
 B & Where does the MB label sit above the gold? & \ref{sec:geom} \\
 C & How does one MB label's signal arise? & \ref{sec:core} \\
 D & Why square-wave voltammetry specifically? & \ref{sec:wave} \\
@@ -164,14 +165,14 @@ real, MCH-free surface described above. Treat $P(d)$ as a reasonable
 working shape, not a measured one.
 
 %=======================================================================
-\section{Part B: Where Does the MB Label Sit?}
+\section{Part B: Position of the MB Label Above the Electrode}
 \label{sec:geom}
 
 \subsection{Overview}
 
 The MB label is not rigidly fixed above the gold: it sits at the end of a
-flexible tether (PEG6 spacer plus the peptide itself), so it wobbles around
-in a range of distances. Molecules further from the gold transfer electrons
+flexible tether (PEG6 spacer plus the peptide itself), and consequently
+samples a range of distances. Molecules further from the gold transfer electrons
 much more slowly (electron transfer through the tether decays roughly
 exponentially with distance -- this is standard Marcus/tunnelling theory
 \cit{9,10}), so only probes sitting close to the gold contribute meaningfully
@@ -222,7 +223,7 @@ tip}=4.2$; this has been superseded by the confirmed frequency.)
     electron-transfer rate $k^0(d)$ falls off fast with distance, so nearby
     probes dominate the signal. \textbf{C:} the square-wave voltammetry
     (SWV) pulse pattern used to scan the electrode. \textbf{D:} the net
-    signal peaks at an intermediate scan speed -- too fast and probes can't
+    signal peaks at an intermediate scan speed -- too fast and probes cannot
     react in time, too slow and forward/backward pulses give the same
     answer and cancel out.}
   \label{fig:geom}
@@ -236,8 +237,8 @@ tip}=4.2$; this has been superseded by the confirmed frequency.)
 
 Each MB label switches between an oxidised and reduced state at a rate set
 by the applied potential (Butler-Volmer kinetics, the standard model for
-electrode reactions \cit{9}). Because MB is stuck to the surface rather than
-floating free in solution, this reduces to a single, exactly solvable
+electrode reactions \cit{9}). Because MB is confined to the surface rather
+than diffusing freely in solution, this reduces to a single, exactly solvable
 equation -- no numerical simulation needed -- for the fraction of MB in the
 reduced state.
 
@@ -269,7 +270,7 @@ closed-form solution:
 \end{equation}
 In words: over each pulse, the MB coverage relaxes exponentially towards its
 equilibrium value $\Greq$. If the pulse is short compared to the reaction
-rate, almost nothing happens (weak signal). If it's long, the system fully
+rate, almost nothing happens (weak signal). If it is long, the system fully
 equilibrates before the next pulse and forward/backward currents cancel
 (also weak signal). The useful signal comes from the middle ground, where
 the coverage moves partway to equilibrium each pulse -- this is why there is
@@ -341,7 +342,7 @@ mid-height $90.6/n$ at 25\textdegree C) -- confirmed by direct reading of
 the paper, and used here exactly as published, not re-derived by our
 simulator. What is \emph{not} established is that our finite-$\kappa$
 BV-ODE simulator reproduces the full \emph{shape} of that curve by
-extrapolation. It shouldn't be expected to: Laviron's formula describes an
+extrapolation. It should not be expected to: Laviron's formula describes an
 idealised continuously-swept, always-at-equilibrium system, not a
 discretely-pulsed SWV protocol sampled at one instant per half-cycle.
 Checking this directly, the simulator's shape differs from Laviron's by a
@@ -367,7 +368,7 @@ paper) -- a real 10$\times$ error, now fixed. However, at their reported
 $k^0$ and their operating frequencies (20--1000~Hz), $\kappa$ is of order
 $10$--$10^3$ -- squarely in the numerically unstable regime identified
 above. \textbf{A quantitative comparison to their data is therefore not
-currently possible}, not because the paper isn't relevant (it is directly
+currently possible}, not because the paper is not relevant (it is directly
 relevant) but because our simulator cannot yet be trusted at the $\kappa$
 their measurements operate at. Resolving this would need a numerically
 stable reformulation of the high-$\kappa$ current calculation -- real
@@ -386,12 +387,12 @@ work, not yet attempted, and flagged here rather than papered over.
   shown well inside the stable range. \textbf{C:} the same stable-range
   data compared directly against the Laviron asymptote, showing the gap
   discussed in the text rather than a false convergence. \textbf{D:}
-  summary of what is and isn't validated, stated plainly.}
+  summary of what is and is not validated, stated plainly.}
   \label{fig:valid}
 \end{figure}
 
 %=======================================================================
-\section{Part D: Why Square-Wave Voltammetry}
+\section{Part D: Rationale for Square-Wave Voltammetry}
 \label{sec:wave}
 
 \subsection{Overview}
@@ -437,29 +438,29 @@ $\alpha = 0.37$ and $n_e = 2$ for MB \cit{1} \CONF.
 \end{figure}
 
 %=======================================================================
-\section{Part E: No Reference Reporter -- What Changed and What It Costs}
+\section{Part E: Removal of the Reference Reporter and Its Implications}
 \label{sec:ratio}
 
-\subsection{Overview: the protocol no longer uses Fc}
+\subsection{Protocol Change: Removal of Fc}
 
 Earlier versions of this model included a ferrocene (Fc) reference probe
 co-deposited alongside the MB-peptide, used to build a ratiometric
 correction intended to cancel electrode-to-electrode variation. \textbf{The
-team has since dropped Fc from the protocol entirely} \cit{12}: the
+team has since removed Fc from the protocol entirely} \cit{12}: the
 electrode now carries a single probe type, MB-peptide only. This section
 replaces the earlier ratiometric-correction description with an honest
-account of what that removes, what it doesn't, and what is now the central
+account of what that removes, what it does not, and what is now the central
 open risk.
 
 This is not simply a loss. Several of the problems flagged in earlier
 versions of this report were specifically about Fc not behaving as
-assumed -- its formal potential didn't match the literature anchor, its
+assumed -- its formal potential did not match the literature anchor, its
 borrowed rate constant predicted a vanishing signal that contradicted
 direct observation, and no distinct dual peak was ever seen on a real
-scan. Dropping Fc removes all of those problems at once, because the thing
-they were problems \emph{with} is no longer part of the device.
+scan. Removing Fc resolves all of these problems simultaneously, because
+the component they concerned is no longer part of the device.
 
-\subsection{The corrected mathematics: what Fc actually added}
+\subsection{Reassessment: The Actual Contribution of Fc}
 
 The measurement protocol (Overview) already takes an SWV scan on each
 electrode \emph{before} incubation and again \emph{after} -- a baseline
@@ -486,12 +487,12 @@ to Eq.~\eqref{eq:Fk_simple} whenever Fc coverage is stable during incubation.
 coverage differences} -- Eq.~\eqref{eq:Fk_simple} already self-normalises
 against that, since each electrode is compared only to its own earlier
 reading, not to any other electrode or to a reference curve. An earlier
-version of this document stated that dropping Fc would make the
+version of this document stated that removing Fc would make the
 $\sim$100$\times$ electrode-to-electrode signal variation (Part~\ref{sec:sam})
 the central unavoidable problem for calibration; on closer inspection that
 overstated the loss, and is corrected here.
 
-\subsection{What is genuinely lost}
+\subsection{Consequences of Removal}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
@@ -607,7 +608,7 @@ At the $3\sigma$ detection criterion, this gives a predicted limit of
 detection around \textbf{4~nM} at 30 minutes, below the 6~nM healing/chronic
 boundary -- \emph{provided} a noise floor of $\sim$3\% is achievable.
 \textbf{That number is no longer confirmed} \FLAG: it was derived for the
-Fc-based ratiometric measurement, which has since been dropped
+Fc-based ratiometric measurement, which has since been removed
 (Part~\ref{sec:ratio}). The noise floor for the simpler before/after MB-only
 comparison now in use has not been separately derived, so this 4~nM figure
 should be treated as provisional pending that re-derivation, not as a
@@ -625,7 +626,7 @@ settled prediction.
 \end{figure}
 
 %=======================================================================
-\section{Summary: What's Solid, What's Assumed, What's Open}
+\section{Summary: Confirmed Results, Working Assumptions, and Open Questions}
 \label{sec:summary}
 
 \begin{center}
@@ -654,16 +655,16 @@ F    & Surface efficiency $\eta$ & Central estimate, needs direct measurement & 
 \textbf{Bottom line.} The core electrochemistry (Parts~\ref{sec:core} and
 \ref{sec:wave}) rests on standard Butler-Volmer theory and an exact,
 independently-verifiable closed-form solution -- the \emph{equations}
-aren't in question. Whether this specific numerical implementation
+are not in question. Whether this specific numerical implementation
 reproduces a real published curve is a separate question, and is
 currently open (Part~\ref{sec:core}, "Validation against published
 data") rather than confirmed. What needs direct experimental attention
 before the device can be trusted end to end is everything to do with the
-real surface: what's actually on
-it (Part~\ref{sec:sam}), and, now that Fc has been dropped, whether
+real surface: what is actually on
+it (Part~\ref{sec:sam}), and, now that Fc has been removed, whether
 non-cleavage signal drift during incubation can be ruled out or bounded
-(Part~\ref{sec:ratio}) -- since that is now the one thing this device
-cannot detect on its own.
+(Part~\ref{sec:ratio}) -- this is the principal failure mode the device
+can no longer detect on its own.
 
 %=======================================================================
 \section*{References}
@@ -718,12 +719,12 @@ cannot detect on its own.
   \textit{Anal Chem} 57:101A--110A. \textbf{osteryoung1985.pdf} (papers/layer\_11/)
 
 \item Dry lab team, internal electrode characterisation notes (September
-  2026): single-component deposition protocol (no MCH, Fc dropped
+  2026): single-component deposition protocol (no MCH, Fc removed
   entirely), confirmed operating frequency (10--20~Hz), confirmed
   electrode area (1.7~mm$^2$) and SWV amplitude (25~mV), and historical
   observations from when Fc was still part of the protocol (observed C6FC
   formal potential and peak height/width) retained for the discussion in
-  Part~VI of why Fc was dropped. Cited throughout as the source of the protocol and
+  Part~VI of why Fc was removed. Cited throughout as the source of the protocol and
   measurement corrections in this version of the report.
 
 \end{enumerate}
