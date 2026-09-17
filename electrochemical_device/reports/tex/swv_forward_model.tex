@@ -425,7 +425,7 @@ the first assumption below for why that change matters.
 trusted result}
 
 \textbf{This cancellation is an assumption, not a demonstrated fact for our
-device.} Four separate problems have come up:
+device.} Five separate problems have come up:
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
@@ -458,6 +458,23 @@ device.} Four separate problems have come up:
   but it means the literature anchor doesn't transfer cleanly to our
   chemistry, and the real value needs a dedicated single-component Fc scan
   to pin down more precisely.
+\item \textbf{The borrowed Fc rate constant likely does not apply to this
+  device either.} $k^0_{\rm Fc} = 2.7\times10^5$~s$^{-1}$ was borrowed from
+  a different construct (Dauphin-Ducharme 2017, MB-DNA electrode), the same
+  way $k^0_{\rm ref}$ for MB was. At that rate and the team's actual
+  operating frequency (10--20~Hz, not the 15~Hz this model previously
+  assumed \cit{12}), $\kappa_{\rm Fc}$ works out to 6{,}750--13{,}500 --
+  so far into the reversible limit that the BV-ODE (Part~\ref{sec:core})
+  predicts an essentially zero net SWV signal, mathematically, regardless
+  of coverage. That contradicts direct observation: a real Fc peak has
+  been seen experimentally, with height varying from
+  $5\times10^{-8}$ to $10^{-5}$~A and width varying substantially between
+  scans \cit{12} \FLAG. Taken together, this strongly suggests the true
+  $k^0_{\rm Fc}$ for this specific Fc-hexanethiol construct is several
+  orders of magnitude slower than the borrowed literature value -- not
+  that the underlying kinetics equation is wrong. This is not yet
+  confirmed and needs a dedicated Fc-only characterisation (e.g.\ a slow
+  CV scan) to pin down the real rate constant.
 \item \textbf{We have not actually seen two separate peaks.} The model
   assumes the MB and Fc peaks are well separated and can both be read off
   cleanly in one scan. \textbf{On real voltammograms, no distinct dual peak
@@ -482,18 +499,17 @@ device.} Four separate problems have come up:
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV7_ratiometric.pdf}
-  \caption{The ratiometric correction \emph{as modelled}. \textit{Figure
-  regeneration pending:} the generating code has been updated to use the
-  corrected Fc potential range (Part~\ref{sec:ratio}) and to mark panel~A
-  explicitly as not-yet-observed, but the PDF itself has not been
-  re-rendered as of this version of the report -- treat the image below as
-  the previous render until it is updated. \textbf{A:} MB and Fc peaks as
-  modelled -- \textbf{a distinct dual peak has not been observed on real
-  scans, see text.} \textbf{B:} recovered vs.\ true cleavage fraction under
-  an idealised noise model, independent of the area/height question.
-  \textbf{C, D:} frequency and quadrature diagnostics for the underlying
-  simulator (already peak-height-based), independent of the ratiometric
-  open questions above.}
+  \caption{The ratiometric correction \emph{as modelled}. \textbf{A:} MB
+  and Fc peaks as modelled -- the Fc trace is effectively flat at this
+  scale. This is \emph{not} a plotting error: using the literature $k^0_{\rm
+  Fc}$ (see the assumption below), the model predicts a vanishingly small
+  Fc signal at the team's operating frequencies, in contrast to the real
+  Fc peak that has been observed experimentally -- see the assumption
+  below for what this implies. \textbf{B:} recovered vs.\ true cleavage
+  fraction under an idealised noise model, independent of the area/height
+  question. \textbf{C, D:} frequency and quadrature diagnostics for the
+  underlying simulator (already peak-height-based), independent of the
+  ratiometric open questions above.}
   \label{fig:ratio}
 \end{figure}
 
@@ -599,6 +615,7 @@ A    & One-pot, no-MCH deposition & Confirmed current protocol \cit{12} & \CONF 
 B    & $P(d)$ tether geometry & Derived for a clean surface, not validated for the real one & \FLAG \\
 A    & Surface coverage $\Grtot$ & Engineering placeholder; not measurable with available instrumentation & \FLAG \\
 E    & C6FC formal potential & Literature value doesn't match observed +300--400~mV, itself variable & \FLAG \\
+E    & Fc rate constant $k^0_{\rm Fc}$ & Borrowed value predicts zero signal at 10--20~Hz; real Fc peak observed & \FLAG \\
 E    & Two resolvable peaks (MB, Fc) & \textbf{Not observed on real scans yet} & \FLAG \\
 E    & Ratiometric drift-cancellation & Assumed, not demonstrated on our device & \FLAG \\
 E    & Single calibration curve & Unlikely to be robust: up to 100$\times$ electrode-to-electrode variation & \FLAG \\

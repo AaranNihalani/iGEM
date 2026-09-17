@@ -150,7 +150,16 @@ def swv_voltammogram(E_arr, k0, Gamma_tot=1.0, A_cm2=1.0,
         DI[i]  = I_fwd - I_rev
         Gamma_r = Gamma_r_rev   # carry state into next step
 
-    return DI * A_cm2 * Gamma_tot
+    # NOTE: Gamma_tot is already correctly incorporated inside
+    # _half_cycle_end (via Gamma_red_end / Gamma_ox_end, both computed in
+    # real coverage units), so I_fwd/I_rev/DI are already a real current
+    # density (A/cm^2), not a per-Gamma_tot normalised quantity. Multiplying
+    # by Gamma_tot again here double-counts it, scaling the output by
+    # Gamma_tot^2 instead of Gamma_tot^1 -- confirmed by direct test
+    # (peak / Gamma_tot^2 is constant across Gamma_tot values; peak /
+    # Gamma_tot is not). Only A_cm2 (current density -> total current)
+    # belongs here.
+    return DI * A_cm2
 
 
 def laviron_reversible(E_arr, E0, ne, Gamma_tot=1.0, A_cm2=1.0):
