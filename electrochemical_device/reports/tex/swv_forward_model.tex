@@ -37,15 +37,12 @@
 \newcommand{\Greq}{\Gamma_{\rm eq}}
 \newcommand{\kzero}{k^0}
 \newcommand{\Esw}{E_{\rm sw}}
-\newcommand{\FLAG}{\textcolor{red}{$\bigstar$\,FLAG}}
-\newcommand{\CONF}{\textcolor{teal}{\checkmark\,confirmed}}
+\newcommand{\FLAG}{\textit{(unconfirmed)}}
+\newcommand{\CONF}{\textit{(confirmed)}}
 
 \newenvironment{assump}{%
-  \begin{tcolorbox}[colback=orange!5,colframe=orange!40!black,boxrule=0.5pt,
-                    arc=2pt,left=5pt,right=5pt,top=4pt,bottom=4pt,
-                    title={\small\textbf{Assumptions}},fonttitle=\small]
   \small}{%
-  \end{tcolorbox}\smallskip}
+  \smallskip}
 
 \begin{document}
 
@@ -59,56 +56,60 @@ Layers 8, 10, 11, 13, 15 \quad$|$\quad
 \end{center}
 \vspace{0.4em}\hrule\vspace{0.7em}
 
-\noindent\textbf{What this document is.}
-This is the working model of how our electrode turns MMP-9 activity into a
-signal we can read on a potentiostat. It is organised as six self-contained
-parts, one per physical step in the chain from probe to peak. Each part
-follows the same pattern: what it does, in plain language; the assumptions
-required to reach that result, stated explicitly and justified; the equation, with
-its physical meaning given before it appears, not after; the parameters it
-needs; and the result. Where a number comes from a published paper it is
-marked \CONF. Where it is a working assumption, not yet confirmed on our
-own electrodes, it is marked \FLAG.
+\noindent\textbf{Scope.}
+This document presents the forward model describing how MMP-9 activity at
+the electrode surface is transduced into a measured voltammogram. It is
+organised into six sections, each corresponding to one physical step in
+the signal chain from probe to peak. Each section follows a consistent
+structure: a plain-language description of the process; the assumptions
+required to obtain the stated result, given explicitly; the governing
+equation, with its physical interpretation stated before its derivation;
+the relevant parameters; and the resulting prediction. Values obtained
+from a published source are annotated \CONF. Values that represent a
+working assumption not yet confirmed on the fabricated device are
+annotated \FLAG.
 
 %=======================================================================
 \section{Overview: Electrode Structure and Operating Principle}
 \label{sec:story}
 
-Our sensor is a small gold electrode with a geometric area of
-1.7~mm$^2$ (0.017~cm$^2$) \cit{12} \CONF, superseding an earlier
-1.5~mm-diameter design spec (0.0177~cm$^2$), a $\sim$4\% difference too
-small to change any qualitative conclusion in this report. It carries a
-single probe type
-attached to its surface via a thiol (sulfur) anchor, Figure~\ref{fig:assem}:
-a short peptide (SGKIPRTLTA) that MMP-9 cleaves, with a spacer (PEG6) holding
-it away from the gold, and a methylene blue (MB) dye conjugated to the far
-end. MB is capable of transferring an electron to and from the gold
-surface, which constitutes the measured signal. When MMP-9 cleaves the
-peptide, the MB-bearing fragment is released into solution and the probe
-becomes electrochemically silent. \textbf{An earlier version of this
-device also carried a ferrocene (Fc) reference probe alongside MB, used
-for a ratiometric correction; Fc has since been removed from the protocol
-entirely} \cit{12} -- see Part~E for the rationale and its consequences.
+The sensor is a gold electrode with a geometric area of 1.7~mm$^2$
+(0.017~cm$^2$) \cit{12} \CONF, which supersedes an earlier 1.5~mm-diameter
+design specification (0.0177~cm$^2$); the $\sim$4\% discrepancy is too
+small to alter any qualitative conclusion in this report. A single probe
+type is attached to the electrode surface via a thiol (sulfur) anchor
+(Figure~\ref{fig:assem}): a ten-residue peptide (SGKIPRTLTA) that
+constitutes the MMP-9 cleavage site, connected to the gold via a PEG6
+spacer, and terminating in a covalently conjugated methylene blue (MB)
+label. MB undergoes reversible electron transfer with the gold surface,
+which constitutes the measured signal. Upon cleavage of the peptide by
+MMP-9, the MB-bearing fragment is released into solution and the
+resulting truncated probe is no longer electroactive. An earlier
+configuration of this device additionally incorporated a ferrocene (Fc)
+reference probe alongside MB for a ratiometric correction; Fc has since
+been removed from the protocol \cit{12}, for reasons detailed in
+Part~E.
 
-As MMP-9 activity increases, more MB is lost, and the MB peak in the
-voltammogram shrinks. Measuring how much it shrinks over a known incubation
-time, on the same electrode before and after incubation, is how we read
-out enzyme activity, and from there, estimate [MMP-9] in the wound sample.
+As MMP-9 activity increases, the quantity of intact MB-bearing probe
+decreases, and the corresponding voltammetric peak diminishes in
+proportion. The extent of this decrease, measured on a single electrode
+before and after a defined incubation period, constitutes the readout of
+enzymatic activity from which [MMP-9] is subsequently estimated.
 
-The document is organised as six parts, each covering one physical step in
-that chain:
+The remainder of this document is organised into six sections, each
+addressing one stage of this signal chain:
 \begin{center}
 \small
 \begin{tabular}{@{}cll@{}}
 \toprule
-Part & Question & Section \\
+Part & Content & Section \\
 \midrule
-A & What is actually on the electrode surface? & \ref{sec:sam} \\
-B & Where does the MB label sit above the gold? & \ref{sec:geom} \\
-C & How does one MB label's signal arise? & \ref{sec:core} \\
-D & Why square-wave voltammetry specifically? & \ref{sec:wave} \\
-E & How do we turn a peak into a cleavage fraction? & \ref{sec:ratio} \\
-F & How does [MMP-9] map to a predicted signal? & \ref{sec:conc} \\
+A & Composition of the electrode surface & \ref{sec:sam} \\
+B & Spatial distribution of the MB label & \ref{sec:geom} \\
+C & Origin of the signal from a single MB label & \ref{sec:core} \\
+D & Justification for square-wave voltammetry & \ref{sec:wave} \\
+E & Derivation of the cleavage fraction from the measured peak & \ref{sec:ratio} \\
+F & Relationship between [MMP-9] and the predicted signal & \ref{sec:conc} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -129,42 +130,44 @@ F & How does [MMP-9] map to a predicted signal? & \ref{sec:conc} \\
 
 \subsection{Overview}
 
-Before anything electrochemical can be modelled, we need to know what is
-physically on the electrode. \textbf{This section replaces an earlier,
-incorrect description.} Previous versions of this report and related layer
-reports described an MCH backfill step, where a small inert molecule
-(6-mercapto-1-hexanol) fills in gaps between the probes, and a
-two-component deposition alongside a ferrocene (Fc) reference probe.
-\textbf{Neither is what we do now.} The current protocol \cit{12} deposits
-a single probe type, MB-peptide only, with no MCH and no Fc.
+An accurate description of the electrode surface composition is a
+prerequisite for the electrochemical treatment that follows. This section
+supersedes an earlier, incorrect description. Previous versions of this
+report, and related layer reports, described a 6-mercapto-1-hexanol (MCH)
+backfill step intended to fill unoccupied sites between probes, together
+with a two-component deposition incorporating a ferrocene (Fc) reference
+probe. Neither description reflects the current protocol. The protocol in
+current use \cit{12} deposits a single probe species, MB-peptide only,
+with no MCH and no Fc.
 
 \subsection{Assumptions}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*,noitemsep]
-\item \textbf{Single-component deposition (no MCH, no Fc).} Confirmed
-  protocol \cit{12}; this is a fact about the fabrication process, not a
-  modelling choice.
+\item \textbf{Single-component deposition (no MCH, no Fc).} This is a
+  confirmed property of the fabrication protocol \cit{12}, not a modelling
+  choice.
 \item \textbf{Total probe coverage $\Grtot = 3\times10^{-12}$~mol~cm$^{-2}$.}
-  This is \emph{not} a measured value for our electrodes: it is an
-  engineering placeholder in the range reported for a comparable
-  peptide-PEG system in the literature \cit{8} \FLAG. This is not
-  measurable with the instrumentation currently available to the team
-  \cit{12}, so it remains a placeholder for the foreseeable future rather
-  than a near-term fix; any prediction that depends sensitively on the
-  exact value of $\Grtot$ should be treated with that in mind.
-\item \textbf{Bare gold exposure between probes.} With a single probe type
-  and no MCH filling the remaining surface, bare gold is likely exposed
-  between probes, which is a plausible route for non-specific protein
-  adsorption from wound fluid (fouling). This has not been checked \FLAG.
+  This value has not been measured for the electrodes in use; it is an
+  engineering estimate within the range reported for a comparable
+  peptide-PEG system in the literature \cit{8} \FLAG. Direct measurement
+  is not possible with the instrumentation currently available to the
+  team \cit{12}, so this value is expected to remain a placeholder for
+  the foreseeable future. Any prediction sensitive to the exact value of
+  $\Grtot$ should be interpreted accordingly.
+\item \textbf{Exposure of bare gold between probes.} In the absence of an
+  MCH backfill, regions of bare gold are likely to remain exposed between
+  probes, presenting a plausible route for non-specific protein adsorption
+  from wound fluid (fouling). This has not been experimentally assessed
+  \FLAG.
 \end{itemize}
 \end{assump}
 
-\textbf{Why this matters downstream.} The distance distribution $P(d)$
-used in Part~\ref{sec:geom} was derived assuming a clean, PEG6-spaced probe
-with nothing else nearby. It has not been re-derived or validated for the
-real, MCH-free surface described above. Treat $P(d)$ as a reasonable
-working shape, not a measured one.
+The distance distribution $P(d)$ used in Part~\ref{sec:geom} was derived
+under the assumption of an isolated, PEG6-spaced probe with no neighbouring
+species. This assumption has not been re-derived or validated for the
+present MCH-free surface, and $P(d)$ should accordingly be regarded as a
+plausible working form rather than a measured quantity.
 
 %=======================================================================
 \section{Part B: Position of the MB Label Above the Electrode}
@@ -172,13 +175,13 @@ working shape, not a measured one.
 
 \subsection{Overview}
 
-The MB label is not rigidly fixed above the gold: it sits at the end of a
-flexible tether (PEG6 spacer plus the peptide itself), and consequently
-samples a range of distances. Molecules further from the gold transfer electrons
-much more slowly (electron transfer through the tether decays roughly
-exponentially with distance -- this is standard Marcus/tunnelling theory
-\cit{9,10}), so only probes sitting close to the gold contribute meaningfully
-to the signal.
+The MB label is not rigidly fixed above the gold surface: it is positioned
+at the terminus of a flexible tether (the PEG6 spacer together with the
+peptide itself) and consequently samples a distribution of distances. The
+rate of electron transfer decreases approximately exponentially with
+distance, consistent with standard Marcus/tunnelling theory \cit{9,10},
+such that only probes positioned close to the gold contribute
+appreciably to the measured signal.
 
 \subsection{Assumptions}
 
@@ -203,31 +206,32 @@ right at the PEG6 spacer length and falls off further out:
   P(d) \propto \exp\!\left(-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right),
   \qquad d \geq d_{\rm PEG}
 \]
-with $d_{\rm PEG} \approx 14$~\AA\ (from the PEG6 spacer) and
-$\sigma_z \approx 9.8$~\AA\ (from the peptide's flexibility). The
-electron-transfer rate at the near end of that range works out to
-$\kzero_{\rm ref} \approx 127$~s$^{-1}$ \FLAG\ (carries the same $P(d)$
-caveat above). At the team's confirmed operating frequency of 10--20~Hz
-\cit{12}, this gives $\kappa_{\rm tip} = \kzero_{\rm ref}/(2f) = 6.4$ at
-10~Hz or $3.2$ at 20~Hz -- both comfortably in the quasi-reversible range
-(Part~\ref{sec:core}) where signal is strongest, though the exact value
-depends on which frequency is actually used for a given scan. (An earlier
-version of this report used an assumed 15~Hz, giving $\kappa_{\rm
-tip}=4.2$; this has been superseded by the confirmed frequency.)
+where $d_{\rm PEG} \approx 14$~\AA\ is set by the PEG6 spacer and
+$\sigma_z \approx 9.8$~\AA\ by the conformational flexibility of the
+peptide. The electron-transfer rate at the near boundary of this
+distribution is $\kzero_{\rm ref} \approx 127$~s$^{-1}$ \FLAG, subject to
+the same validation caveat as $P(d)$ above. At the confirmed operating
+frequency of 10--20~Hz \cit{12}, this corresponds to
+$\kappa_{\rm tip} = \kzero_{\rm ref}/(2f) = 6.4$ at 10~Hz or $3.2$ at
+20~Hz, both within the quasi-reversible regime (Part~\ref{sec:core}) in
+which the signal is largest, although the precise value depends on the
+frequency employed for a given scan. An earlier version of this report
+assumed 15~Hz, giving $\kappa_{\rm tip}=4.2$; this value has been
+superseded by the confirmed operating frequency.
 
 \subsection{Result}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV1_geometry.pdf}
-  \caption{\textbf{A:} the distance distribution $P(d)$ -- most MB labels
+  \caption{\textbf{A:} the distance distribution $P(d)$; most MB labels
     sit within about 1~nm of the PEG6 spacer tip. \textbf{B:} the
-    electron-transfer rate $k^0(d)$ falls off fast with distance, so nearby
-    probes dominate the signal. \textbf{C:} the square-wave voltammetry
-    (SWV) pulse pattern used to scan the electrode. \textbf{D:} the net
-    signal peaks at an intermediate scan speed -- too fast and probes cannot
-    react in time, too slow and forward/backward pulses give the same
-    answer and cancel out.}
+    electron-transfer rate $k^0(d)$ falls off rapidly with distance, so
+    nearby probes dominate the signal. \textbf{C:} the square-wave
+    voltammetry (SWV) pulse pattern used to scan the electrode.
+    \textbf{D:} the net signal peaks at an intermediate scan speed: too
+    fast, and probes cannot react in time; too slow, and forward and
+    backward pulses give the same answer and cancel.}
   \label{fig:geom}
 \end{figure}
 
@@ -237,12 +241,13 @@ tip}=4.2$; this has been superseded by the confirmed frequency.)
 
 \subsection{Overview}
 
-Each MB label switches between an oxidised and reduced state at a rate set
-by the applied potential (Butler-Volmer kinetics, the standard model for
-electrode reactions \cit{9}). Because MB is confined to the surface rather
-than diffusing freely in solution, this reduces to a single, exactly solvable
-equation -- no numerical simulation needed -- for the fraction of MB in the
-reduced state.
+Each MB label transitions between oxidised and reduced states at a rate
+determined by the applied potential, following Butler-Volmer kinetics,
+the standard model for electrode reactions \cit{9}. Because MB is
+confined to the electrode surface rather than diffusing freely in
+solution, the governing equation for the fraction of MB in the reduced
+state admits a single, exact closed-form solution, obtained without
+recourse to numerical simulation.
 
 \subsection{Assumptions}
 
@@ -270,27 +275,31 @@ closed-form solution:
   \boxed{\;\Grred(\tau) = \Greq + \bigl[\Grred(0) - \Greq\bigr]\,e^{-(k_f+k_b)\tau}\;}
   \label{eq:soln}
 \end{equation}
-In words: over each pulse, the MB coverage relaxes exponentially towards its
-equilibrium value $\Greq$. If the pulse is short compared to the reaction
-rate, almost nothing happens (weak signal). If it is long, the system fully
-equilibrates before the next pulse and forward/backward currents cancel
-(also weak signal). The useful signal comes from the middle ground, where
-the coverage moves partway to equilibrium each pulse -- this is why there is
-an optimal scan frequency (Fig.~\ref{fig:geom}D).
+Equation~\eqref{eq:soln} indicates that, over each pulse, the MB coverage
+relaxes exponentially towards its equilibrium value $\Greq$. When the
+pulse duration is short relative to the characteristic reaction time, the
+coverage changes negligibly and the resulting signal is weak. When the
+pulse duration is long, the system reaches equilibrium before the pulse
+ends, and the forward and backward currents cancel, again yielding a weak
+signal. The largest net signal therefore occurs at intermediate pulse
+durations, where the coverage advances partway towards equilibrium within
+each pulse; this accounts for the existence of an optimal scan frequency
+(Figure~\ref{fig:geom}D).
 
-Scanning this across a full range of potentials, and adding up the
-contribution from every MB label at every distance $d$ (weighted by $P(d)$
-from Part~\ref{sec:geom}), gives the full predicted voltammogram $\DI(E)$ --
-a peak centred near the MB formal potential, whose height scales with how
-much intact probe remains on the electrode:
+Integrating this result over the full potential range, and summing the
+contribution of every MB label over the distance distribution $P(d)$
+(Part~\ref{sec:geom}), yields the predicted voltammogram $\DI(E)$: a peak
+centred near the MB formal potential, whose amplitude scales with the
+quantity of intact probe remaining on the electrode:
 \begin{equation}
   \DI(E;\Fk) \;\propto\; (1-\Fk)\,\Grtot
   \label{eq:DI_Fk}
 \end{equation}
-where $\Fk$ is the fraction of probe that has been cut by MMP-9. This
-proportionality was checked numerically and holds to within 2\% across
-the full range of $\Fk$ -- the peak shrinks in proportion to cleavage, and
-its position and width barely move.
+where $\Fk$ denotes the fraction of probe cleaved by MMP-9. This
+proportionality was verified numerically and holds to within 2\% across
+the full range of $\Fk$: the peak amplitude decreases in direct proportion
+to the cleavage fraction, while its position and width remain
+approximately constant.
 
 \subsection{Results}
 
@@ -299,7 +308,7 @@ its position and width barely move.
   \includegraphics[width=\textwidth]{../figures/fig_SWV3_ode.pdf}
   \caption{\textbf{A:} how the MB coverage relaxes during one forward-then-
     backward pulse pair, for three different reaction speeds. \textbf{B:}
-    the three regimes -- too slow, just right, too fast. \textbf{C:} net
+    the three regimes: too slow, near-optimal, too fast. \textbf{C:} net
     signal vs.\ reaction speed, confirming the optimum. \textbf{D:} the
     algebra behind Eq.~\eqref{eq:soln} (an integrating-factor solution of
     Eq.~\eqref{eq:ode}), for reference.}
@@ -320,7 +329,7 @@ its position and width barely move.
   \includegraphics[width=\textwidth]{../figures/fig_SWV5_averaging.pdf}
   \caption{\textbf{A:} near probes dominate the total signal; far probes
     contribute almost nothing. \textbf{B:} predicted voltammograms at
-    several cleavage fractions $\Fk$ -- the peak shrinks but keeps its
+    several cleavage fractions $\Fk$; the peak shrinks but keeps its
     shape. \textbf{C:} peak area vs.\ $(1-\Fk)$, confirming the linear
     relationship of Eq.~\eqref{eq:DI_Fk}. \textbf{D:} peak position and
     width stay essentially constant across $\Fk$.}
@@ -329,67 +338,73 @@ its position and width barely move.
 
 \subsection{Validation against published data}
 
-This subsection was rewritten after a direct audit found that an earlier
-version overstated what had actually been checked -- specifically, a
-claimed "under 1\%" match to the Laviron (1979) shape and a claimed
-"within 4~mV" match to Dauphin-Ducharme (2017) both turned out to have no
-real calculation behind them (one was a hardcoded placeholder, the other
-compared our own simulator's output to itself). What follows is what is
-actually true, checked directly against both papers.
+This subsection reports the outcome of direct comparisons against two
+published sources. Two claims made in an earlier version of this
+document, agreement with the Laviron (1979) peak shape to within 1\% and
+agreement with Dauphin-Ducharme (2017) peak widths to within 4~mV, were
+not supported by any underlying calculation and are superseded by the
+results reported below, which were obtained by direct computation and by
+reading both source publications in full.
 
-\textbf{Laviron (1979) \cit{2}.} The FWHM formula used throughout this
-report, $3.53\,RT/(n_eF) = 45.3$~mV at $n_e=2$, is Laviron's own
-closed-form result (his Eq.~6, $|\Psi|=\eta/(1+\eta)^2$, width at
-mid-height $90.6/n$ at 25\textdegree C) -- confirmed by direct reading of
-the paper, and used here exactly as published, not re-derived by our
-simulator. What is \emph{not} established is that our finite-$\kappa$
-BV-ODE simulator reproduces the full \emph{shape} of that curve by
-extrapolation. It should not be expected to: Laviron's formula describes an
-idealised continuously-swept, always-at-equilibrium system, not a
-discretely-pulsed SWV protocol sampled at one instant per half-cycle.
-Checking this directly, the simulator's shape differs from Laviron's by a
-large margin (24\% RMS at $\kappa=10$) and does not converge towards it as
-$\kappa$ increases -- if anything, the simulator becomes numerically
-unstable above $\kappa\approx15$ (peak position and shape become erratic,
-a floating-point cancellation artefact in the $I_f - I_b$ subtraction at
-high $\kappa$, not a real physical prediction). \textbf{This does not
-threaten our own predictions}: MB's operating $\kappa_{\rm tip}$ is
-3.2--6.4 (Part~\ref{sec:geom}), safely inside the range where the
-simulator is well-behaved -- but a quantitative shape match to the
-Laviron limit itself is not something this report can currently claim.
+\textbf{Laviron (1979) \cit{2}.} The full-width-at-half-maximum (FWHM)
+expression used throughout this report is Laviron's closed-form analytic
+result (Equation~6 of that work, $|\Psi|=\eta/(1+\eta)^2$, with
+mid-height width $90.6/n$ at 25\textdegree C), giving
+$3.53\,RT/(n_eF) = 45.3$~mV at $n_e=2$. This expression is used here
+exactly as published and is not re-derived from the present simulator. Agreement between the
+simulator and the full \emph{shape} of the Laviron curve has not been
+established. Such agreement is not, in general, expected: the Laviron
+expression describes an idealised, continuously-swept system at
+equilibrium, whereas the present simulator describes a discretely-pulsed
+square-wave protocol sampled once per half-cycle. Direct computation
+confirms that the simulator output differs from the Laviron shape by a
+substantial margin (24\% RMS at $\kappa=10$), and this discrepancy does
+not diminish as $\kappa$ increases. Above $\kappa\approx15$, the
+simulator instead exhibits numerical instability, evident as erratic peak
+position and shape; this behaviour arises from floating-point
+cancellation in the $I_f - I_b$ subtraction at large $\kappa$ and does
+not represent a physical prediction. This instability does not affect the
+predictions reported elsewhere in this document: the operating value of
+$\kappa_{\rm tip}$ for MB is 3.2--6.4 (Part~\ref{sec:geom}), well within
+the range over which the simulator behaves in a numerically stable
+manner. A quantitative shape match to the Laviron limit is nonetheless
+not currently established.
 
-\textbf{Dauphin-Ducharme et al.\ (2017) \cit{1}.} This paper directly
+\textbf{Dauphin-Ducharme et al.\ (2017) \cit{1}.} This publication
 characterises methylene blue tethered to gold via a hexanethiol linker
-(Figure 4 in that paper) -- a genuinely comparable system, general
-chemistry aside from the specific tether -- and reports $k^0 = 1.5\pm0.5$~cm~s$^{-1}$,
-converted in their own text to $k^0_{x=8\text{\AA}} = 5.0(\pm1.7)\times10^4$~s$^{-1}$,
-with $\alpha=0.37\pm0.02$: both numbers confirmed by direct reading of the
-paper. An earlier version of this model's code had transcribed this as
-$5\times10^3$~s$^{-1}$ (misattributed to a different figure in the same
-paper) -- a real 10$\times$ error, now fixed. However, at their reported
-$k^0$ and their operating frequencies (20--1000~Hz), $\kappa$ is of order
-$10$--$10^3$ -- squarely in the numerically unstable regime identified
-above. \textbf{A quantitative comparison to their data is therefore not
-currently possible}, not because the paper is not relevant (it is directly
-relevant) but because our simulator cannot yet be trusted at the $\kappa$
-their measurements operate at. Resolving this would need a numerically
-stable reformulation of the high-$\kappa$ current calculation -- real
-work, not yet attempted, and flagged here rather than papered over.
+(their Figure~4), a system directly comparable in general chemistry, and
+reports $k^0 = 1.5\pm0.5$~cm~s$^{-1}$, converted therein to
+$k^0_{x=8\text{\AA}} = 5.0(\pm1.7)\times10^4$~s$^{-1}$, with
+$\alpha=0.37\pm0.02$. Both values were confirmed by direct reading of the
+source text. An earlier version of the model code had recorded this rate
+constant as $5\times10^3$~s$^{-1}$, misattributed to a different figure
+within the same publication; this represents an order-of-magnitude
+transcription error, which has since been corrected. At the reported
+$k^0$ and the frequencies employed in that study (20--1000~Hz), $\kappa$
+takes values of order $10$ to $10^3$, within the numerically unstable
+regime identified above. A quantitative comparison to these data is
+therefore not currently possible. This limitation arises from the
+present simulator, which has not been validated over the relevant range
+of $\kappa$, and not from any deficiency in the cited source, which
+remains directly applicable. Resolution would require a numerically
+stable reformulation of the current calculation at high $\kappa$; this
+has not been undertaken and is recorded here as an explicit limitation of
+the present implementation.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV6_validation.pdf}
   \caption{\textbf{A:} Laviron's own analytic peak shape (his closed-form
-  formula, not derived from our simulator), shown for three electron
-  counts, confirming the FWHM formula used throughout this report.
-  \textbf{B:} our simulator's FWHM vs.\ $\kappa$, shown only over the range
-  where its output is numerically stable (peak position and shape remain
-  physically sensible) -- the instability onset near $\kappa\approx15$ is
-  marked explicitly, and MB's operating $\kappa_{\rm tip}$ (3.2--6.4) is
-  shown well inside the stable range. \textbf{C:} the same stable-range
-  data compared directly against the Laviron asymptote, showing the gap
-  discussed in the text rather than a false convergence. \textbf{D:}
-  summary of what is and is not validated, stated plainly.}
+  formula, not derived from the simulator used in this report), shown for
+  three electron counts, confirming the FWHM formula used throughout this
+  report. \textbf{B:} the simulator's FWHM versus $\kappa$, shown only
+  over the range where its output is numerically stable (peak position
+  and shape remain physically sensible); the instability onset near
+  $\kappa\approx15$ is marked explicitly, and MB's operating $\kappa_{\rm
+  tip}$ (3.2--6.4) is shown well inside the stable range. \textbf{C:} the
+  same stable-range data compared directly against the Laviron asymptote,
+  illustrating the discrepancy discussed in the text. \textbf{D:} summary
+  of validated and unvalidated components of the model.}
   \label{fig:valid}
 \end{figure}
 
@@ -399,29 +414,30 @@ work, not yet attempted, and flagged here rather than papered over.
 
 \subsection{Overview}
 
-Square-wave voltammetry samples the current only at the end of each pulse,
-by which point the electrode's background charging current has died away,
-and then subtracts the forward and backward readings. Both steps remove
-background signal that a simpler technique (e.g.\ cyclic voltammetry)
-would keep, giving SWV substantially better sensitivity for a
-surface-bound probe like ours \cit{11}.
+Square-wave voltammetry samples the current only at the end of each
+pulse, by which point the background charging current at the electrode
+has decayed to a negligible level, and subsequently subtracts the
+forward and backward readings. Both operations remove background
+contributions that a simpler technique, such as cyclic voltammetry, would
+retain, giving SWV substantially greater sensitivity for a surface-bound
+probe of this type \cit{11}.
 
 \subsection{Assumptions}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*,noitemsep]
-\item \textbf{SWV's sensitivity advantage over CV/DPV for surface-bound
-  probes is standard electroanalytical theory} \cit{11}, not specific to
-  our device.
+\item \textbf{The sensitivity advantage of SWV over CV/DPV for
+  surface-bound probes} is an established result in electroanalytical
+  theory \cit{11}, not specific to this device.
 \end{itemize}
 \end{assump}
 
 \subsection{Operating parameters}
 
-For completeness, the specific SWV settings this model uses: pulse
-amplitude $\Esw = 25$~mV \cit{6,12} \CONF\ (matches the Baker 2006
-literature value exactly, and confirmed against the fabricated device and
-potentiostat settings); operating frequency 10--20~Hz \cit{12} \CONF;
+The specific SWV settings employed in this model are as follows: pulse
+amplitude $\Esw = 25$~mV \cit{6,12} \CONF, matching the Baker (2006)
+literature value exactly and confirmed against the fabricated device and
+potentiostat settings; operating frequency 10--20~Hz \cit{12} \CONF;
 electrode area 1.7~mm$^2$ (Overview) \CONF; transfer coefficient
 $\alpha = 0.37$ and $n_e = 2$ for MB \cit{1} \CONF.
 
@@ -430,12 +446,12 @@ $\alpha = 0.37$ and $n_e = 2$ for MB \cit{1} \CONF.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV8_waveform.pdf}
-  \caption{\textbf{A:} the SWV pulse sequence -- a staircase with a square
-    wave superimposed, forward and backward currents sampled at the end of
-    each half-pulse. \textbf{B:} background charging current dies away
-    quickly; the real (Faradaic) signal persists, so sampling late removes
-    background. \textbf{C:} SWV's sensitivity advantage over CV and DPV for
-    a surface-bound probe.}
+  \caption{\textbf{A:} the SWV pulse sequence, a staircase with a square
+    wave superimposed, with forward and backward currents sampled at the
+    end of each half-pulse. \textbf{B:} the background charging current
+    decays quickly while the Faradaic signal persists, so sampling late
+    removes background. \textbf{C:} the sensitivity advantage of SWV over
+    CV and DPV for a surface-bound probe.}
   \label{fig:wave}
 \end{figure}
 
@@ -445,28 +461,28 @@ $\alpha = 0.37$ and $n_e = 2$ for MB \cit{1} \CONF.
 
 \subsection{Protocol Change: Removal of Fc}
 
-Earlier versions of this model included a ferrocene (Fc) reference probe
-co-deposited alongside the MB-peptide, used to build a ratiometric
-correction intended to cancel electrode-to-electrode variation. \textbf{The
-team has since removed Fc from the protocol entirely} \cit{12}: the
+Earlier versions of this model included a ferrocene (Fc) reference probe,
+co-deposited alongside the MB-peptide, used to construct a ratiometric
+correction intended to cancel electrode-to-electrode variation. The team
+has since removed Fc from the protocol entirely \cit{12}, and the
 electrode now carries a single probe type, MB-peptide only. This section
-replaces the earlier ratiometric-correction description with an honest
-account of what that removes, what it does not, and what is now the central
-open risk.
+replaces the earlier ratiometric-correction description with an account
+of what that removal changes, what it does not change, and what is now
+the principal open risk.
 
-This is not simply a loss. Several of the problems flagged in earlier
-versions of this report were specifically about Fc not behaving as
-assumed -- its formal potential did not match the literature anchor, its
+The removal is not simply a loss of capability. Several of the problems
+identified in earlier versions of this report concerned Fc specifically:
+its formal potential did not match the literature anchor used, its
 borrowed rate constant predicted a vanishing signal that contradicted
-direct observation, and no distinct dual peak was ever seen on a real
-scan. Removing Fc resolves all of these problems simultaneously, because
-the component they concerned is no longer part of the device.
+direct observation, and no distinct dual peak was observed on a real
+scan. Removing Fc resolves each of these problems, since the component to
+which they applied is no longer part of the device.
 
 \subsection{Reassessment: The Actual Contribution of Fc}
 
 The measurement protocol (Overview) already takes an SWV scan on each
-electrode \emph{before} incubation and again \emph{after} -- a baseline
-and a follow-up reading on the same physical electrode, not a comparison
+electrode \emph{before} incubation and again \emph{after}: a baseline and
+a follow-up reading on the same physical electrode, not a comparison
 between different electrodes. Without Fc, the cleavage fraction is read
 directly from that pair:
 \begin{equation}
@@ -475,68 +491,68 @@ directly from that pair:
 \end{equation}
 where $\DI_{\rm MB}$ is the net SWV peak height (Parts~\ref{sec:core}--\ref{sec:wave}).
 
-It is worth being precise about what the old Fc-based ratio (used in
-earlier versions of this report) actually contributed, because the honest
-answer is narrower than earlier drafts implied. Algebraically,
+What the earlier Fc-based ratio actually contributed can be established
+algebraically:
 \begin{equation}
   \left(\Fk^{\rm rec}\right)_{\rm old\ (with\ Fc)} = 1 - \frac{\DI_{\rm MB}(T)/\DI_{\rm Fc}(T)}{\DI_{\rm MB}(0)/\DI_{\rm Fc}(0)}
   \;=\; 1 - \frac{\DI_{\rm MB}(T)}{\DI_{\rm MB}(0)} \quad\text{\emph{whenever} } \DI_{\rm Fc}(T) = \DI_{\rm Fc}(0),
   \label{eq:Fk_ratio_old}
 \end{equation}
-i.e.\ the Fc terms cancel exactly and Eq.~\eqref{eq:Fk_ratio_old} collapses
-to Eq.~\eqref{eq:Fk_simple} whenever Fc coverage is stable during incubation.
-\textbf{This means Fc was never correcting for baseline electrode-to-electrode
-coverage differences} -- Eq.~\eqref{eq:Fk_simple} already self-normalises
-against that, since each electrode is compared only to its own earlier
+so the Fc terms cancel exactly, and Eq.~\eqref{eq:Fk_ratio_old} reduces to
+Eq.~\eqref{eq:Fk_simple} whenever Fc coverage is stable during incubation.
+Fc therefore never corrected for baseline electrode-to-electrode coverage
+differences: Eq.~\eqref{eq:Fk_simple} already self-normalises against
+that difference, since each electrode is compared only to its own earlier
 reading, not to any other electrode or to a reference curve. An earlier
 version of this document stated that removing Fc would make the
 $\sim$100$\times$ electrode-to-electrode signal variation (Part~\ref{sec:sam})
-the central unavoidable problem for calibration; on closer inspection that
-overstated the loss, and is corrected here.
+the central, unavoidable problem for calibration; that claim overstated
+the loss and is superseded by the analysis above.
 
 \subsection{Consequences of Removal}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
-\item \textbf{No way to detect non-cleavage signal drift during
-  incubation.} Fc's real value was catching cases where $\DI_{\rm
-  Fc}(T) \neq \DI_{\rm Fc}(0)$ -- i.e.\ where something \emph{other} than
-  MMP-9 cleavage (non-specific fouling, partial probe desorption,
-  electrode degradation) changed the signal during the incubation window.
+\item \textbf{No means of detecting non-cleavage signal drift during
+  incubation.} The diagnostic value of Fc lay in flagging cases where
+  $\DI_{\rm Fc}(T) \neq \DI_{\rm Fc}(0)$, that is, where something other
+  than MMP-9 cleavage (non-specific fouling, partial probe desorption,
+  electrode degradation) altered the signal during the incubation window.
   Without Fc, any such drift is indistinguishable from real cleavage and
-  is read as extra $\Fk$. The direction of this risk is not neutral: it
-  biases $\Fk^{\rm rec}$ \emph{upward}, i.e.\ towards over-reading
-  cleavage -- a chronic wound could read as more severe than it is, but a
-  healing wound is unlikely to read as falsely reassuring \FLAG. This has
-  not been quantified and is the single most important open question this
-  change creates.
+  is read as additional $\Fk$. This risk is directional: it biases
+  $\Fk^{\rm rec}$ upward, towards over-reading cleavage, so a chronic
+  wound could read as more severe than it is, whereas a healing wound is
+  unlikely to read as falsely reassuring \FLAG. This effect has not been
+  quantified and is the single most important open question created by
+  this change.
 \item \textbf{No real-time electrode-health check.} A dead, poorly
-  contacted, or badly fabricated electrode would previously show up as a
+  contacted, or badly fabricated electrode would previously appear as a
   missing or anomalous Fc signal, independent of the MB read. That
-  diagnostic is gone; a failed electrode and a fully-cleaved electrode may
-  now be harder to tell apart from the MB scan alone \FLAG.
+  diagnostic is no longer available; a failed electrode and a
+  fully-cleaved electrode may now be harder to distinguish from the MB
+  scan alone \FLAG.
 \item \textbf{The 3.4\% noise floor used in the LOD calculation
-  (Part~\ref{sec:conc}) no longer applies as derived.} That number came
+  (Part~\ref{sec:conc}) no longer applies as derived.} That figure came
   from error propagation through the ratio-of-ratios in
   Eq.~\eqref{eq:Fk_ratio_old}. The noise floor for the simpler
   Eq.~\eqref{eq:Fk_simple} has not been separately derived, and there is
-  no principled reason to assume it is the same number -- removing a
-  measured quantity from the calculation could plausibly reduce propagated
-  noise (fewer error sources) or increase it (if Fc had been absorbing a
-  systematic error term, such as amplifier gain drift, that Eq.~\eqref{eq:Fk_simple}
-  no longer cancels) \FLAG. Until re-derived, every LOD and clinical
-  prediction number in Part~\ref{sec:conc} that depends on that 3.4\%
-  figure should be treated as provisional.
-\item \textbf{Low-coverage electrodes still have worse precision, even
-  though $\Fk^{\rm rec}$ itself is unbiased by coverage.} Eq.~\eqref{eq:Fk_simple}
-  correctly cancels the \emph{electrode-to-electrode baseline coverage
-  difference} algebraically, but an electrode with low absolute coverage
+  no principled reason to assume it is unchanged: removing a measured
+  quantity from the calculation could plausibly reduce propagated noise
+  (fewer error sources) or increase it, if Fc had been absorbing a
+  systematic error term, such as amplifier gain drift, that
+  Eq.~\eqref{eq:Fk_simple} no longer cancels \FLAG. Until re-derived,
+  every LOD and clinical prediction figure in Part~\ref{sec:conc} that
+  depends on the 3.4\% value should be treated as provisional.
+\item \textbf{Low-coverage electrodes retain worse precision, even though
+  $\Fk^{\rm rec}$ itself is unbiased by coverage.} Eq.~\eqref{eq:Fk_simple}
+  correctly cancels the electrode-to-electrode baseline coverage
+  difference algebraically, but an electrode with low absolute coverage
   still has a smaller absolute $\DI_{\rm MB}(0)$, and therefore a worse
   signal-to-noise ratio against any fixed absolute noise floor (electronic
-  noise, baseline drift) when trying to resolve a small $\Fk$. This is a
-  real, distinct effect from the (now-resolved) baseline-cancellation
-  question above, and the $\sim$100$\times$ coverage variation
-  (Part~\ref{sec:sam}) is still relevant to it \FLAG.
+  noise, baseline drift) when resolving a small $\Fk$. This is a distinct
+  effect from the baseline-cancellation question addressed above, and the
+  $\sim$100$\times$ coverage variation (Part~\ref{sec:sam}) remains
+  relevant to it \FLAG.
 \end{itemize}
 \end{assump}
 
@@ -545,14 +561,13 @@ overstated the loss, and is corrected here.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/fig_SWV7_ratiometric.pdf}
-  \caption{\textbf{A:} the MB peak before and after incubation, on a single
-  electrode -- the comparison Eq.~\eqref{eq:Fk_simple} actually relies on,
-  with no second probe. \textbf{B:} recovered vs.\ true cleavage fraction
-  under Eq.~\eqref{eq:Fk_simple}, assuming no drift during incubation --
-  the open risk in the assumptions above is that this assumption may not
-  hold. \textbf{C, D:} frequency and quadrature diagnostics for the
-  underlying simulator, unaffected by the change described in this
-  section.}
+  \caption{\textbf{A:} the MB peak before and after incubation on a single
+  electrode, the comparison on which Eq.~\eqref{eq:Fk_simple} relies, with
+  no second probe. \textbf{B:} recovered versus true cleavage fraction
+  under Eq.~\eqref{eq:Fk_simple}, assuming no drift during incubation; the
+  open risk identified above is that this assumption may not hold.
+  \textbf{C, D:} frequency and quadrature diagnostics for the underlying
+  simulator, unaffected by the change described in this section.}
   \label{fig:ratio}
 \end{figure}
 
@@ -574,11 +589,11 @@ cleavage fraction follows simple first-order kinetics.
   pseudo-first-order.} Consistent with clinical concentration ranges
   (6--30~nM) against a surface probe density orders of magnitude lower.
 \item \textbf{Surface efficiency $\eta = 0.20$.} A central estimate, not a
-  measured value for our device \FLAG. It corrects for cleavage on a
-  surface typically being slower than in free solution (steric hindrance,
-  orientation effects), and still needs to be measured directly (e.g.\ by
-  comparing electrode readout to a parallel solution-phase fluorescence
-  assay).
+  value measured for this device \FLAG. It accounts for cleavage on a
+  surface typically proceeding more slowly than in free solution (steric
+  hindrance, orientation effects), and still requires direct measurement,
+  for example by comparing electrode readout to a parallel solution-phase
+  fluorescence assay.
 \end{itemize}
 \end{assump}
 
@@ -607,14 +622,13 @@ Chronic & 30~nM & 53\% & Trengove 1999 \cit{7b} \\
 \end{center}
 
 At the $3\sigma$ detection criterion, this gives a predicted limit of
-detection around \textbf{4~nM} at 30 minutes, below the 6~nM healing/chronic
-boundary -- \emph{provided} a noise floor of $\sim$3\% is achievable.
-\textbf{That number is no longer confirmed} \FLAG: it was derived for the
-Fc-based ratiometric measurement, which has since been removed
-(Part~\ref{sec:ratio}). The noise floor for the simpler before/after MB-only
-comparison now in use has not been separately derived, so this 4~nM figure
-should be treated as provisional pending that re-derivation, not as a
-settled prediction.
+detection around 4~nM at 30 minutes, below the 6~nM healing/chronic
+boundary, provided a noise floor of $\sim$3\% is achievable. That figure
+is no longer confirmed \FLAG: it was derived for the Fc-based ratiometric
+measurement, which has since been removed (Part~\ref{sec:ratio}). The
+noise floor for the simpler before/after MB-only comparison now in use
+has not been separately derived, so this 4~nM figure should be treated as
+provisional pending that re-derivation, not as a settled prediction.
 
 \begin{figure}[H]
   \centering
@@ -637,7 +651,7 @@ settled prediction.
 \toprule
 \textbf{Part} & \textbf{Component} & \textbf{Status} & \\
 \midrule
-C, D & The BV-ODE closed-form solution & Exact maths (verifiable by substitution); NOT yet shown to match any published curve -- see Part~IV & \CONF \\
+C, D & The BV-ODE closed-form solution & Exact mathematics (verifiable by substitution); not yet shown to match any published curve; see Part~C & \CONF \\
 D    & SWV beats CV/DPV for this probe & Standard, well-established result & \CONF \\
 F    & Solution cleavage rate (Kridel) & Directly measured for this peptide & \CONF \\
 A    & Single-component deposition (no MCH, no Fc) & Confirmed current protocol \cit{12} & \CONF \\
@@ -656,17 +670,16 @@ F    & Surface efficiency $\eta$ & Central estimate, needs direct measurement & 
 
 \textbf{Bottom line.} The core electrochemistry (Parts~\ref{sec:core} and
 \ref{sec:wave}) rests on standard Butler-Volmer theory and an exact,
-independently-verifiable closed-form solution -- the \emph{equations}
+independently verifiable closed-form solution; the governing equations
 are not in question. Whether this specific numerical implementation
-reproduces a real published curve is a separate question, and is
-currently open (Part~\ref{sec:core}, "Validation against published
-data") rather than confirmed. What needs direct experimental attention
-before the device can be trusted end to end is everything to do with the
-real surface: what is actually on
-it (Part~\ref{sec:sam}), and, now that Fc has been removed, whether
-non-cleavage signal drift during incubation can be ruled out or bounded
-(Part~\ref{sec:ratio}) -- this is the principal failure mode the device
-can no longer detect on its own.
+reproduces a real published curve is a separate question, and remains
+open (Part~\ref{sec:core}, "Validation against published data") rather
+than confirmed. What requires direct experimental attention before the
+device can be trusted end to end concerns the real surface: what is
+actually present on it (Part~\ref{sec:sam}), and, now that Fc has been
+removed, whether non-cleavage signal drift during incubation can be
+ruled out or bounded (Part~\ref{sec:ratio}). This is the principal
+failure mode the device can no longer detect on its own.
 
 %=======================================================================
 \section*{References}
@@ -700,8 +713,9 @@ can no longer detect on its own.
 \item Kridel SJ, Chen E, Howard EW, Bhatt L, Strongin AY (2001).
   Substrate hydrolysis by matrix metalloproteinase-9.
   \textit{J Biol Chem} 276:20572--20578. \textbf{kridel2001.pdf} (papers/layer\_09/)
-  [7b] Trengove NJ, Stacey MC, MacAuley S, et~al.\ (1999). Analysis of the
-  acute and chronic wound environments.
+
+  \noindent[7b] Trengove NJ, Stacey MC, MacAuley S, et~al.\ (1999).
+  Analysis of the acute and chronic wound environments.
   \textit{Wound Repair Regen} 7:442--452. \textbf{trengove1999.pdf} (papers/layer\_00/)
 
 \item Adjemian J, Anne A, Cauet G, Demaille C (2010). Cleavage-sensing redox peptide
@@ -725,9 +739,10 @@ can no longer detect on its own.
   entirely), confirmed operating frequency (10--20~Hz), confirmed
   electrode area (1.7~mm$^2$) and SWV amplitude (25~mV), and historical
   observations from when Fc was still part of the protocol (observed C6FC
-  formal potential and peak height/width) retained for the discussion in
-  Part~VI of why Fc was removed. Cited throughout as the source of the protocol and
-  measurement corrections in this version of the report.
+  formal potential and peak height and width), retained for the
+  discussion in Part~E of why Fc was removed. Cited throughout as the
+  source of the protocol and measurement corrections in this version of
+  the report.
 
 \end{enumerate}
 
