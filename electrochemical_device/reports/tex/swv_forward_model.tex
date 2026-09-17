@@ -74,10 +74,11 @@ own electrodes, it is marked \FLAG.
 \section{Overview: The Electrode and What Happens to It}
 \label{sec:story}
 
-Our sensor is a small gold disc, 1.5~mm across (0.0177~cm$^2$ geometric
-area) by design (electrode design, Layer 6) \FLAG -- this is the design
-specification, not yet independently confirmed against the fabricated
-device, and is currently being checked. It carries two kinds of molecule
+Our sensor is a small gold electrode with a geometric area of
+1.7~mm$^2$ (0.017~cm$^2$) \cit{12} \CONF -- confirmed against the
+fabricated device, superseding an earlier 1.5~mm-diameter design spec
+(0.0177~cm$^2$), a $\sim$4\% difference too small to change any
+qualitative conclusion in this report. It carries two kinds of molecule
 stuck to its surface by a thiol (sulfur) anchor, Figure~\ref{fig:assem}:
 
 \begin{itemize}[leftmargin=*]
@@ -388,12 +389,14 @@ surface-bound probe like ours \cit{11}.
 \subsection{Operating parameters}
 
 For completeness, the specific SWV settings this model uses: pulse
-amplitude $\Esw = 25$~mV \cit{6} \FLAG\ (pending field confirmation, as
-noted in the Overview); operating frequency 10--20~Hz \cit{12} (confirmed);
-transfer coefficient $\alpha = 0.37$ and $n_e = 2$ for MB \cit{1}
-\CONF; $\alpha = 0.5$ and $n_e = 1$ for Fc, the standard textbook
-assumption for a fast, symmetric one-electron couple rather than a
-measured value for this specific construct.
+amplitude $\Esw = 25$~mV \cit{6,12} \CONF\ (matches the Baker 2006
+literature value exactly, and confirmed against the fabricated device and
+potentiostat settings); operating frequency 10--20~Hz \cit{12} \CONF;
+electrode area 1.7~mm$^2$ (Overview) \CONF; transfer coefficient
+$\alpha = 0.37$ and $n_e = 2$ for MB \cit{1} \CONF; $\alpha = 0.5$ and
+$n_e = 1$ for Fc, the standard textbook assumption for a fast, symmetric
+one-electron couple rather than a measured value for this specific
+construct.
 
 \subsection{Result}
 
@@ -494,24 +497,25 @@ device.} Five separate problems have come up:
   Back-calculating from the worst-case observed height
   ($5\times10^{-8}$~A) at $f=20$~Hz, using the model's own internal Fc
   coverage estimate $\Gamma_{\rm Fc}=1.5\times10^{-12}$~mol~cm$^{-2}$ and
-  the design-spec electrode area (both themselves \FLAG, see the Overview
-  and below), gives an optimal $k^0_{\rm Fc} \approx 23$~s$^{-1}$
+  the now-confirmed electrode area (1.7~mm$^2$) and SWV amplitude
+  (25~mV), gives an optimal $k^0_{\rm Fc} \approx 23$~s$^{-1}$
   ($\kappa_{\rm Fc}\approx0.6$, near the quasi-reversible optimum) --
   roughly four orders of magnitude slower than the borrowed value. At
   that corrected $k^0_{\rm Fc}$ and the current coverage assumption, the
   model cannot reach the upper end of the observed range
   ($10^{-5}$~A) at \emph{any} $k^0$: coverage, not kinetics, sets a hard
-  ceiling on peak height, and $10^{-5}$~A is roughly 200--400$\times$
+  ceiling on peak height, and $10^{-5}$~A is roughly 400$\times$
   above that ceiling. One coherent (but unconfirmed) explanation is that
-  real Fc coverage on a well-formed SAM is $\sim$200--400$\times$ higher
+  real Fc coverage on a well-formed SAM is $\sim$400$\times$ higher
   than the current placeholder -- which would also help explain the
   $\sim$100$\times$ electrode-to-electrode signal variation already noted
-  above, if coverage varies similarly. \textbf{None of this is confirmed}:
-  it depends on the electrode area and SWV amplitude, both still pending
-  field confirmation, and on whether the observed heights were genuinely
-  isolated Fc peaks rather than a combined or contaminated signal. It
-  should be treated as a specific, testable hypothesis, not a corrected
-  parameter, until those are checked.
+  above, if coverage varies similarly. \textbf{This is still not
+  confirmed}: it depends on whether the observed heights were genuinely
+  isolated Fc peaks rather than a combined or contaminated signal, which
+  has not been checked. Electrode area and SWV amplitude are no longer
+  open questions here (both confirmed above), so the remaining uncertainty
+  is narrower than before, but this should still be treated as a specific,
+  testable hypothesis, not a corrected parameter.
 \item \textbf{We have not actually seen two separate peaks.} The model
   assumes the MB and Fc peaks are well separated and can both be read off
   cleanly in one scan. \textbf{On real voltammograms, no distinct dual peak
@@ -652,8 +656,8 @@ A    & One-pot, no-MCH deposition & Confirmed current protocol \cit{12} & \CONF 
 A    & Operating frequency (10--20~Hz) & Confirmed by team; supersedes earlier 15~Hz assumption & \CONF \\
 B    & $P(d)$ tether geometry & Derived for a clean surface, not validated for the real one & \FLAG \\
 A    & Surface coverage $\Grtot$ & Engineering placeholder; not measurable with available instrumentation & \FLAG \\
-A    & Electrode area (1.5~mm, 0.0177~cm$^2$) & Design spec, pending confirmation against fabricated device & \FLAG \\
-D    & SWV amplitude $\Esw$ (25~mV) & Literature value, pending field confirmation & \FLAG \\
+A    & Electrode area (1.7~mm$^2$) & Confirmed against fabricated device (supersedes 1.5~mm design spec) & \CONF \\
+D    & SWV amplitude $\Esw$ (25~mV) & Confirmed against potentiostat settings; matches literature exactly & \CONF \\
 E    & C6FC formal potential & Literature value doesn't match observed +300--400~mV, itself variable & \FLAG \\
 E    & Fc rate constant $k^0_{\rm Fc}$ & Back-calculated $\sim$23~s$^{-1}$, $\sim$4 orders below borrowed value; unconfirmed & \FLAG \\
 E    & Two resolvable peaks (MB, Fc) & \textbf{Not observed on real scans yet} & \FLAG \\

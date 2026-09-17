@@ -497,13 +497,15 @@ DD_FIG5B_NORM = np.array([0.00, 0.01, 0.08, 0.38, 0.70, 0.88,
 # representative default below; 20 Hz gives kappa_tip = 3.18 instead of 6.35
 # (see swv_forward_model.tex Part B for both).
 F_SWV    = 10.0    # Hz (confirmed range 10-20 Hz; 10 Hz used as default)
-# E_SW, A_ELEC: values below are the pre-existing working assumptions
-# (Baker 2006 / Layer 6 respectively). Both are currently being checked
-# against the fabricated device and potentiostat settings -- treat as
-# FLAG (pending field confirmation), not settled, until confirmed.
-E_SW     = 0.025   # V  (25 mV amplitude, Baker 2006 [6]; FLAG: pending field confirmation)
+# E_SW confirmed against the potentiostat settings (25 mV, matches the
+# Baker 2006 literature value exactly). A_ELEC confirmed against the
+# fabricated device: geometric area 1.7 mm^2, not the 1.5 mm diameter
+# design spec previously assumed (0.017 cm^2 vs 0.0177 cm^2 -- a ~4%
+# difference, small enough not to change any qualitative conclusion).
+# Both CONFIRMED (internal electrode characterisation notes, Sept 2026).
+E_SW     = 0.025   # V  (25 mV amplitude; confirmed, Baker 2006 [6] + field confirmation)
 GAMMA_0  = 3.0e-12 # mol cm-2 (Lubin 2010, papers/layer_11/)
-A_ELEC   = 0.0177  # cm2 (1.5 mm diameter, Layer 6; FLAG: pending field confirmation)
+A_ELEC   = 0.017   # cm2 (1.7 mm^2 geometric area; confirmed)
 
 # ─── M5: Fc REFERENCE PEAK ───────────────────────────────────────────────────
 # Ferrocene-hexanethiol on C6 SAM.
@@ -514,13 +516,16 @@ A_ELEC   = 0.0177  # cm2 (1.5 mm diameter, Layer 6; FLAG: pending field confirma
 # to this device." At this k0 and the real 10-20 Hz operating frequency,
 # kappa_Fc = 6,750-13,500, which the BV-ODE predicts as an essentially zero
 # net SWV signal -- contradicted by direct observation (a real Fc peak has
-# been seen, height 5e-8 to 1e-5 A). Back-calculating from the worst-case
-# observed height (5e-8 A) at Gamma_Fc=1.5e-12 and f=20 Hz gives an optimal
-# k0_Fc ~ 23 s-1 (kappa ~ 0.57, near the quasi-reversible optimum) -- roughly
-# four orders of magnitude slower than the borrowed value. NOT YET CONFIRMED;
-# needs a dedicated Fc-only characterisation. K0_FC left at the literature
-# value below since no confirmed replacement exists yet; do not treat it as
-# reliable for absolute Fc signal predictions.
+# been seen, height 5e-8 to 1e-5 A). Back-calculating with CONFIRMED
+# A_ELEC=0.017 cm2 and E_SW=25 mV, from the worst-case observed height
+# (5e-8 A) at Gamma_Fc=1.5e-12 and f=20 Hz, gives an optimal k0_Fc ~ 23 s-1
+# (kappa ~ 0.57, near the quasi-reversible optimum) -- roughly four orders
+# of magnitude slower than the borrowed value. At that k0 and coverage, the
+# model cannot reach the best-case observed height (1e-5 A) at any k0 --
+# that would need Gamma_Fc ~ 6e-10 mol/cm2, ~400x the current placeholder.
+# NOT YET CONFIRMED; needs a dedicated Fc-only characterisation. K0_FC left
+# at the literature value below since no confirmed replacement exists yet;
+# do not treat it as reliable for absolute Fc signal predictions.
 K0_FC   = 2.7e5    # s-1  (FLAG: literature value for a different construct, likely wrong for this device -- see note above)
 E0_FC   = 0.35     # V vs Ag/AgCl (FLAG: observed range +0.30 to +0.40 V, itself variable electrode-to-electrode; midpoint used here, not a confirmed single value)
 GAMMA_FC = 1.5e-12 # mol cm-2 (internal Fc SAM fraction; FLAG: confirm at Layer 15)

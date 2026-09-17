@@ -830,7 +830,7 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
     E0_Fc = 0.350
     k0_Fc = 2.7e5
     kap_Fc = k0_Fc / (2 * f_op)
-    A_Fc = 0.0177
+    A_Fc = 0.017  # 1.7 mm^2, confirmed
     Gamma_Fc = 1.5e-12  # matches GAMMA_FC in swv_forward_model.py
     E_wide = np.linspace(-0.40, 0.50, 600)
 
@@ -891,7 +891,7 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
         k0_eff = k0_of_d(D_PEG_NM + SIGMA_Z_NM * np.sqrt(2 / np.pi))
         DI_e = swv_voltammogram(E_SCAN, k0=k0_eff, ne=2, alpha=0.37,
                                  E0=-0.25, f_swv=fq, E_sw=0.025)
-        DI_e_sc = DI_e * 3e-12 * 0.0177
+        DI_e_sc = DI_e * 3e-12 * 0.017
         peak_eff.append(np.max(DI_e_sc))
 
     peak_P = np.array(peak_P)
@@ -1328,7 +1328,7 @@ def fig12_worked_example():
     f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
     tau = 1.0 / (2 * f_op)
     Gamma_tot = 3e-12
-    A_cm2 = 0.0177
+    A_cm2 = 0.017  # 1.7 mm^2, confirmed
     Esw = 0.025
 
     # Compute BV rates at E_fwd and E_bwd
