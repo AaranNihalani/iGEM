@@ -634,7 +634,7 @@ settled prediction.
 \toprule
 \textbf{Part} & \textbf{Component} & \textbf{Status} & \\
 \midrule
-C, D & The BV-ODE and its solution & Exact maths, validated against two published datasets & \CONF \\
+C, D & The BV-ODE closed-form solution & Exact maths (verifiable by substitution); NOT yet shown to match any published curve -- see Part~IV & \CONF \\
 D    & SWV beats CV/DPV for this probe & Standard, well-established result & \CONF \\
 F    & Solution cleavage rate (Kridel) & Directly measured for this peptide & \CONF \\
 A    & Single-component deposition (no MCH, no Fc) & Confirmed current protocol \cit{12} & \CONF \\
@@ -652,9 +652,14 @@ F    & Surface efficiency $\eta$ & Central estimate, needs direct measurement & 
 \end{center}
 
 \textbf{Bottom line.} The core electrochemistry (Parts~\ref{sec:core} and
-\ref{sec:wave}) rests on standard, validated theory and isn't in question.
-What needs direct experimental attention before the device can be trusted
-end to end is everything to do with the real surface: what's actually on
+\ref{sec:wave}) rests on standard Butler-Volmer theory and an exact,
+independently-verifiable closed-form solution -- the \emph{equations}
+aren't in question. Whether this specific numerical implementation
+reproduces a real published curve is a separate question, and is
+currently open (Part~\ref{sec:core}, "Validation against published
+data") rather than confirmed. What needs direct experimental attention
+before the device can be trusted end to end is everything to do with the
+real surface: what's actually on
 it (Part~\ref{sec:sam}), and, now that Fc has been dropped, whether
 non-cleavage signal drift during incubation can be ruled out or bounded
 (Part~\ref{sec:ratio}) -- since that is now the one thing this device
