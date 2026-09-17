@@ -79,7 +79,7 @@ def fig0_assembly():
     sam = mpatches.FancyBboxPatch((0.5, 1.2), 9, 0.8, boxstyle="round,pad=0.05",
                                    fc="#e8d5a3", ec="#9c7a3c", lw=1)
     ax.add_patch(sam)
-    ax.text(5, 1.6, "Mixed SAM  (Au–S bonds)", ha="center", va="center",
+    ax.text(5, 1.6, "SAM  (Au–S bonds)", ha="center", va="center",
             fontsize=8, color="#5a3a00")
 
     # PEG6 spacers (left side: signal probes)
@@ -446,10 +446,10 @@ def fig3_ode_derivation():
     alpha = 0.37
     ne = 2
 
-    kappa_cases = [0.05, 4.2, 50.0]
+    kappa_cases = [0.05, 4.2, 12.0]  # 50 replaced: simulator numerically unstable above kappa~15
     colors = [C1, C0, C2]
     labels = [r"$\kappa=0.05$ (irrev.)", r"$\kappa=4.2$ (quasi-rev., our case)",
-              r"$\kappa=50$ (rev.)"]
+              r"$\kappa=12$ (more reversible)"]
 
     # A: Gamma_red(t) during forward + backward half-pulse at E = E0
     ax = axes[0]
@@ -581,10 +581,10 @@ def fig4_scan_evolution():
     tau = 1.0 / (2 * f_op)
     alpha, ne, E0 = 0.37, 2, -0.25
 
-    kappa_cases2 = [0.05, 4.2, 50.0]
+    kappa_cases2 = [0.05, 4.2, 12.0]  # 50 replaced: simulator numerically unstable above kappa~15
     colors2 = [C1, C0, C2]
     labels2 = [r"$\kappa=0.05$ (irrev.)", r"$\kappa=4.2$ (our operating point)",
-               r"$\kappa=50$ (rev.)"]
+               r"$\kappa=12$ (more reversible)"]
 
     ax = axes[0]
     for kap, col, lab in zip(kappa_cases2, colors2, labels2):
@@ -699,51 +699,22 @@ def fig5_averaging(DI_Fk, fk_arr, A_areas, E_peaks, FWHMs,
 # FIG 6 — Validation: Laviron limit + FWHM derivation + DD comparison
 # ═══════════════════════════════════════════════════════════════════════════════
 def fig6_validation():
-    print("[6/12] Fig 6: Validation ...")
+    print("[6/12] Fig 6: Validation (honest version -- see swv_forward_model.tex Part C) ...")
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     axes = axes.flatten()
 
-    E_lav = np.linspace(-0.15, 0.15, 600)
-    f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
+    f_op = 10.0  # confirmed operating frequency
+    kap_tip_lo = K0_REF_S1 / (2 * 20.0)  # 3.2 at 20 Hz
+    kap_tip_hi = K0_REF_S1 / (2 * 10.0)  # 6.4 at 10 Hz
+    KAP_STABLE_MAX = 15.0  # simulator becomes numerically unstable above this
+                            # (peak position/shape become erratic -- floating
+                            # point cancellation in I_f - I_b at high kappa,
+                            # confirmed by direct test, not a physical result)
 
-    # A: Laviron limit (small Esw)
+    # A: Laviron's OWN analytic formula (not derived from our simulator) --
+    # confirms the FWHM formula used throughout this report is correctly
+    # transcribed from Laviron (1979) Eq. 6.
     ax = axes[0]
-    k0_qr = 10 * 2 * f_op
-    DI_25 = swv_voltammogram(E_lav, k0=k0_qr, ne=2, alpha=0.5, E0=0.0,
-                              f_swv=f_op, E_sw=0.025)
-    DI_1 = swv_voltammogram(E_lav, k0=k0_qr, ne=2, alpha=0.5, E0=0.0,
-                             f_swv=f_op, E_sw=0.001)
-    DI_lav = laviron_reversible(E_lav, E0=0.0, ne=2)
-
-    # Normalise
-    DI_25n = DI_25 / np.max(DI_25)
-    DI_1n = DI_1 / np.max(DI_1)
-    DI_lavn = DI_lav / np.max(DI_lav)
-
-    ax.plot(E_lav * 1000, DI_25n, color=C0, lw=2,
-            label="BV-SWV $E_{\\rm sw}=25$ mV (operating)")
-    ax.plot(E_lav * 1000, DI_1n, color=C1, lw=2, ls="--",
-            label="BV-SWV $E_{\\rm sw}=1$ mV (small-$E_{\\rm sw}$ limit)")
-    ax.plot(E_lav * 1000, DI_lavn, color="#888", lw=1.5, ls=":",
-            label="Laviron (1979) analytic")
-
-    # FWHM markers
-    for DI_n, col, name in [(DI_1n, C1, "1 mV"), (DI_25n, C0, "25 mV")]:
-        above_half = E_lav[DI_n >= 0.5]
-        if len(above_half) > 1:
-            fwhm = (above_half[-1] - above_half[0]) * 1000
-            ax.annotate("", xy=(above_half[-1] * 1000, 0.5),
-                        xytext=(above_half[0] * 1000, 0.5),
-                        arrowprops=dict(arrowstyle="<->", color=col, lw=1))
-            ax.text((above_half[0] + above_half[-1]) / 2 * 1000, 0.52,
-                    f"FWHM={fwhm:.1f} mV", ha="center", fontsize=7, color=col)
-    ax.set_xlabel("Potential (mV)")
-    ax.set_ylabel(r"$\Delta I$ (normalised)")
-    ax.set_title("A  BV simulator vs Laviron (1979)")
-    ax.legend(fontsize=7)
-
-    # B: Laviron FWHM derivation
-    ax = axes[1]
     ne_vals = [1, 2, 4]
     eta_range = np.linspace(-0.30, 0.30, 600)
     for ne_v in ne_vals:
@@ -751,64 +722,72 @@ def fig6_validation():
         eta_e = np.exp(xi)
         psi = eta_e / (1 + eta_e)**2
         psi_n = psi / np.max(psi)
-        fwhm_th = 3.53 * R_const * T_K / (ne_v * F_const) * 1000  # mV
+        fwhm_th = 3.53 * R_const * T_K / (ne_v * F_const) * 1000
         ax.plot(eta_range * 1000, psi_n, lw=2,
                 label=f"$n_e={ne_v}$,  FWHM$={fwhm_th:.1f}$ mV")
     ax.axhline(0.5, color="#aaa", ls="--", lw=0.8)
     ax.set_xlabel("Overpotential $\\eta$ (mV)")
     ax.set_ylabel(r"$|\Psi|$ (normalised)")
-    ax.set_title("B  Laviron peak: FWHM $= 3.53\\,RT/(n_e F)$")
+    ax.set_title("A  Laviron's analytic formula (paper, not our simulator)")
     ax.legend(fontsize=8)
 
-    # C: Frequency dependence (DD comparison)
-    ax = axes[2]
-    k0_DD = 5000.0
-    alpha_DD = 0.37
-    E_DD = np.linspace(-0.15, 0.15, 400)
-    freqs_DD = [200, 500, 1000]
-    for f_dd, col in zip(freqs_DD, [C0, C1, C2]):
-        kap_dd = k0_DD / (2 * f_dd)
-        DI_dd = swv_voltammogram(E_DD, k0=k0_DD, ne=2, alpha=alpha_DD, E0=0.0,
-                                  f_swv=f_dd, E_sw=0.025)
-        DI_dd_n = DI_dd / np.max(DI_dd)
-        fwhm_dd = 0
-        above_h = E_DD[DI_dd_n >= 0.5]
-        if len(above_h) > 1:
-            fwhm_dd = (above_h[-1] - above_h[0]) * 1000
-        ax.plot(E_DD * 1000, DI_dd_n, color=col, lw=1.5,
-                label=f"$f={f_dd}$ Hz, $\\kappa={kap_dd:.1f}$, FWHM$={fwhm_dd:.0f}$ mV")
-    ax.set_xlabel("Potential (mV)")
-    ax.set_ylabel(r"$\Delta I$ (normalised)")
-    ax.set_title("C  Frequency dependence (DD2017 parameters)")
-    ax.legend(fontsize=7)
-
-    # D: FWHM vs kappa
-    ax = axes[3]
-    kap_range = np.logspace(-1, 2, 60)
+    # B: Our simulator's FWHM vs kappa, STABLE RANGE ONLY, instability
+    # onset marked explicitly rather than hidden.
+    ax = axes[1]
+    kap_range = np.linspace(0.2, KAP_STABLE_MAX, 60)
     fwhms = []
-    E_fw = np.linspace(-0.15, 0.15, 500)
+    E_fw = np.linspace(-0.15, 0.15, 800)
     for kap in kap_range:
         k0_t = kap * 2 * f_op
         DI = swv_voltammogram(E_fw, k0=k0_t, ne=2, alpha=0.37, E0=0.0,
                                f_swv=f_op, E_sw=0.025)
-        DI_n = DI / (np.max(DI) + 1e-30)
+        DI_n = DI / (np.max(np.abs(DI)) + 1e-30)
         above_h = E_fw[DI_n >= 0.5]
-        if len(above_h) > 1:
-            fwhms.append((above_h[-1] - above_h[0]) * 1000)
-        else:
-            fwhms.append(np.nan)
-    ax.semilogx(kap_range, fwhms, color=C0, lw=2)
+        fwhms.append((above_h[-1] - above_h[0]) * 1000 if len(above_h) > 1 else np.nan)
+    ax.plot(kap_range, fwhms, color=C0, lw=2, label="Simulator (stable range)")
     ax.axhline(3.53 * R_const * T_K / (2 * F_const) * 1000, color=C1,
-               ls="--", lw=1.5, label=f"Laviron limit {3.53*R_const*T_K/(2*F_const)*1000:.1f} mV")
-    kap_tip = K0_REF_S1 / (2 * f_op)
-    fwhm_tip = np.interp(kap_tip, kap_range, fwhms)
-    ax.scatter([kap_tip], [fwhm_tip], color=C1, s=60, zorder=5,
-               label=f"$\\kappa_{{\\rm tip}}={kap_tip:.1f}$, FWHM$={fwhm_tip:.0f}$ mV")
-    ax.axvspan(0.5, 10, alpha=0.08, color="green")
+               ls="--", lw=1.5, label="Laviron limit 45.3 mV (not reached)")
+    ax.axvspan(kap_tip_lo, kap_tip_hi, alpha=0.15, color="green",
+               label=f"MB operating range ($\\kappa=${kap_tip_lo:.1f}--{kap_tip_hi:.1f})")
+    ax.axvline(KAP_STABLE_MAX, color="#a33", ls=":", lw=1.5)
+    ax.text(KAP_STABLE_MAX - 0.5, ax.get_ylim()[1]*0.9 if ax.get_ylim()[1] else 60,
+            "instability\nonset $\\to$", ha="right", fontsize=7, color="#a33")
     ax.set_xlabel(r"$\kappa = k^0/(2f)$")
     ax.set_ylabel("FWHM (mV)")
-    ax.set_title("D  FWHM vs $\\kappa$")
+    ax.set_title("B  Simulator FWHM vs $\\kappa$ (stable range only)")
+    ax.legend(fontsize=7, loc="upper left")
+
+    # C: Same stable-range data vs Laviron -- showing the honest gap, not
+    # a false convergence.
+    ax = axes[2]
+    ax.plot(kap_range, fwhms, color=C0, lw=2, label="Simulator")
+    ax.axhline(3.53 * R_const * T_K / (2 * F_const) * 1000, color=C1,
+               ls="--", lw=1.5, label="Laviron reversible-limit target")
+    ax.fill_between(kap_range, fwhms,
+                    [3.53 * R_const * T_K / (2 * F_const) * 1000] * len(kap_range),
+                    alpha=0.12, color="#a33", label="Unexplained gap")
+    ax.set_xlabel(r"$\kappa = k^0/(2f)$")
+    ax.set_ylabel("FWHM (mV)")
+    ax.set_title("C  Gap vs Laviron limit (stated honestly)")
     ax.legend(fontsize=7)
+
+    # D: Plain-text summary of what is / isn't validated
+    ax = axes[3]
+    ax.axis("off")
+    lines = [
+        ("Laviron (1979) FWHM formula", "CONFIRMED -- read directly from paper, used as-is", "#1a7a1a"),
+        ("Dauphin-Ducharme (2017) k$^0$, $\\alpha$ for MB-gold", "CONFIRMED -- read directly from paper", "#1a7a1a"),
+        ("Simulator shape vs Laviron limit", "NOT matched (24% RMS); different\nmathematical objects, see text", "#a33"),
+        ("Simulator vs DD2017 data ($\\kappa\\approx250$)", "NOT possible -- simulator unstable\nat their operating $\\kappa$", "#a33"),
+        ("Simulator in our own operating range\n($\\kappa=3.2$--$6.4$)", "STABLE and well-behaved\n(panel B)", "#1a7a1a"),
+    ]
+    y = 0.95
+    for label, status, col in lines:
+        ax.text(0.02, y, label, fontsize=8, fontweight="bold", va="top", transform=ax.transAxes)
+        y -= 0.10
+        ax.text(0.06, y, status, fontsize=7.5, color=col, va="top", transform=ax.transAxes)
+        y -= 0.14
+    ax.set_title("D  What is and isn't validated", loc="left")
 
     fig.tight_layout()
     save(fig, "fig_SWV6_validation.pdf")
@@ -823,65 +802,57 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
     axes = axes.flatten()
 
     f_op = 10.0  # confirmed operating frequency (10-20 Hz range; 10 Hz used as representative)
-    # Fc parameters. E0_Fc updated to the observed range on the fabricated
-    # device (+300 to +400 mV vs Ag/AgCl, itself variable electrode-to-
-    # electrode; internal electrode characterisation notes, Sept 2026) --
-    # 350 mV used here as the midpoint, not a confirmed single value.
-    # k0_Fc is the literature value (Dauphin-Ducharme, different construct);
-    # at kappa_Fc = 13500 this predicts an essentially zero net SWV peak,
-    # contradicted by the real observed Fc peak -- see swv_forward_model.tex
-    # Part E. Left at the literature value; not yet replaced with a
-    # confirmed device-specific rate constant.
-    E0_Fc = 0.350
-    k0_Fc = 2.7e5
-    kap_Fc = k0_Fc / (2 * f_op)
-    A_Fc = 0.017  # 1.7 mm^2, confirmed
-    Gamma_Fc = 1.5e-12  # matches GAMMA_FC in swv_forward_model.py
-    E_wide = np.linspace(-0.40, 0.50, 600)
+    # No Fc reference: dropped from the protocol (internal electrode
+    # characterisation notes, Sept 2026). F_k is now read from a simple
+    # before/after comparison of the MB peak on the same electrode
+    # (swv_forward_model.tex Part E). Panels A/B below reflect that; C/D
+    # (frequency and quadrature diagnostics for the underlying simulator)
+    # are unaffected by this change.
+    E_wide = np.linspace(-0.45, -0.05, 600)
 
-    # A: MB + Fc peaks
+    # A: MB peak before and after incubation, same electrode
     ax = axes[0]
-    DI_MB = dist_averaged_voltammogram(E_wide, F_k=0.0, E0_MB=-0.250)
-    DI_Fc = swv_voltammogram(E_wide, k0=k0_Fc, Gamma_tot=Gamma_Fc, A_cm2=A_Fc,
-                              E0=E0_Fc, alpha=0.5, ne=1, f_swv=f_op, E_sw=0.025)
-    ax.plot(E_wide * 1000, DI_MB * 1e9, color=C0, lw=2, label="MB ($F_k=0$)")
-    ax.plot(E_wide * 1000, DI_Fc * 1e9, color=C1, lw=2, label="Fc (reference)")
-    ax.axvline(-250, color=C0, ls=":", lw=0.8, alpha=0.5)
-    ax.axvline(E0_Fc * 1000, color=C1, ls=":", lw=0.8, alpha=0.5)
-    sep_mV = E0_Fc * 1000 - (-250)
-    ax.annotate("", xy=(E0_Fc * 1000, 0.3), xytext=(-250, 0.3),
-                arrowprops=dict(arrowstyle="<->", color="#555", lw=1.5))
-    ax.text((E0_Fc * 1000 - 250) / 2, 0.32, f"{sep_mV:.0f} mV (modelled)",
-            ha="center", fontsize=8)
-    ax.text(0.02, 0.96,
-            "As originally modelled -- a distinct dual peak has not yet\n"
-            "been observed experimentally on the fabricated device.",
-            transform=ax.transAxes, ha="left", va="top", fontsize=7,
-            style="italic", color="#a33",
-            bbox=dict(boxstyle="round", fc="#fff3f3", ec="#a33", lw=0.6))
+    DI_before = dist_averaged_voltammogram(E_wide, F_k=0.0, E0_MB=-0.250)
+    DI_after = dist_averaged_voltammogram(E_wide, F_k=0.5, E0_MB=-0.250)
+    ax.plot(E_wide * 1000, DI_before * 1e9, color=C0, lw=2,
+            label="Before incubation ($F_k=0$)")
+    ax.plot(E_wide * 1000, DI_after * 1e9, color=C1, lw=2,
+            label="After incubation ($F_k=0.5$, example)")
+    ax.axvline(-250, color="#888", ls=":", lw=0.8, alpha=0.7)
+    ax.fill_between(E_wide * 1000, DI_before * 1e9, DI_after * 1e9,
+                    where=(DI_before >= DI_after), alpha=0.15, color=C0,
+                    label="Peak shrinkage $\\propto F_k$")
     ax.set_xlabel("Potential (mV vs Ag/AgCl)")
     ax.set_ylabel(r"$\Delta I$ (nA)")
-    ax.set_title("A  MB and Fc peaks (modelled)")
+    ax.set_title("A  MB peak, same electrode, before vs after")
     ax.legend(fontsize=8, loc="upper right")
 
-    # B: Ratiometric recovery
+    # B: Recovery under the simple before/after ratio (Eq. Fk_simple),
+    # noise-free -- confirms the algebra is exact. A real noise floor for
+    # this simpler measurement has NOT been derived (see Part E, no Fc to
+    # propagate uncertainty through as before); do not show an invented
+    # noise band here.
     ax = axes[1]
     fk_arr2 = np.linspace(0, 0.95, 50)
-    rho_true = 1 - fk_arr2
-    # Simulate with ±3% noise on A_MB
-    np.random.seed(42)
-    noise = np.random.normal(0, 0.017, len(fk_arr2))
-    rho_meas = rho_true + noise
-    fk_rec = 1 - rho_meas
-    err = np.abs(fk_rec - fk_arr2)
+    DI0 = np.array([np.max(dist_averaged_voltammogram(E_wide, F_k=0.0, E0_MB=-0.250))
+                     for _ in [0]])[0]
+    fk_rec = []
+    for fk in fk_arr2:
+        DIt = np.max(dist_averaged_voltammogram(E_wide, F_k=fk, E0_MB=-0.250))
+        fk_rec.append(1.0 - DIt / DI0)
+    fk_rec = np.array(fk_rec)
 
     ax.plot(fk_arr2, fk_arr2, "k--", lw=1, label="Ideal ($F_k^{\\rm rec}=F_k$)")
-    ax.scatter(fk_arr2, fk_rec, color=C0, s=15, alpha=0.7, label="Ratiometric recovery")
-    ax.fill_between(fk_arr2, fk_arr2 - 0.034, fk_arr2 + 0.034,
-                    alpha=0.15, color=C0, label="$\\pm 3.4\\%$ noise floor")
+    ax.scatter(fk_arr2, fk_rec, color=C0, s=15, alpha=0.7,
+               label="Recovered (noise-free)")
+    ax.text(0.05, 0.90,
+            "Noise floor for this simpler measurement has not yet\n"
+            "been derived -- not shown here, see Part E.",
+            transform=ax.transAxes, ha="left", va="top", fontsize=7,
+            style="italic", color="#a33")
     ax.set_xlabel("True $F_k$")
     ax.set_ylabel("Recovered $F_k^{\\rm rec}$")
-    ax.set_title("B  Ratiometric pipeline closure")
+    ax.set_title("B  Before/after recovery, noise-free")
     ax.legend(fontsize=7)
     ax.set_xlim(0, 1); ax.set_ylim(0, 1)
 
@@ -905,7 +876,7 @@ def fig7_ratiometric(DI_Fk, fk_arr, A_areas):
                 label="$P(d)$-averaged model")
     ax.semilogx(freqs, peak_eff / peak_eff.max(), color=C1, lw=2, ls="--",
                 label="Single $k^0$ at mean $d$")
-    ax.axvline(15, color="#888", ls=":", lw=1.5, label="Operating 15 Hz")
+    ax.axvline(10, color="#888", ls=":", lw=1.5, label="Operating 10 Hz")
     ax.set_xlabel("SWV frequency $f$ (Hz)")
     ax.set_ylabel(r"$\Delta I_{\rm peak}$ (normalised)")
     ax.set_title("C  Frequency diagnostic")

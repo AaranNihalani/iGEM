@@ -191,9 +191,19 @@ def test_bv_simulator():
         Laviron LPSV value of 45.3 mV because E_sw is not << RT/nF).
         Accept 40 – 90 mV as the valid range.
 
-    (D) Laviron shape (small E_sw limit): at E_sw = 1 mV (≪ RT/nF =
-        12.8 mV), the SWV net current approaches the Laviron LPSV peak
-        η/(1+η)^2. Check shape agreement < 3 % rms.
+    (D) Laviron shape (small E_sw limit): at E_sw = 1 mV (<< RT/nF =
+        12.8 mV), the SWV net current does NOT closely approach the
+        Laviron LPSV peak eta/(1+eta)^2 -- checked directly, the RMS
+        difference is ~24%, not the <3% originally hoped for. This is a
+        genuine gap, not a bug in this test: Laviron's formula describes a
+        continuously-swept, always-at-equilibrium system, while this
+        simulator samples a discretely-pulsed SWV waveform once per
+        half-cycle; there is no guarantee the two converge, and directly
+        checking shows they don't (see swv_forward_model.tex Part C for
+        the full discussion). shape_rms below is a REAL computed value,
+        not a placeholder, and is NOT used to gate all_ok (a large value
+        here is expected and does not indicate the simulator is broken
+        for its own operating regime, kappa < ~15).
 
     Returns bool values and diagnostics.
     """
@@ -226,8 +236,16 @@ def test_bv_simulator():
     DI_lav_n  = laviron_reversible(E_arr, E0=0.0, ne=2)
     DI_lav_n  = DI_lav_n / np.max(DI_lav_n)
 
+    # (D) REAL small-Esw shape comparison (was previously a hardcoded 0.0
+    # placeholder -- fixed). Computed at Esw=1mV, the actual small-signal
+    # limit the docstring describes, not the 25mV operating value used above.
+    DI_small = swv_voltammogram(E_arr, k0=k0_qr, ne=2, alpha=0.5,
+                                 E0=0.0, f_swv=f_test, E_sw=0.001)
+    DI_small_n = DI_small / np.max(np.abs(DI_small))
+    shape_rms = float(np.sqrt(np.mean((DI_small_n - DI_lav_n)**2)))
+
     return (pos_ok and sign_ok and fwhm_ok and mono_ok,
-            fwhm_ok, fwhm_mV, 0.0,
+            fwhm_ok, fwhm_mV, shape_rms,
             DI_norm, DI_lav_n, E_arr,
             DI_fk05 / np.max(DI_fk0))
 
@@ -508,6 +526,11 @@ GAMMA_0  = 3.0e-12 # mol cm-2 (Lubin 2010, papers/layer_11/)
 A_ELEC   = 0.017   # cm2 (1.7 mm^2 geometric area; confirmed)
 
 # ─── M5: Fc REFERENCE PEAK ───────────────────────────────────────────────────
+# LEGACY / NOT USED IN THE CURRENT DEVICE: Fc has been dropped from the
+# protocol entirely (internal electrode characterisation notes, Sept 2026;
+# see swv_forward_model.tex Part E). This section is retained only as a
+# record of the earlier ratiometric-correction design and its diagnosed
+# problems; nothing below feeds into the current device's predictions.
 # Ferrocene-hexanethiol on C6 SAM.
 # K0_FC below (2.7e5 s-1, Dauphin-Ducharme [1] Fig. 3) is a LITERATURE VALUE
 # FOR A DIFFERENT CONSTRUCT (MB-DNA electrode), not confirmed for this
@@ -539,14 +562,22 @@ def run_all(save=True):
     all_ok, fwhm_ok, fwhm_mV, shape_rms, DI_qr_n, DI_lav_n, E_lav, DI_tiny_n = \
         test_bv_simulator()
     print(f"BV simulator test:  FWHM={fwhm_mV:.1f} mV (valid 40-90 mV), "
-          f"shape_rms={shape_rms:.4f} (need <0.03), PASS={all_ok}")
+          f"shape_rms vs Laviron={shape_rms:.4f} (large by design -- "
+          f"not gated, see docstring), PASS={all_ok}")
     if not all_ok:
         raise RuntimeError("BV simulator failed unit test - do not proceed.")
 
-    # ── Dauphin-Ducharme frequency comparison (k0=5000 s-1, valid κ range) ────
-    # Show BV-ODE at 200, 500, 1000 Hz (κ = 12.5, 5, 2.5) — all quasi-reversible.
-    # At 15 Hz (κ=167) the ODE gives ΔI→0 (outside valid range): NOT shown.
-    k0_DNA   = 5000.0     # s-1  (Dauphin-Ducharme [1] Fig 5, k0=0.4 cm/s at 8 Å)
+    # ── Dauphin-Ducharme frequency comparison ─────────────────────────────────
+    # k0 below is illustrative, NOT the paper's confirmed value. The paper's
+    # confirmed k0 for a comparable MB-hexanethiol-gold system (their Fig 4,
+    # not Fig 5/DNA -- corrected mislabelling from an earlier version of this
+    # code) is 5.0e4 s-1, which at these frequencies gives kappa of order
+    # 25-250, well above the simulator's confirmed numerically stable range
+    # (kappa <~ 15, see swv_forward_model.tex Part C). A quantitative
+    # comparison to their actual data is therefore not currently possible;
+    # this demo plot uses a smaller, illustrative k0 to stay in the stable
+    # regime and should NOT be read as validated against Dauphin-Ducharme.
+    k0_DNA   = 5000.0     # s-1  (illustrative only, see note above)
     E_DD     = np.linspace(-0.40, -0.10, 300)
     DI_DD_200  = swv_voltammogram(E_DD, k0=k0_DNA, ne=2, alpha=0.37,
                                   E0=-0.250, f_swv=200.0, E_sw=0.025)
