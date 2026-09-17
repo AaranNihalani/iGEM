@@ -72,7 +72,7 @@ def fig0_assembly():
     gold = mpatches.FancyBboxPatch((0.5, 0.2), 9, 1.0, boxstyle="round,pad=0.05",
                                     fc="#FFD700", ec="#b8860b", lw=1.5)
     ax.add_patch(gold)
-    ax.text(5, 0.7, "Au electrode  (1.5 mm disc)", ha="center", va="center",
+    ax.text(5, 0.7, "Au electrode  (1.7 mm$^2$)", ha="center", va="center",
             fontsize=8, fontweight="bold")
 
     # SAM layer
@@ -113,17 +113,22 @@ def fig0_assembly():
     ax.annotate("", xy=(3.7, 7.2), xytext=(3.7, 6.6),
                 arrowprops=dict(arrowstyle="->", color=C1, lw=1.5))
 
-    # Fc reference probes (right side)
-    for x in [6.5, 7.5, 8.5]:
-        ax.plot([x, x], [2.0, 3.5], "-", color="#c66", lw=2)
-    for x in [6.5, 7.5, 8.5]:
-        hex_patch = mpatches.RegularPolygon((x, 3.8), 6, radius=0.3,
-                                             fc="#f9a", ec="#c66", lw=1)
-        ax.add_patch(hex_patch)
-        ax.text(x, 3.8, "Fc", ha="center", va="center", fontsize=6,
-                fontweight="bold", color="#800")
-    ax.text(7.5, 2.5, "Fc-hexanethiol\n(reference)", ha="center", fontsize=7,
-            color="#800")
+    # Additional MB-peptide probes (right side) -- single-component monolayer,
+    # no reference reporter (Fc dropped from the protocol)
+    for x in [6.0, 7.0, 8.0]:
+        ax.annotate("", xy=(x, 3.8), xytext=(x, 2.0),
+                    arrowprops=dict(arrowstyle="-", color=C2, lw=2,
+                                   connectionstyle="arc3,rad=0.15"))
+    for i, x in enumerate([6.0, 7.0, 8.0]):
+        ys = [3.8, 4.5, 4.2, 4.9, 5.3][:5]
+        xs = [x, x + 0.15, x - 0.1, x + 0.2, x - 0.15][:5]
+        ax.plot(xs, ys, "o-", ms=2, color="#888", lw=1, zorder=3)
+        circle3 = plt.Circle((xs[-1], ys[-1] + 0.5), 0.26, color=C0, zorder=5)
+        ax.add_patch(circle3)
+        ax.text(xs[-1], ys[-1] + 0.5, "MB", ha="center", va="center",
+                fontsize=6, color="white", fontweight="bold")
+    ax.text(7.0, 2.5, "one-pot deposition\n(single probe type, no Fc)",
+            ha="center", fontsize=7, color="#555")
 
     # Dividers and labels
     ax.axhline(7.8, xmin=0.05, xmax=0.95, ls="--", color="#aaa", lw=0.8)
