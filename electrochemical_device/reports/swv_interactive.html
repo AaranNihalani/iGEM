@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWV Signal Explorer</title>
+<meta name="description" content="Interactive companion to swv_forward_model.tex — drive the Butler-Volmer/FJC forward model live and read off the predicted voltammogram.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e13;
+    --panel: #121922;
+    --panel-2: #17202b;
+    --panel-3: #1c2733;
+    --border: #263140;
+    --border-soft: #1c2530;
+    --text: #e7eef5;
+    --text-dim: #8a9db3;
+    --text-faint: #5a6d82;
+    --trace-a: #4fc3f7;
+    --trace-a-fill: rgba(79,195,247,0.12);
+    --trace-b: #5fd9c4;
+    --trace-b-fill: rgba(95,217,196,0.12);
+    --lav: #f2a65a;
+    --gold: #cda05e;
+    --warn: #ff8a5c;
+    --warn-bg: rgba(255,138,92,0.1);
+    --ok: #5fd9a4;
+    --ok-bg: rgba(95,217,164,0.08);
+    --grid: #1e2733;
+    --focus: #4fc3f7;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 60px;
+  }
+  .mono{ font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+
+  /* ── Header ───────────────────────────────────────────── */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    flex-wrap: wrap; gap: 14px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px; margin-bottom: 22px;
+  }
+  .h-left{ display:flex; flex-direction:column; gap:6px; }
+  .kicker{
+    font-family:"IBM Plex Mono", monospace; font-size:11px; letter-spacing:0.14em;
+    color: var(--gold); text-transform: uppercase;
+  }
+  h1{
+    font-size: clamp(22px, 3vw, 30px); font-weight:700; margin:0;
+    letter-spacing: -0.01em;
+  }
+  .subtitle{ color: var(--text-dim); font-size: 13.5px; max-width: 62ch; line-height:1.5; }
+  .h-right{
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; color: var(--text-faint);
+    text-align:right; line-height:1.6;
+  }
+  .h-right a{ color: var(--trace-a); text-decoration:none; }
+  .h-right a:hover{ text-decoration:underline; }
+
+  /* ── Mode tabs ────────────────────────────────────────── */
+  .tabs{
+    display:flex; gap:8px; margin-bottom: 18px; flex-wrap:wrap;
+  }
+  .tab{
+    font-family:"IBM Plex Mono", monospace; font-size:12.5px; letter-spacing:0.03em;
+    background: var(--panel); border:1px solid var(--border); color: var(--text-dim);
+    padding:9px 16px; border-radius:7px; cursor:pointer; transition: all .15s ease;
+  }
+  .tab:hover{ color: var(--text); border-color:#354256; }
+  .tab.active{
+    color: var(--bg); background: var(--trace-a); border-color: var(--trace-a); font-weight:600;
+  }
+  .tab .n{ opacity:.6; margin-right:6px; }
+  .tab.active .n{ opacity:.55; }
+
+  /* ── Layout grid ──────────────────────────────────────── */
+  .grid{
+    display:grid; grid-template-columns: 320px 1fr; gap: 18px;
+    align-items:start;
+  }
+  @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+
+  .card{
+    background: var(--panel); border:1px solid var(--border); border-radius: 12px;
+    padding: 18px 18px 20px;
+  }
+  .card + .card{ margin-top: 16px; }
+  .card h2{
+    font-size: 11px; letter-spacing:0.12em; text-transform:uppercase; color: var(--text-faint);
+    margin: 0 0 14px; font-weight:600;
+  }
+
+  /* ── Controls ─────────────────────────────────────────── */
+  .field{ margin-bottom: 16px; }
+  .field:last-child{ margin-bottom:0; }
+  .field-label{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size: 12.5px; color: var(--text); margin-bottom: 6px;
+  }
+  .field-label .name{ font-weight:500; }
+  .field-label .val{
+    font-family:"IBM Plex Mono", monospace; font-size:12px; color: var(--trace-a);
+    font-variant-numeric: tabular-nums;
+  }
+  .field-note{ font-size:11px; color: var(--text-faint); margin-top:5px; line-height:1.45; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:26px;
+    background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:4px; border-radius:2px; background: var(--panel-3);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%;
+    background: var(--trace-a); border:2px solid #0a0e13; margin-top:-5.5px;
+    box-shadow: 0 0 0 1px var(--trace-a);
+  }
+  input[type=range]::-moz-range-track{ height:4px; border-radius:2px; background: var(--panel-3); }
+  input[type=range]::-moz-range-thumb{
+    width:13px; height:13px; border-radius:50%; background: var(--trace-a); border:2px solid #0a0e13;
+  }
+  input[type=range]:focus-visible{ outline: 2px solid var(--focus); outline-offset: 4px; border-radius:4px; }
+
+  .seg{
+    display:flex; background: var(--panel-2); border:1px solid var(--border); border-radius:8px;
+    padding:3px; gap:3px;
+  }
+  .seg button{
+    flex:1; border:none; background:transparent; color: var(--text-dim);
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; padding:7px 6px; border-radius:6px;
+    cursor:pointer; transition: all .15s ease;
+  }
+  .seg button.active{ background: var(--panel-3); color: var(--text); font-weight:600; }
+
+  .divider{ height:1px; background: var(--border-soft); margin: 16px 0; }
+
+  .checkline{
+    display:flex; align-items:center; gap:9px; font-size:12.5px; color: var(--text-dim); cursor:pointer;
+  }
+  .checkline input{ accent-color: var(--trace-a); width:15px; height:15px; }
+
+  /* ── Chart area ───────────────────────────────────────── */
+  .chart-card{ padding: 18px 18px 12px; }
+  .chart-head{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+    margin-bottom: 6px; flex-wrap: wrap;
+  }
+  .chart-title{ font-size:13.5px; font-weight:600; }
+  .chart-title .dim{ color: var(--text-faint); font-weight:400; }
+  .kappa-badge{
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; padding:5px 10px; border-radius:6px;
+    display:flex; align-items:center; gap:7px; white-space:nowrap;
+  }
+  .kappa-badge .dot{ width:7px; height:7px; border-radius:50%; }
+  .kappa-badge.ok{ background: var(--ok-bg); color: var(--ok); }
+  .kappa-badge.ok .dot{ background: var(--ok); }
+  .kappa-badge.warn{ background: var(--warn-bg); color: var(--warn); }
+  .kappa-badge.warn .dot{ background: var(--warn); }
+
+  canvas{ display:block; width:100%; height:340px; }
+
+  .instability-banner{
+    display:none; align-items:flex-start; gap:9px;
+    background: var(--warn-bg); border:1px solid rgba(255,138,92,0.35); color: var(--warn);
+    border-radius:8px; padding:10px 13px; font-size:12px; line-height:1.5; margin-top:10px;
+  }
+  .instability-banner.show{ display:flex; }
+  .instability-banner svg{ flex-shrink:0; margin-top:2px; }
+
+  /* ── Readout stats ────────────────────────────────────── */
+  .stats{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap:1px;
+    background: var(--border-soft); border:1px solid var(--border-soft); border-radius:10px;
+    overflow:hidden; margin-top: 14px;
+  }
+  @media (max-width:600px){ .stats{ grid-template-columns: repeat(2, 1fr); } }
+  .stat{ background: var(--panel-2); padding:11px 14px; }
+  .stat .label{ font-size:10.5px; letter-spacing:0.07em; text-transform:uppercase; color: var(--text-faint); }
+  .stat .value{
+    font-family:"IBM Plex Mono", monospace; font-size:16px; font-weight:600; color: var(--text);
+    margin-top:3px; font-variant-numeric: tabular-nums;
+  }
+  .stat .value .unit{ font-size:11px; color: var(--text-dim); font-weight:400; margin-left:2px; }
+
+  /* ── Legend ───────────────────────────────────────────── */
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color: var(--text-dim); margin-top:12px; }
+  .legend .item{ display:flex; align-items:center; gap:6px; }
+  .legend .swatch{ width:16px; height:2.5px; border-radius:2px; }
+  .legend .swatch.dashed{ background-image: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 9px); background-color: transparent !important; height:2px; }
+
+  footer{
+    margin-top: 28px; padding-top:16px; border-top:1px solid var(--border-soft);
+    font-size:11.5px; color: var(--text-faint); line-height:1.6;
+  }
+  footer strong{ color: var(--text-dim); }
+
+  .pill{
+    display:inline-block; font-family:"IBM Plex Mono", monospace; font-size:10.5px;
+    background: var(--panel-3); color: var(--text-dim); padding:2px 7px; border-radius:5px;
+    border:1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="h-left">
+      <div class="kicker">Eton iGEM 2026 · Dry Lab</div>
+      <h1>SWV Signal Explorer</h1>
+      <div class="subtitle">Drive the same Butler–Volmer / freely-jointed-chain forward model used
+        in the flagship report and read off the predicted square-wave voltammogram live.</div>
+    </div>
+    <div class="h-right">
+      companion to <span class="pill">swv_forward_model.tex</span><br>
+      engine ported from <span class="pill">swv_forward_model.py</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-mode="single" role="tab" aria-selected="true">
+      <span class="n">01</span>Single MB probe — ODE kinetics
+    </button>
+    <button class="tab" data-mode="device" role="tab" aria-selected="false">
+      <span class="n">02</span>Full device — distance-averaged
+    </button>
+  </div>
+
+  <div class="grid">
+
+    <!-- ═══════════════════ CONTROLS ═══════════════════ -->
+    <div class="controls-col">
+
+      <!-- SINGLE-PROBE CONTROLS -->
+      <div class="card" id="panel-single">
+        <h2>Kinetic regime</h2>
+
+        <div class="field">
+          <div class="field-label"><span class="name">κ = k⁰/(2f)</span><span class="val mono" id="v-kappa">10.0</span></div>
+          <input type="range" id="s-kappa" min="-2" max="2.301" step="0.01" value="1">
+          <div class="field-note">Log scale, 0.01–200. The report's own simulator is
+            numerically stable only below κ≈15 (floating-point cancellation in I_f − I_b above
+            that); this is reproduced live below, not hidden.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label"><span class="name">SWV frequency, f</span><span class="val mono" id="v-freq">15 Hz</span></div>
+          <input type="range" id="s-freq" min="1" max="1000" step="1" value="15">
+        </div>
+
+        <div class="field">
+          <div class="field-label"><span class="name">Pulse amplitude, E_sw</span><span class="val mono" id="v-esw">25 mV</span></div>
+          <input type="range" id="s-esw" min="1" max="100" step="1" value="25">
+          <div class="field-note">Device-confirmed value is 25 mV (Baker 2006 anchor).</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label"><span class="name">Transfer coefficient, α</span><span class="val mono" id="v-alpha">0.37</span></div>
+          <input type="range" id="s-alpha" min="0.1" max="0.9" step="0.01" value="0.37">
+        </div>
+
+        <div class="field">
+          <div class="field-label"><span class="name">Electrons transferred, n_e</span></div>
+          <div class="seg" id="seg-ne">
+            <button data-val="1">n_e = 1</button>
+            <button data-val="2" class="active">n_e = 2 (MB)</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <label class="checkline">
+          <input type="checkbox" id="chk-laviron" checked>
+          Overlay Laviron (1979) reversible limit
+        </label>
+      </div>
+
+      <!-- DEVICE-MODEL CONTROLS -->
+      <div class="card" id="panel-device" style="display:none;">
+        <h2>Input mode</h2>
+        <div class="seg" id="seg-input" style="margin-bottom:16px;">
+          <button data-val="fk" class="active">Set F_k directly</button>
+          <button data-val="conc">From [MMP-9] + time</button>
+        </div>
+
+        <div id="block-fk">
+          <div class="field">
+            <div class="field-label"><span class="name">Cleavage fraction, F_k</span><span class="val mono" id="v-fk">0 %</span></div>
+            <input type="range" id="s-fk" min="0" max="100" step="1" value="0">
+          </div>
+        </div>
+
+        <div id="block-conc" style="display:none;">
+          <div class="field">
+            <div class="field-label"><span class="name">[MMP-9]</span><span class="val mono" id="v-conc">6 nM</span></div>
+            <input type="range" id="s-conc" min="0" max="100" step="0.5" value="6">
+            <div class="field-note">Clinical range ≈ 6 nM (healing) – 30 nM (chronic), Trengove 1999.</div>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="name">Incubation time, T</span><span class="val mono" id="v-tinc">30 min</span></div>
+            <input type="range" id="s-tinc" min="1" max="90" step="1" value="30">
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="name">Surface efficiency, η</span><span class="val mono" id="v-eta">0.20</span></div>
+            <input type="range" id="s-eta" min="0.01" max="1" step="0.01" value="0.20">
+            <div class="field-note">Central estimate, not measured for this device <em>(unconfirmed)</em> — Part F.</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <h2 style="margin-bottom:10px;">Operating point</h2>
+        <div class="field">
+          <div class="field-label"><span class="name">SWV frequency, f</span><span class="val mono" id="v-freq2">10 Hz</span></div>
+          <input type="range" id="s-freq2" min="10" max="20" step="1" value="10">
+          <div class="field-note">Confirmed operating range 10–20 Hz.</div>
+        </div>
+        <div class="field-note" style="margin-top:2px;">
+          E_sw = 25 mV, α = 0.37, n_e = 2, Γ_tot = 3×10⁻¹² mol cm⁻², A = 1.7 mm² —
+          all held at their confirmed / placeholder device values (see report Summary table).
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════ CHART ═══════════════════ -->
+    <div class="chart-col">
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div class="chart-title" id="chart-title">Predicted net SWV current <span class="dim">— single MB probe, normalised</span></div>
+          <div class="kappa-badge ok" id="kappa-badge"><span class="dot"></span><span id="kappa-badge-text">κ = 10.0 · stable</span></div>
+        </div>
+        <canvas id="chart" width="1000" height="340" aria-label="Predicted square-wave voltammogram"></canvas>
+        <div class="legend" id="legend"></div>
+        <div class="instability-banner" id="instability-banner">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 16.5h.01M10.3 3.9 1.8 18.5a1.5 1.5 0 0 0 1.3 2.25h17.8a1.5 1.5 0 0 0 1.3-2.25L13.7 3.9a1.5 1.5 0 0 0-2.6 0Z"/></svg>
+          <span>κ &gt; ~15: the underlying simulator loses numerical stability here
+            (floating-point cancellation in the forward/backward current subtraction). The curve
+            shown is not a physical prediction — see <em>swv_forward_model.tex</em>, Part C,
+            “Validation against published data”.</span>
+        </div>
+        <div class="stats" id="stats"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <strong>Reading this tool.</strong> Values marked <em>(confirmed)</em> in the controls come
+    directly from the fabricated device or a cited literature source; values marked
+    <em>(unconfirmed)</em> are working assumptions, exactly as flagged in the written report.
+    This page reimplements <span class="pill">swv_forward_model.py</span> in JavaScript
+    (Butler–Volmer surface ODE, freely-jointed-chain distance averaging, pseudo-first-order
+    cleavage kinetics) and was checked against the Python model's own unit-test values before
+    publishing. Not for clinical use.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ════════════════════════════════════════════════════════════════
+  // Physics engine — ported 1:1 from swv_forward_model.py
+  // ════════════════════════════════════════════════════════════════
+  const F_const = 96485.0, R_const = 8.3145, T_K = 298.15;
+
+  function bvRates(E, E0, k0, alpha, ne){
+    const xi = ne * F_const * (E - E0) / (R_const * T_K);
+    return [k0 * Math.exp(-alpha * xi), k0 * Math.exp((1 - alpha) * xi)];
+  }
+  function halfCycleEnd(G0, Gtot, k0, alpha, ne, E, E0, tau){
+    const [kf, kb] = bvRates(E, E0, k0, alpha, ne);
+    const K = kf + kb;
+    const Geq = (kf / K) * Gtot;
+    const Gred = Geq + (G0 - Geq) * Math.exp(-K * tau);
+    const Gox = Gtot - Gred;
+    return [Gred, ne * F_const * (kb * Gred - kf * Gox)];
+  }
+  function swvVoltammogram(Earr, k0, Gtot, A_cm2, E0, alpha, ne, f_swv, E_sw){
+    const tau = 1 / (2 * f_swv);
+    let Gr = Gtot;
+    const E_start = Earr[0];
+    for (let i = 0; i < 5; i++){
+      Gr = halfCycleEnd(Gr, Gtot, k0, alpha, ne, E_start + E_sw, E0, tau)[0];
+      Gr = halfCycleEnd(Gr, Gtot, k0, alpha, ne, E_start - E_sw, E0, tau)[0];
+    }
+    const DI = new Array(Earr.length);
+    for (let i = 0; i < Earr.length; i++){
+      const [Gf, If] = halfCycleEnd(Gr, Gtot, k0, alpha, ne, Earr[i] + E_sw, E0, tau);
+      const [Gv, Iv] = halfCycleEnd(Gf, Gtot, k0, alpha, ne, Earr[i] - E_sw, E0, tau);
+      DI[i] = (If - Iv) * A_cm2;
+      Gr = Gv;
+    }
+    return DI;
+  }
+  function lavironReversible(Earr, E0, ne){
+    return Earr.map(E => {
+      const xi = ne * F_const * (E - E0) / (R_const * T_K);
+      const eta = Math.exp(xi);
+      return eta / Math.pow(1 + eta, 2);
+    });
+  }
+  function linspace(a, b, n){
+    const out = new Array(n), step = (b - a) / (n - 1);
+    for (let i = 0; i < n; i++) out[i] = a + i * step;
+    return out;
+  }
+
+  // FJC tether geometry (Part B) — fixed, confirmed-derivation constants
+  const N_RESIDUES = 10, L0_NM = 0.38, B_KUHN_NM = 0.76, D_PEG_NM = 1.398;
+  const N_KUHN = (N_RESIDUES * L0_NM) / B_KUHN_NM;
+  const SIGMA_Z_NM = Math.sqrt((N_KUHN * B_KUHN_NM ** 2) / 3.0);
+  const D_MAX_NM = D_PEG_NM + N_RESIDUES * L0_NM;
+  function P_d(d){
+    return d >= D_PEG_NM
+      ? Math.sqrt(2 / Math.PI) / SIGMA_Z_NM * Math.exp(-((d - D_PEG_NM) ** 2) / (2 * SIGMA_Z_NM ** 2))
+      : 0;
+  }
+  function trapzNorm(fn, a, b, n){
+    const xs = linspace(a, b, n);
+    let s = 0;
+    for (let i = 0; i < n - 1; i++) s += 0.5 * (fn(xs[i]) + fn(xs[i+1])) * (xs[i+1]-xs[i]);
+    return s;
+  }
+  const P_NORM = trapzNorm(P_d, D_PEG_NM, D_MAX_NM, 2000);
+  const BETA_NM = 10.0, K0_AT_0_S1 = 1.5e8;
+  const K0_REF_S1 = K0_AT_0_S1 * Math.exp(-BETA_NM * D_PEG_NM);
+  function k0_of_d(d){ return K0_REF_S1 * Math.exp(-BETA_NM * (d - D_PEG_NM)); }
+
+  function distAveragedVoltammogram(Earr, Fk, Gamma_0, A_cm2, E0_MB, alpha, ne, f_swv, E_sw, n_dist){
+    const d_vals = linspace(D_PEG_NM, D_MAX_NM, n_dist);
+    const dd = d_vals[1] - d_vals[0];
+    const DI_total = new Array(Earr.length).fill(0);
+    for (let j = 0; j < d_vals.length; j++){
+      const w = P_d(d_vals[j]) / P_NORM;
+      const k0d = k0_of_d(d_vals[j]);
+      const DI_norm = swvVoltammogram(Earr, k0d, 1.0, 1.0, E0_MB, alpha, ne, f_swv, E_sw);
+      for (let i = 0; i < Earr.length; i++) DI_total[i] += w * DI_norm[i] * dd;
+    }
+    const scale = (1 - Fk) * Gamma_0 * A_cm2;
+    return DI_total.map(x => x * scale);
+  }
+  function concentrationToFk(conc_nM, T_min, eta){
+    const keff = eta * 67500.0;
+    const conc = conc_nM * 1e-9;
+    const T_s = T_min * 60.0;
+    return 1.0 - Math.exp(-keff * conc * T_s);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // UI state
+  // ════════════════════════════════════════════════════════════════
+  const state = {
+    mode: "single",
+    kappaLog: 1.0, freq: 15, esw: 25, alpha: 0.37, ne: 2, showLaviron: true,
+    inputMode: "fk", fk: 0, conc: 6, tinc: 30, eta: 0.20, freq2: 10
+  };
+
+  const els = {};
+  ["s-kappa","v-kappa","s-freq","v-freq","s-esw","v-esw","s-alpha","v-alpha",
+   "seg-ne","chk-laviron","s-fk","v-fk","s-conc","v-conc","s-tinc","v-tinc",
+   "s-eta","v-eta","s-freq2","v-freq2","seg-input","block-fk","block-conc",
+   "panel-single","panel-device","chart-title","kappa-badge","kappa-badge-text",
+   "instability-banner","stats","legend"].forEach(id => els[id] = document.getElementById(id));
+
+  const canvas = document.getElementById("chart");
+  const ctx = canvas.getContext("2d");
+
+  function fmtSI(x, unit){
+    const ax = Math.abs(x);
+    if (ax === 0) return "0 " + unit;
+    if (ax >= 1e-3) return (x*1e3).toFixed(ax>=1 ? 1: 2) + " m" + unit;
+    if (ax >= 1e-6) return (x*1e6).toFixed(2) + " µ" + unit;
+    if (ax >= 1e-9) return (x*1e9).toFixed(2) + " n" + unit;
+    return (x*1e12).toFixed(2) + " p" + unit;
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(b => { b.classList.remove("active"); b.setAttribute("aria-selected","false"); });
+      btn.classList.add("active"); btn.setAttribute("aria-selected","true");
+      state.mode = btn.dataset.mode;
+      els["panel-single"].style.display = state.mode === "single" ? "" : "none";
+      els["panel-device"].style.display = state.mode === "device" ? "" : "none";
+      render();
+    });
+  });
+
+  // ── Segmented controls ──────────────────────────────────────────
+  els["seg-ne"].addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    els["seg-ne"].querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); state.ne = +b.dataset.val; render();
+  });
+  els["seg-input"].addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    els["seg-input"].querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); state.inputMode = b.dataset.val;
+    els["block-fk"].style.display = state.inputMode === "fk" ? "" : "none";
+    els["block-conc"].style.display = state.inputMode === "conc" ? "" : "none";
+    render();
+  });
+
+  // ── Sliders ──────────────────────────────────────────────────────
+  function bind(sliderId, cb){ els[sliderId].addEventListener("input", cb); }
+  bind("s-kappa", () => { state.kappaLog = +els["s-kappa"].value; render(); });
+  bind("s-freq",  () => { state.freq  = +els["s-freq"].value; render(); });
+  bind("s-esw",   () => { state.esw   = +els["s-esw"].value; render(); });
+  bind("s-alpha", () => { state.alpha = +els["s-alpha"].value; render(); });
+  bind("s-fk",    () => { state.fk    = +els["s-fk"].value; render(); });
+  bind("s-conc",  () => { state.conc  = +els["s-conc"].value; render(); });
+  bind("s-tinc",  () => { state.tinc  = +els["s-tinc"].value; render(); });
+  bind("s-eta",   () => { state.eta   = +els["s-eta"].value; render(); });
+  bind("s-freq2", () => { state.freq2 = +els["s-freq2"].value; render(); });
+  els["chk-laviron"].addEventListener("change", () => { state.showLaviron = els["chk-laviron"].checked; render(); });
+
+  // ════════════════════════════════════════════════════════════════
+  // Chart drawing
+  // ════════════════════════════════════════════════════════════════
+  function setupCanvasDPR(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const cssW = rect.width || 900, cssH = 340;
+    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return {w: cssW, h: cssH};
+  }
+
+  function drawChart(xVals, series, opts){
+    const {w, h} = setupCanvasDPR();
+    ctx.clearRect(0,0,w,h);
+
+    const padL = 56, padR = 18, padT = 14, padB = 34;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+
+    let allY = [];
+    series.forEach(s => allY = allY.concat(s.y));
+    let yMin = Math.min(0, Math.min(...allY));
+    let yMax = Math.max(...allY);
+    if (yMax === yMin){ yMax = yMin + 1; }
+    const yPad = (yMax - yMin) * 0.12;
+    yMin -= yPad; yMax += yPad * 1.3;
+
+    const xMin = xVals[0], xMax = xVals[xVals.length-1];
+    const X = x => padL + (x - xMin) / (xMax - xMin) * plotW;
+    const Y = y => padT + plotH - (y - yMin) / (yMax - yMin) * plotH;
+
+    // grid
+    ctx.strokeStyle = getCSS("--grid"); ctx.lineWidth = 1;
+    ctx.font = "11px 'IBM Plex Mono', monospace";
+    ctx.fillStyle = getCSS("--text-faint");
+    const nYT = 5;
+    for (let i=0;i<=nYT;i++){
+      const yv = yMin + (yMax-yMin)*i/nYT;
+      const yy = Y(yv);
+      ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(w-padR, yy); ctx.stroke();
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText(opts.yTickFmt(yv), padL-8, yy);
+    }
+    const nXT = 6;
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (let i=0;i<=nXT;i++){
+      const xv = xMin + (xMax-xMin)*i/nXT;
+      const xx = X(xv);
+      ctx.strokeStyle = getCSS("--grid");
+      ctx.beginPath(); ctx.moveTo(xx, padT); ctx.lineTo(xx, h-padB); ctx.stroke();
+      ctx.fillText(xv.toFixed(0), xx, h-padB+8);
+    }
+    // zero line
+    if (yMin < 0 && yMax > 0){
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.beginPath(); ctx.moveTo(padL, Y(0)); ctx.lineTo(w-padR, Y(0)); ctx.stroke();
+    }
+    // axis label
+    ctx.fillStyle = getCSS("--text-dim");
+    ctx.textAlign = "center";
+    ctx.fillText(opts.xLabel, padL + plotW/2, h-padB+22);
+
+    // series
+    series.forEach(s => {
+      if (s.fill){
+        ctx.beginPath();
+        ctx.moveTo(X(xVals[0]), Y(0));
+        for (let i=0;i<xVals.length;i++) ctx.lineTo(X(xVals[i]), Y(s.y[i]));
+        ctx.lineTo(X(xVals[xVals.length-1]), Y(0));
+        ctx.closePath();
+        ctx.fillStyle = s.fillColor;
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.lineWidth = s.width || 2.2;
+      ctx.strokeStyle = s.color;
+      if (s.dashed) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+      for (let i=0;i<xVals.length;i++){
+        const xx = X(xVals[i]), yy = Y(s.y[i]);
+        if (i===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+
+  function getCSS(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // Render
+  // ════════════════════════════════════════════════════════════════
+  function updateReadouts(){
+    els["v-kappa"].textContent = Math.pow(10, state.kappaLog).toFixed(state.kappaLog < 0 ? 3 : 1);
+    els["v-freq"].textContent = state.freq + " Hz";
+    els["v-esw"].textContent = state.esw + " mV";
+    els["v-alpha"].textContent = state.alpha.toFixed(2);
+    els["v-fk"].textContent = state.fk + " %";
+    els["v-conc"].textContent = state.conc.toFixed(1) + " nM";
+    els["v-tinc"].textContent = state.tinc + " min";
+    els["v-eta"].textContent = state.eta.toFixed(2);
+    els["v-freq2"].textContent = state.freq2 + " Hz";
+  }
+
+  function statBlock(label, value, unit){
+    return '<div class="stat"><div class="label">'+label+'</div><div class="value">'+value+
+      (unit ? ' <span class="unit">'+unit+'</span>' : '') + '</div></div>';
+  }
+
+  function peakStats(xVals, y){
+    let iMax = 0;
+    for (let i=1;i<y.length;i++) if (Math.abs(y[i]) > Math.abs(y[iMax])) iMax = i;
+    const peakVal = y[iMax], peakX = xVals[iMax];
+    const half = peakVal/2;
+    let lo=null, hi=null;
+    for (let i=0;i<y.length-1;i++){
+      if ((y[i]-half)*(y[i+1]-half) <= 0 && peakVal>0){
+        const t = (half - y[i])/(y[i+1]-y[i]);
+        const xc = xVals[i] + t*(xVals[i+1]-xVals[i]);
+        if (xc < peakX && lo===null) lo = xc;
+        if (xc > peakX) hi = xc;
+      }
+    }
+    const fwhm = (lo!==null && hi!==null) ? (hi-lo) : null;
+    return {peakVal, peakX, fwhm};
+  }
+
+  function render(){
+    updateReadouts();
+
+    if (state.mode === "single"){
+      renderSingle();
+    } else {
+      renderDevice();
+    }
+  }
+
+  function renderSingle(){
+    const kappa = Math.pow(10, state.kappaLog);
+    const f = state.freq;
+    const k0 = kappa * 2 * f;
+    const E_sw = state.esw / 1000;
+    const alpha = state.alpha, ne = state.ne;
+
+    const E_arr = linspace(-0.30, 0.30, 241);
+    const DI = swvVoltammogram(E_arr, k0, 1.0, 1.0, 0.0, alpha, ne, f, E_sw);
+    const maxAbs = Math.max(...DI.map(Math.abs)) || 1;
+    const DI_n = DI.map(x => x/maxAbs);
+    const xmV = E_arr.map(e => e*1000);
+
+    const series = [{ y: DI_n, color: getCSS("--trace-a"), fill:true, fillColor: getCSS("--trace-a-fill") }];
+    let legendHTML = '<div class="item"><span class="swatch" style="background:var(--trace-a)"></span>BV-ODE simulator (this tool)</div>';
+
+    if (state.showLaviron){
+      const lav = lavironReversible(E_arr, 0.0, ne);
+      const lavMax = Math.max(...lav) || 1;
+      const lav_n = lav.map(x => x/lavMax);
+      series.push({ y: lav_n, color: getCSS("--lav"), dashed:true, width:1.8 });
+      legendHTML += '<div class="item"><span class="swatch dashed" style="color:var(--lav)"></span>Laviron (1979) reversible limit</div>';
+    }
+
+    els["chart-title"].innerHTML = 'Predicted net SWV current <span class="dim">— single MB probe, normalised</span>';
+    els["legend"].innerHTML = legendHTML;
+
+    drawChart(xmV, series, {
+      xLabel: "E − E⁰′  (mV)",
+      yTickFmt: v => v.toFixed(1)
+    });
+
+    const stats = peakStats(xmV, DI_n);
+    const unstable = kappa > 15;
+    els["kappa-badge"].className = "kappa-badge " + (unstable ? "warn" : "ok");
+    els["kappa-badge-text"].textContent = "κ = " + kappa.toFixed(kappa<1?2:1) + (unstable ? " · unstable" : " · stable");
+    els["instability-banner"].classList.toggle("show", unstable);
+
+    els["stats"].innerHTML =
+      statBlock("Peak position", (stats.peakX>=0?"+":"")+stats.peakX.toFixed(1), "mV") +
+      statBlock("FWHM", stats.fwhm!==null ? stats.fwhm.toFixed(1) : "—", "mV") +
+      statBlock("Laviron limit", (3.53*8.3145*298.15/(ne*96485)*1000).toFixed(1), "mV") +
+      statBlock("τ (half-pulse)", (1000/(2*f)).toFixed(2), "ms");
+  }
+
+  function renderDevice(){
+    const f = state.freq2;
+    const E_sw = 0.025, alpha = 0.37, ne = 2, Gamma0 = 3e-12, A_cm2 = 0.017, E0_MB = -0.250;
+    let fk;
+    if (state.inputMode === "fk"){
+      fk = state.fk/100;
+    } else {
+      fk = concentrationToFk(state.conc, state.tinc, state.eta);
+    }
+    const E_arr = linspace(-0.40, -0.10, 151);
+    const DI = distAveragedVoltammogram(E_arr, fk, Gamma0, A_cm2, E0_MB, alpha, ne, f, E_sw, 50);
+    const DI_pA = DI.map(x => x*1e12);
+    const xmV = E_arr.map(e => e*1000);
+
+    const series = [{ y: DI_pA, color: getCSS("--trace-b"), fill:true, fillColor: getCSS("--trace-b-fill") }];
+
+    els["chart-title"].innerHTML = 'Predicted net SWV current <span class="dim">— full device, distance-averaged</span>';
+    els["legend"].innerHTML = '<div class="item"><span class="swatch" style="background:var(--trace-b)"></span>Distance-averaged ΔI(E), F_k = '+(fk*100).toFixed(0)+'%</div>';
+
+    drawChart(xmV, series, {
+      xLabel: "E  (mV vs Ag/AgCl)",
+      yTickFmt: v => v.toFixed(0)
+    });
+
+    const kappaTip = k0_of_d(D_PEG_NM) / (2*f);
+    const unstable = kappaTip > 15;
+    els["kappa-badge"].className = "kappa-badge " + (unstable ? "warn" : "ok");
+    els["kappa-badge-text"].textContent = "κ_tip = " + kappaTip.toFixed(2) + (unstable ? " · unstable" : " · stable");
+    els["instability-banner"].classList.toggle("show", unstable);
+
+    const stats = peakStats(xmV, DI_pA);
+    els["stats"].innerHTML =
+      statBlock("Cleavage fraction F_k", (fk*100).toFixed(1), "%") +
+      statBlock("Peak height", Math.abs(stats.peakVal).toFixed(1), "pA") +
+      statBlock("Peak position", stats.peakX.toFixed(1), "mV") +
+      statBlock("FWHM", stats.fwhm!==null ? Math.abs(stats.fwhm).toFixed(1) : "—", "mV");
+  }
+
+  window.addEventListener("resize", render);
+  render();
+})();
+</script>
+</body>
+</html>
