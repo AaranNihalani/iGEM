@@ -1,0 +1,446 @@
+\documentclass[10pt]{article}
+\usepackage[a4paper,margin=0.85in,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- house style (matches Layers 11-13) ----------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\itshape Layer 14: Electronics and Potentiostat Noise Budget}
+\rhead{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
+\cfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries}{\Roman{section}.}{0.5em}{}[\vspace{-0.6em}\rule{\textwidth}{0.4pt}]
+\titlespacing*{\section}{0pt}{1.1em}{0.5em}
+\titleformat{\subsection}{\bfseries}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{0.7em}{-0.1em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+
+\numberwithin{equation}{section}
+\renewcommand{\theequation}{\Roman{section}.\arabic{equation}}
+\renewcommand{\thetable}{\arabic{table}}
+
+\newcommand{\pA}{\,\mathrm{pA}}
+\newcommand{\rtHz}{\sqrt{\mathrm{Hz}}}
+\newcommand{\fAV}{\,\mathrm{fA\!\cdot\! V}}
+\newcommand{\nAV}{\,\mathrm{nA\!\cdot\! V}}
+\newcommand{\flag}[1]{\textbf{FLAG:} #1}
+
+\begin{document}
+
+% ---------- title block ----------
+\begin{center}
+{\LARGE\bfseries Layer 14: Electronics and Potentiostat Noise Budget}\\[0.35em]
+{\large From Electrode Current to Per-Point Noise, Peak-Area Noise, and the Electronic Detection Floor}\\[0.3em]
+{\small\color{gray} Eton iGEM 2026, Dry Lab \;|\; Layer 14 of 17-Layer Biosensor Pipeline \;|\;
+\texttt{noise\_budget.py} $\cdot$ \texttt{sigma\_area.py} $\cdot$ \texttt{snr\_vs\_gamma.py} $\cdot$ \texttt{mains\_spectrum.py}}
+\end{center}
+\vspace{-0.4em}\rule{\textwidth}{0.4pt}
+
+Layer 14 sits between the electrode and the peak-extraction code. It takes the electrode capacitance and background current
+from Layers 4--6 and the SWV waveform from Layers 11--12, and returns three things: (i) the RMS current noise
+$\sigma_{\Delta I}$ on every net SWV point, which Layer 12 consumes as ``$\sigma_{\text{noise}}$ from Layer 14''; (ii) the
+resulting noise $\sigma_{\text{area}}$ on the fitted MB peak area, which feeds Layer 13; and (iii) a decision on whether the
+limit of detection is set by the electronics or by something else. The noise budget is also a design tool: it says which
+component to change if the electronic floor ever becomes the problem.
+
+\textbf{Scope and corrections.} The reference architecture is the DStat potentiostat, as specified in the planning file
+(\texttt{contents.md}, Layer 14). The ProteaSign schematic (Stakeholder Document) instead shows an AD5940 analogue front
+end with a TMUX1104 multiplexer, so both are evaluated (Section~I). Checking the planning file's arithmetic in code exposed several
+errors (ADC step sizes off by $10^3$, electrode capacitance off by $10^1$, an omitted noise source, and an
+inconsistent worked example). They are corrected here and tabulated in Section~VIII; the qualitative conclusions of the planning
+file survive, but several numbers change by factors of 2--10.
+
+% =====================================================================
+\section{Signal Chain, Conventions and Inputs}
+
+\subsection{Hardware reference}
+DStat (Dryden and Wheeler, 2015 \cite{dstat}) uses an ATxmega256A3U microcontroller (not a PIC, as the planning file states),
+an external 16-bit DAC (46~$\mu$V step on a 3~V range; 76~$\mu$V on 5~V), a 24-bit sigma-delta ADC whose digital filter has
+zeros at multiples of its output rate, and a transimpedance amplifier (TIA) with seven selectable feedback resistors from
+100~$\Omega$ to 100~M$\Omega$. Its measured open-circuit noise levels off near 200~fA (60~Hz sample rate, no cell attached),
+giving an instrument detection limit near 600~fA \cite{dstat}. The ProteaSign schematic uses an AD5940 \cite{ad5940} (16-bit SAR ADC at
+800~kSPS, 1.82~V internal reference, TIA resistor 0.2--512~k$\Omega$ per the schematic) behind a TMUX1104 4:1 multiplexer
+(2.5~$\Omega$ on-resistance, 1.5~pC charge injection, 3~pA leakage \cite{tmux}). The DAC contributes negligibly: a
+76~$\mu$V step is 3.8\% of the 2~mV staircase step, and its maximum potential error ($\pm$38~$\mu$V) is 0.2\% of the 20~mV
+peak $\sigma_E$.
+
+\subsection{Conventions}
+All noise values are RMS currents referred to the working-electrode input for \emph{one} SWV current sample, taken at the end
+of a half-cycle of duration $\tau = 1/(2f_{\text{SWV}})$. A boxcar average over the half-cycle has noise bandwidth
+$B = 1/(2\tau) = f_{\text{SWV}} = 60$~Hz. (The planning file uses $B = f_{\text{SWV}}/2 = 30$~Hz, which would need an
+integration window longer than the half-cycle.) The net SWV current is $\Delta I_n = I_{\text{fwd},n} - I_{\text{rev},n}$; the two
+samples are independent, so
+\begin{equation}
+\sigma_{\Delta I} = \sqrt{2}\,\sigma_{\text{sample}} = \sqrt{2}\sqrt{\textstyle\sum_k \sigma_k^{2}} .
+\end{equation}
+Inputs, all taken from upstream layers except where marked, are in Table~\ref{tab:inputs}.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}p{4.5cm}p{5.8cm}p{5.0cm}@{}}
+\toprule
+Parameter & Value & Source \\
+\midrule
+True electrode area $A_{\text{true}}$ & 0.013 cm$^2$ & Layers 4, 6 \\
+SAM double-layer capacitance $C_{dl}$ & 2 $\mu$F\,cm$^{-2}$ $\Rightarrow$ $C_{\text{cell}} = 26$ nF & Layer 6 \\
+Solution resistance $R_s$ & 7.1 k$\Omega$ & Layer 5 \\
+$E_{sw}$, $f_{\text{SWV}}$, $\Delta E_{\text{step}}$ & 25 mV, 60 Hz, 2 mV & Layers 5, 11, 12 \\
+Capacitive background $I_{\text{cap}}$ & 70 nA (60--78 nA) & Layers 5, 6 \\
+Peak $\sigma_E$, window & 20 mV; $\pm3\sigma_E$ = 61 points & Layer 12 \\
+MB peak area $A_{\text{MB}}$ & 0.3 nA$\cdot$V (peak 5.98 nA) & Layer 13 \\
+Fc peak area $A_{\text{Fc}}$ & 1 nA$\cdot$V & Layer 12 range 0.1--10; \flag{mid-range assumed} \\
+Initial coverage $\Gamma_0$ & 2.0 pmol\,cm$^{-2}$ & Layer 15 \\
+Op-amp (OPA2333) & $e_n$ = 55 nV/$\sqrt{\text{Hz}}$, $i_n$ = 100 fA/$\sqrt{\text{Hz}}$, GBW 350 kHz & TI datasheet \cite{opa} \\
+ADC & 24-bit sigma-delta, 20 ENOB, $\pm$2.5 V & planning file, DStat \\
+Temperature (instrument) & 298.15 K & --- \\
+\bottomrule
+\end{tabular}
+\caption{Inputs to the noise budget.}\label{tab:inputs}
+\end{table}
+
+% =====================================================================
+\section{Noise Sources}
+
+\subsection{Johnson noise in $R_f$}
+\begin{equation}
+i_J = \sqrt{4k_BT/R_f}
+\end{equation}
+gives 0.406, 0.128 and 0.041 pA/$\sqrt{\text{Hz}}$ for $R_f$ = 100~k$\Omega$, 1~M$\Omega$ and 10~M$\Omega$ at 298~K (the planning file's values
+are confirmed). Over $B = 60$~Hz at 1~M$\Omega$ this is 0.99~pA RMS.
+
+\subsection{Op-amp noise}
+Two terms matter. The first is the input current noise: the OPA2333 datasheet gives $i_n = 100$~fA/$\sqrt{\text{Hz}}$ at 10~Hz \cite{opa},
+5--20$\times$ larger than the 5--20~fA/$\sqrt{\text{Hz}}$ assumed in the planning file (zero-drift amplifiers trade offset and 1/$f$
+performance for higher current noise). Over 60~Hz this is 0.77~pA, comparable to Johnson noise at 1~M$\Omega$, not negligible.
+
+The second term is absent from the planning file. The WE is held at virtual ground, so the op-amp's input voltage noise $e_n$ appears across the
+electrode impedance $\approx 1/(2\pi fC_{\text{cell}})$ (valid for $f \ll 1/(2\pi R_sC_{\text{cell}}) \approx 860$~Hz) and drives a
+current $i(f) = 2\pi f\,C_{\text{cell}}\,e_n$ in the measurement. Integrating over the noise bandwidth,
+\begin{equation}
+i_{e_nC,\text{rms}} = 2\pi\,C_{\text{cell}}\,e_n\sqrt{B^{3}/3} = 2.41\pA ,
+\end{equation}
+using $C_{\text{cell}} = 26$~nF and $e_n = 55$~nV/$\sqrt{\text{Hz}}$ (1~kHz datasheet value). This is the \emph{largest} single term in the budget.
+It grows as $B^{3/2}$, independent of $R_f$, and is the reason raising $R_f$ beyond a few M$\Omega$ buys almost nothing (Section~III).
+
+\subsection{Shot noise of the DC background}
+$i_{sh} = \sqrt{2qI_{\text{cap}}} = 0.150$~pA/$\sqrt{\text{Hz}}$ for $I_{\text{cap}} = 70$~nA, i.e.\ 1.16~pA over 60~Hz (the planning file's density is confirmed; its
+summary table entry of ``0.025 at 30~Hz'' is inconsistent with it). Strictly, shot noise arises from carriers crossing a barrier; a capacitive
+charging current does not have it, so this term is a conservative upper bound. The true shot noise is set by the much smaller Faradaic leakage
+and O$_2$ background.
+
+\subsection{ADC quantisation}
+With input-referred step $\text{LSB} = 2V_{\text{ref}}/(R_f\,2^{\text{ENOB}})$ and noise LSB/$\sqrt{12}$: at $R_f = 100$~k$\Omega$ and $\pm2.5$~V the 20-ENOB
+step is 47.7~pA (48~\emph{pA}, not the planning file's 48~nA), at 1~M$\Omega$ it is 4.8~pA, giving 1.38~pA RMS. A nominal 24-bit step at 100~k$\Omega$ is 3~pA (not 3~nA).
+The planning file's lesson survives with correct numbers: at 100~k$\Omega$ quantisation dominates (14~pA RMS against $\approx$3 pA of analogue noise), so $R_f$ must be scaled up
+to use the ADC range. The DStat paper reaches the same conclusion: for any ADC up to 16 bits, the step, not the analogue noise, limits resolution at every gain \cite{dstat}
+(Fig.~\ref{fig:budget}C).
+
+\subsection{1/f noise}
+The OPA2333 is chopper-stabilised, so the corner is negligible. Integrating $i_n^2 f_c/f$ with $f_c = 0.1$~Hz from 0.1 to 60~Hz gives 0.08~pA. Low-frequency drift is also
+suppressed by the forward--reverse differencing and removed by the baseline fit (Layer 12).
+
+\subsection{TIA bandwidth and stability}
+The planning file's $C_f$ = 1--10~pF (159~kHz at 100~k$\Omega$) ignores the 26~nF source capacitance, which destabilises a TIA. Phase margin requires
+$C_f \gtrsim \sqrt{C_{\text{in}}/(2\pi R_f\,\text{GBW})} = 109$~pF at 1~M$\Omega$, so the signal bandwidth is
+$1/(2\pi R_fC_f) = 1.46$~kHz, not 15.9~kHz. This is still 24$\times$ above $f_{\text{SWV}}$, so the conclusion is unchanged, but the component value must be corrected.
+
+\subsection{Budget}
+Table~\ref{tab:budget} and Fig.~\ref{fig:budget} give the base case (DStat, $R_f$ = 1~M$\Omega$, $f_{\text{SWV}}$ = 60~Hz), and the same
+model for the AD5940 case. The AD5940 column uses $R_f$ = 512~k$\Omega$, 16 bits, a 1.82~V span and no PGA; \flag{its amplifier noise is a placeholder (OPA2333 values) and
+the ADC span is approximate. The chip's PGA (gain 1--9) and 800~kSPS oversampling would reduce the ADC term and are not credited.}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Source & Density (pA/$\sqrt{\text{Hz}}$) & DStat RMS/sample (pA) & AD5940 case (pA) \\
+\midrule
+Johnson ($R_f$) & 0.128 (1 M$\Omega$) & 0.99 & 1.39 \\
+Op-amp $i_n$ & 0.100 & 0.77 & 0.77 \\
+Op-amp $e_n \times C_{\text{cell}}$ & 0.539 (at 60 Hz) & \textbf{2.41} & 2.41 \\
+Shot ($I_{\text{cap}}$, upper bound) & 0.150 & 1.16 & 1.16 \\
+ADC quantisation & --- & 1.38 & \textbf{15.66} \\
+1/$f$ & --- & 0.08 & 0.08 \\
+\midrule
+Total per sample & & 3.26 & 15.96 \\
+\textbf{Total per net SWV point ($\times\sqrt{2}$)} & & \textbf{4.61} & 22.58 \\
+\bottomrule
+\end{tabular}
+\caption{Noise budget, $B$ = 60 Hz, $C_{\text{cell}}$ = 26 nF. Without the $e_n C$ term (the planning-file model) the DStat total is 3.11 pA per net point.}\label{tab:budget}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_L14_noise_budget.pdf}
+\caption{A: current noise per sample versus $R_f$ for each source. The flat terms ($e_nC$, $i_n$, shot) set a floor near 2.7 pA; the ADC term dominates below $\approx$300 k$\Omega$. B: budget at 1~M$\Omega$. C: ADC step versus analogue noise; the 16-bit step exceeds analogue noise at every $R_f$.}\label{fig:budget}
+\end{figure}
+
+% =====================================================================
+\section{Choice of $R_f$}
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rccccc@{}}
+\toprule
+$R_f$ & $\sigma_{\Delta I}$ (pA) & Input range & Stable $C_f$ & TIA BW & Dominant term \\
+\midrule
+100 k$\Omega$ & 20.4 & $\pm$25 $\mu$A & 344 pF & 4.6 kHz & ADC quantisation \\
+1 M$\Omega$ & 4.61 & $\pm$2.5 $\mu$A & 109 pF & 1.46 kHz & $e_n C$ \\
+10 M$\Omega$ & 3.97 & $\pm$0.25 $\mu$A & 34 pF & 463 Hz & $e_n C$ \\
+\bottomrule
+\end{tabular}
+\caption{$R_f$ trade-off (DStat, 20 ENOB).}\label{tab:rf}
+\end{table}
+Going from 100~k$\Omega$ to 1~M$\Omega$ cuts the net noise 4.4$\times$; going on to 10~M$\Omega$ cuts it only a further 14\%, because the
+$R_f$-independent terms dominate, and it would clip if the MB peak is as large as Layer 11's 0.27~$\mu$A ($R_{f,\max} = 2.5~\text{V}/0.27~\mu\text{A} = 9.3$~M$\Omega$). The planning file's recommendation of \textbf{$R_f$ = 1~M$\Omega$} is therefore confirmed,
+now on the basis of range rather than noise: it is the largest decade that safely holds the biggest plausible peak. If Layer 13's smaller peak is right, autoranging to 10~M$\Omega$ is possible but unnecessary.
+
+% =====================================================================
+\section{Multiplexer Settling and Charge Injection}
+When the multiplexer connects WE$_i$, the electrode charges through $R_{\text{mux}} + R_s$:
+\begin{equation}
+\tau_{\text{settle}} = (R_{\text{mux}} + R_s)\,C_{\text{cell}} = (2.5 + 7100)\,\Omega \times 26~\text{nF} = 185~\mu\text{s}.
+\end{equation}
+The planning file's 14~$\mu$s used $C = 2$~nF, ten times too small; the wait rule ``10$\tau$ $\approx$ 140~$\mu$s'' becomes 1.85~ms. The
+schematic leaves idle electrodes floating, so on reconnection the electrode may sit several hundred mV from $E_{\text{start}}$. For a
+0.3~V step the initial current is $0.3/7102 = 42~\mu$A, which saturates the 2.5~$\mu$A range at 1~M$\Omega$, and it takes $\ln(42~\mu\text{A}/1~\text{pA}) = 17.6\tau = 3.2$~ms
+to decay below 1~pA (half-cycle at 60~Hz: 8.3~ms). Charge injection is negligible for the TMUX1104: 1.5~pC on 26~nF is a 58~$\mu$V step (2.9\% of one 2~mV step). The planning file's ADG1606 value (10--100~pC) would give up to 3.8~mV, larger than a staircase step.
+(The TMUX1104 is the part in the schematic; ADG1606 is a 16:1 device.)
+
+\textbf{Firmware requirement (replaces ``$>$100~$\mu$s''):} wait $\ge 20\tau \approx 3.7$~ms after every mux switch before the first sample, \emph{and} hold at $E_{\text{start}}$ for
+$5\tau_{\text{relax}}$ (Layer 11, Sec.~IX). The second condition ($\tau_{\text{relax}} = 1/k_{\text{tot}} \sim 10$--100~ms for $k^0 \sim 10$--100~s$^{-1}$) dominates the wait. A 206-step MB-window scan at 60~Hz takes 3.4~s per electrode.
+\flag{TIA recovery time from the initial saturation is not modelled and should be measured.}
+
+% =====================================================================
+\section{Mains Interference}
+
+\subsection{Amplitude}
+Mains couples in as a displacement current through a stray capacitance $C_c$ from the wiring to the high-impedance WE loop, reduced by a shield of effectiveness SE:
+\begin{equation}
+i_{pk} = \frac{2\pi f_m\,C_c\,\sqrt{2}\,V_{\text{rms}}}{10^{\,\text{SE}/20}} .
+\end{equation}
+For a UK grid (230~V, 50~Hz), $C_c$ = 1~pF gives 102~nA, reproducing the planning file's ``1--100~nA'' unshielded range. \flag{$C_c$ and SE are scenario assumptions, not measurements;
+they must be measured by shorting the WE input and recording with the cell disconnected.} (The planning file quotes the shielded level as ``$<$0.1~nA'' in the text but ``$<$0.1~pA/$\sqrt{\text{Hz}}$'' in its table; a tone is not a noise density, so amplitude in nA is the right description.)
+
+\subsection{Aliasing into the SWV waveform}
+Mains is not white noise here. The net current is the difference of two samples spaced $\tau$ apart, once per staircase step. A tone $A\cos(2\pi f_mt + \phi)$ therefore appears as
+$\Delta I_n = G\,A\sin(2\pi\nu n + \phi')$ with
+\begin{equation}
+G = 2\left|\sin(\pi f_m\tau)\right|\;\left|\mathrm{sinc}(f_mT_{\text{int}})\right|, \qquad
+\nu = (f_m/f_{\text{SWV}}) \bmod 1 ,
+\end{equation}
+where $T_{\text{int}}$ is the averaging window of each sample and $\mathrm{sinc}\,x = \sin\pi x/\pi x$. The tone becomes a ripple in $E$-space of period $\Delta E_{\text{step}}/\nu$, which
+the Savitzky--Golay filter, cubic baseline and Gaussian fit turn into an area error. For $T_{\text{int}} = \tau$, $G = 2\sin^2(\pi f_m\tau)/(\pi f_m\tau)$.
+Table~\ref{tab:transfer} lists the gain and beat for a 50~Hz grid.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rcccccc@{}}
+\toprule
+$f_{\text{SWV}}$ (Hz) & 25 & 30 & 45 & 60 & 80 & 100 \\
+\midrule
+Gain $G$ & 0.000 & 0.19 & 1.11 & 1.43 & 1.41 & 1.27 \\
+Alias (Hz) & 0 & 10 & 5 & 10 & 30 & 50 \\
+Beat period in $E$ (mV) & DC & 6.0 & 18 & 12 & 5.3 & 4.0 \\
+\bottomrule
+\end{tabular}
+\caption{Transfer of a 50 Hz tone into the net SWV current ($T_{\text{int}}=\tau$). On a 60 Hz grid the null is at $f_{\text{SWV}} = 30$ Hz.}\label{tab:transfer}
+\end{table}
+
+\subsection{Effect on the peak area}
+Monte Carlo through the Layer 12 chain (random phase, $\pm$0.2~Hz grid detuning, tone amplitude in the linear regime) gives an area error of \textbf{0.98\% per nA of pickup} at
+$f_{\text{SWV}}$ = 60~Hz on a 50~Hz grid (linear to within 3\% from 10 to 300~pA). Table~\ref{tab:mains} converts the scenarios.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Scenario & Pickup & \% of MB peak & $\sigma_A/A$ at 60 Hz & $\sigma_A/A$ at 45 Hz \\
+\midrule
+Unshielded, 1 pF & 102 nA & 1710 & $>$100\% (unrecoverable) & $>$100\% \\
+Unshielded, 0.1 pF & 10.2 nA & 171 & $>$100\% & $>$100\% \\
+Grounded foil, 30 dB & 0.323 nA & 5.4 & 0.30\% & 2.4\% \\
+Closed cage, 60 dB & 10.2 pA & 0.17 & 0.010\% & 0.085\% \\
+\midrule
+\multicolumn{5}{@{}l}{Electronic floor (Section VI): $\sigma_A/A$ = 0.037\%; Layer 13 budget: 3\%} \\
+\bottomrule
+\end{tabular}
+\caption{Mains-induced area error, 50 Hz grid.}\label{tab:mains}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_L14_mains.pdf}
+\caption{A: pickup amplitude by scenario. B: 1~nA of 50~Hz pickup on the MB peak at three SWV frequencies (25~Hz is synchronous and leaves the peak clean). C: area error per nA versus $f_{\text{SWV}}$ for 50 and 60~Hz grids; the response is erratic, with deep nulls only at $f_m/2$.}\label{fig:mains}
+\end{figure}
+
+\subsection{Design consequences}
+\begin{enumerate}[leftmargin=1.5em,itemsep=0pt,topsep=0pt]
+\item \textbf{Shielding is non-negotiable.} Keeping the area error below 3\% at 60~Hz needs $\approx$31~dB, below 1\% needs $\approx$40~dB, and pushing it below the electronic floor needs $\approx$69~dB from the 1~pF open-bench case. A closed grounded cage (60~dB assumed) is sufficient.
+\item \textbf{Merely detuning $f_{\text{SWV}}$ from the mains frequency does not help} (the planning file's option 2). It moves the ripple in $E$-space; on a 50~Hz grid, 45~Hz is about 8$\times$ \emph{worse} than 60~Hz because the 18~mV beat is close to the peak width.
+\item \textbf{Synchronous integration works.} If each half-cycle spans exactly one mains period ($\tau = 1/f_m$, i.e.\ $f_{\text{SWV}} = f_m/2$ = 25~Hz UK, 30~Hz US), both the differencing and boxcar factors vanish and the tone and its harmonics are nulled. This needs the mux/ADC timing to be locked to $\tau = 20$~ms and is available only if $k^0_{ET}$ (Layers 10--11) puts $f_{\text{opt}}$ at or below this range. Layer 11 quotes $f_{\text{opt}} \approx k^0/2 \approx 15$~Hz for $k^0 = 30$~s$^{-1}$, which is consistent.
+\item The DStat sigma-delta filter offers the same effect through its zeros at multiples of the output rate \cite{dstat}; the AD5940's sinc$^3$/sinc$^2$ filter should be configured equivalently (\flag{to be checked against the datasheet}).
+\end{enumerate}
+
+% =====================================================================
+\section{Propagation to the Peak Area}
+Layer 12 fits $\Delta I^{\text{corr}}(E) = A_{\text{peak}}\exp[-(E-E_0)^2/2\sigma_E^2]$ over $\pm3\sigma_E$ (61 points at 2~mV), with area $A_{\text{area}} = A_{\text{peak}}\sigma_E\sqrt{2\pi}$
+and variance from its Eq.~(IV.3). For white noise $\sigma_{\Delta I}$ on each point every term of that variance scales as $\sigma_{\Delta I}^2$ and is independent of $A_{\text{peak}}$, so $\sigma_{\text{area}}$ does not depend on $\Gamma$.
+Five estimates for $A_{\text{MB}} = 0.3$~nA$\cdot$V (peak 5.98~nA) and $\sigma_{\Delta I} = 4.61$~pA are in Table~\ref{tab:sigarea}.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Estimator & $\sigma_{\text{area}}$ (fA$\cdot$V) & SNR & $\sigma_A/A$ (\%) \\
+\midrule
+Direct integration $\sigma_{\Delta I}\sqrt{N}\,\Delta E$ (planning file) & 72.1 & 4160 & 0.0240 \\
+Free-shape Gaussian fit, Cram\'er--Rao (Layer 12 Eq.\ IV.3) & 67.3 & 4450 & 0.0224 \\
+Fixed-shape fit ($E_0$, $\sigma_E$ locked), Cram\'er--Rao & 55.0 & 5460 & 0.0183 \\
+\textbf{Full Layer 12 pipeline, Monte Carlo (SG $\to$ baseline $\to$ fit)} & \textbf{112.5} & \textbf{2670} & \textbf{0.0375} \\
+Windowed sum after baseline subtraction, Monte Carlo & 118.7 & 2530 & 0.0396 \\
+\bottomrule
+\end{tabular}
+\caption{Peak-area noise from electronics alone (3000 Monte Carlo trials). The full-pipeline value is adopted as the Layer 14 output.}\label{tab:sigarea}
+\end{table}
+
+The full pipeline is 1.7$\times$ worse than the Cram\'er--Rao bound, which counts neither the variance of the fitted cubic baseline nor the correlation introduced by smoothing;
+this is why the Monte Carlo number is adopted. The amplitude--width correlation is $-0.58$, confirming Layer 12's remark that the covariance term must not be dropped. Three further points follow.
+(i) The Gaussian fit is only 5\% quieter than a plain windowed sum, so the planning file's explanation that the fit ``extracts more information than a peak-height measurement'' is not a noise advantage of the fit.
+The larger gain is from locking the peak shape (2$\times$ against the pipeline, though this gap mixes baseline and smoothing effects). (ii) $\sigma_{\text{area}} \propto \sqrt{\Delta E_{\text{step}}}$
+(Fig.~\ref{fig:sigarea}C): a 1~mV step lowers it by 30\% at the price of doubling the scan time. (iii) The pipeline has a $-0.27$\% smoothing bias, common to $R(T)$ and $R(0)$ and therefore cancelled in $\rho$.
+The Fc peak (1~nA$\cdot$V, 121 points) has a relative electronic noise of only 0.016\%. Layer 12's ``signal below LOD'' flag corresponds to $A_{\text{peak}} < 3\sigma_{\Delta I}/\sqrt{N_{\text{pts}}} = 1.8$~pA here, three orders of magnitude below the peak.
+Layer 12's quoted Savitzky--Golay \cite{sg} sum $\sum c_k^2 = 0.233$ evaluates to 0.2075 (noise factor 0.455, not 0.48).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_L14_sigma_area.pdf}
+\caption{A: Monte Carlo scatter of the fitted area against the Cram\'er--Rao width. B: estimator comparison. C: dependence on the staircase step.}\label{fig:sigarea}
+\end{figure}
+
+% =====================================================================
+\section{SNR versus Probe Coverage and the Electronic Floor}
+In the reversible surface-confined limit, integrating Layer 11 Eq.~(V.5) over the sech$^2$ peak gives
+\begin{equation}
+A_{\text{MB}}(\Gamma) = 2\,n_eF\,A_{\text{true}}\,\Gamma\,E_{sw}f_{\text{SWV}}\,f_{\text{kin}},
+\end{equation}
+so SNR $= A_{\text{MB}}/\sigma_{\text{area}}$ is linear in $\Gamma$. The kinetic factor $f_{\text{kin}}$ depends on $k^0_{ET}$, which is unmeasured, so it is inferred by requiring
+$A_{\text{MB}}(\Gamma_0 = 2~\text{pmol\,cm}^{-2}) = 0.3$~nA$\cdot$V, giving $f_{\text{kin}} = 0.020$ (the reversible limit, 15~nA$\cdot$V, would give a 50$\times$ higher SNR).
+
+Propagating electronic area noise through Layer 13 (Eqs.~I.4, II.4, III.5, with $n_0 = 3$ baseline scans and an intact control electrode) gives an electronic
+$\sigma_{F_k}(F_k = 0)$ of \textbf{0.065\%} for one electrode pair and 0.033\% for four. The corresponding electronic $F_{\text{LOD}} = 3\sigma_{F_k}$ is 0.20\%, roughly 100$\times$ below Layer 13's
+$F_{\min}$ = 20\% (Fig.~\ref{fig:snr}B). Unlike Layer 13's $(1-F_k)\times6.8\%$, the electronic $\sigma_{F_k}$ stays flat near 0.04\% out to $F_k = 0.99$, because the shrinking
+peak is measured against constant absolute noise. Layer 13's $F_{\max}$ = 95\% is therefore not electronic either: the remaining probe would still have SNR $\approx$ 3 at $F_k$ = 0.9989.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Case & SNR at $\Gamma_0$ & $\Gamma_{\text{det}}$ (SNR=3) & $\Gamma$ ($\sigma_A/A$=3\%) & $\Gamma_{0,\min}$ ($\sigma_F<1.7\%$) & Margin \\
+\midrule
+DStat, full pipeline & 2670 & 0.0022 & 0.025 & \textbf{0.072} & 28$\times$ \\
+DStat, fixed shape & 5460 & 0.0011 & 0.012 & 0.035 & 57$\times$ \\
+AD5940 case, full pipeline & 545 & 0.011 & 0.122 & 0.352 & 5.7$\times$ \\
+\bottomrule
+\end{tabular}
+\caption{Coverage thresholds in pmol\,cm$^{-2}$. $\Gamma_{0,\min}$ is the starting coverage at which the electronic part of $\sigma_{F_k}(0)$ reaches 1.7\% (the requirement for $F_{\text{LOD}}$ = 5\%).}\label{tab:gamma}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_L14_snr_vs_gamma.pdf}
+\caption{A: SNR versus $\Gamma$ for the DStat (pipeline and fixed shape), the AD5940 case and the reversible limit. B: electronic $\sigma_{F_k}$ versus $F_k$ at $\Gamma_0$ = 2 pmol\,cm$^{-2}$ against Layer 13's model. C: minimum starting coverage for a target electronic $\sigma_{F_k}(0)$.}\label{fig:snr}
+\end{figure}
+
+\subsection{Is the LOD electronics-limited?}
+No. Even the pessimistic AD5940 case (16-bit, no PGA, no oversampling) has SNR $\approx$ 550 at $\Gamma_0$, well above the 33 needed for 3\%. The electronic floor (0.04\%) is
+80$\times$ below Layer 13's assumed 3\% per-scan area precision. With mains shielded, the mains term adds only 0.01\% (cage) to 0.3\% (partial foil). The 3\% therefore has to come from effects
+that Layer 14 does not model: baseline-model error, peak drift out of the fit window, differential fouling, and incomplete redox re-equilibration between scans are the candidates,
+but this layer does not establish which. The consequence for design is that improving the electronics (higher-resolution ADC, lower-noise op-amp) will not lower the LOD; the levers are upstream
+(Layers 1, 9, 12) or a measurement of the actual scan-to-scan reproducibility. This also agrees with the planning file's own conclusion, but its figure ($F_{\text{LOD}} \approx 0.02$\%) is an electronics-only floor and
+should not be quoted as the device LOD; the planning file's citation of a ``0.6\% LOD in Layer 13'' does not match Layer 13, which gives 20\%.
+
+% =====================================================================
+\section{Reconciliation with the Planning File}
+\begin{table}[h]
+\centering\footnotesize
+\begin{tabular}{@{}p{3.0cm}p{3.5cm}p{3.9cm}p{4.7cm}@{}}
+\toprule
+Quantity & \texttt{contents.md} & This report & Reason \\
+\midrule
+ADC step (24 bit, $\pm$2.5 V, 100 k$\Omega$) & 3 nA; 48 nA at 20 ENOB & 3.0 pA; 47.7 pA & $10^3$ arithmetic slip \\
+Op-amp current noise & 5--20 fA/$\sqrt{\text{Hz}}$ & 100 fA/$\sqrt{\text{Hz}}$ & OPA2333 datasheet \\
+$e_n C_{\text{cell}}$ term & absent & 2.41 pA (dominant) & 26 nF source capacitance \\
+TIA $C_f$, bandwidth & 1--10 pF; 15.9 kHz & $\approx$109 pF; 1.46 kHz & source-capacitance stability \\
+$C_{dl}A$ for settling & 2 nF & 26 nF & 2 $\mu$F\,cm$^{-2}$ $\times$ 0.013 cm$^2$ \\
+$\tau_{\text{settle}}$; wait & 14 $\mu$s; $>$100 $\mu$s & 185 $\mu$s; $\ge$3.7 ms + $5\tau_{\text{relax}}$ & follows from $C$; floating-electrode step \\
+Charge injection & 10--100 pC (ADG1606) & 1.5 pC (TMUX1104) & part in schematic \\
+Noise per point (14.8) & 2.3 pA & 3.26 pA (sample); 4.61 pA (net) & 2.3 pA used 100 k$\Omega$ Johnson; net point $\times\sqrt2$; $B$ = 60 Hz \\
+$\sigma_{\text{area}}$ & 26.5 fA$\cdot$V (table: 2--5) & 67 (CR); 112 (pipeline) & table and text disagree by 10$\times$ \\
+SNR at $A_{\text{MB}}$ & 30,600 (0.81 nA$\cdot$V) & 2670 (0.3 nA$\cdot$V, pipeline); 12,000 at 0.81 nA$\cdot$V (CR) & noise and amplitude differences \\
+Mains shielded level & $<$0.1 nA (text) vs pA/$\sqrt{\text{Hz}}$ (table) & 10 pA tone & tone, not density \\
+Detune $f_{\text{SWV}}$ to avoid mains & suggested 45 Hz & 8$\times$ worse than 60 Hz & alias beat near peak width \\
+Microcontroller & PIC or similar & ATxmega256A3U & DStat paper \\
+\bottomrule
+\end{tabular}
+\caption{Corrections to the planning file.}\label{tab:recon}
+\end{table}
+
+% =====================================================================
+\section{Key Outputs}
+\begin{center}\small
+\begin{tabular}{@{}p{5.3cm}p{5.6cm}p{3.6cm}@{}}
+\toprule
+Output & Value & Feeds \\
+\midrule
+$\sigma_{\Delta I}$ per net SWV point & 4.61 pA (DStat, 1 M$\Omega$, 60 Hz); 22.6 pA (AD5940 case) & Layer 12 ($\sigma_{\text{noise}}$) \\
+$\sigma_{\text{area}}$ (MB, full pipeline) & 112 fA$\cdot$V = 0.037\% of 0.3 nA$\cdot$V & Layers 12, 13 \\
+Electronic $\sigma_{F_k}(0)$ & 0.065\% (1 pair), 0.033\% (4 pairs) & Layers 13, 15 \\
+SNR at $\Gamma_0$ & 2670 (DStat); 545 (AD5940 case) & LOD is not electronics-limited \\
+Minimum $\Gamma_0$ for electronic $\sigma_F < 1.7\%$ & 0.072 pmol\,cm$^{-2}$ (28$\times$ margin) & Layers 7, 9 \\
+$R_f$, $C_f$ & 1 M$\Omega$, $\approx$110 pF & Hardware spec \\
+Mux wait & $\ge 3.7$ ms + hold $5\tau_{\text{relax}}$ & Firmware spec \\
+Shielding & Closed grounded cage; $\approx$40 dB for $<$1\% at 60 Hz & Hardware spec \\
+$f_{\text{SWV}}$ & Avoid 45 Hz; 25 Hz (UK) synchronous if $k^0$ allows & Layers 10, 11 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Limitations}
+\begin{enumerate}[leftmargin=1.5em,itemsep=1pt,topsep=0pt]
+\item \textbf{Hardware is not fixed.} The ProteaSign schematic shows an AD5940, but the reference model is DStat. The AD5940 case uses placeholder amplifier noise, an approximate ADC span, and ignores its PGA and oversampling (pessimistic).
+\item \textbf{$e_n$ is treated as white} at its 1~kHz value; chopper ripple and the op-amp's noise gain at higher frequencies are not modelled.
+\item \textbf{Shot noise is an upper bound} because the background is capacitive charging current.
+\item \textbf{Signal amplitude is uncertain by up to two orders of magnitude.} Layer 13 uses $A_{\text{MB}}$ = 0.3~nA$\cdot$V; the planning file 0.81; Layer 11's Eq.~(V.5) as written evaluates to 10.8~$\mu$A at $\Gamma = 2\times10^{-10}$ (108~nA at $2\times10^{-12}$~mol\,cm$^{-2}$) against its quoted 0.27~$\mu$A.
+The SNR spans $4\times10^3$ to $2\times10^5$ over these choices, so the conclusion is robust, but $f_{\text{kin}}$ and $A_{\text{Fc}}$ need measurement.
+\item \textbf{Mains scenarios are assumed}, not measured: single sinusoid, no harmonics or magnetic pickup, idealised boxcar, 0.2~Hz detuning.
+\item \textbf{White, independent noise} is assumed between steps. Correlated drift, baseline-model error and other systematics are excluded, so the electronic $\sigma_F$ is a floor, not a prediction of the achieved $\sigma_F$.
+\item The electronic $\sigma_F$ assumes an intact control electrode ($\rho_c = 1$), $n_0 = 3$ baseline scans and no background cleavage.
+\item Floating-electrode reconnection saturates the TIA (42~$\mu$A against a 2.5~$\mu$A range); recovery time is unmodelled.
+\item Layer 11 Sec.~VI's residual capacitive current (2.4~pA) appears to be a unit slip for 2.4~nA when its own inputs are used; worth checking because this feeds the baseline.
+\end{enumerate}
+
+% =====================================================================
+\begin{thebibliography}{9}\small
+\bibitem{dstat} Dryden MDM, Wheeler AR (2015). DStat: a versatile, open-source potentiostat for electroanalysis and integration. \emph{PLoS ONE} 10(10):e0140349. DOI: 10.1371/journal.pone.0140349. -- microcontroller, 16-bit DAC, 24-bit sigma-delta ADC, TIA ranges, measured open-circuit noise, ADC-step limitation, mains rejection by filter zeros.
+\bibitem{opa} Texas Instruments. OPA333/OPA2333 1.8-V micropower CMOS operational amplifiers, zero-drift series, datasheet SBOS351. -- $e_n$ = 55 nV/$\sqrt{\text{Hz}}$ (1 kHz), $i_n$ = 100 fA/$\sqrt{\text{Hz}}$ (10 Hz), GBW 350 kHz.
+\bibitem{tmux} Texas Instruments. TMUX1104 5-V, low-leakage-current, 4:1 precision multiplexer, datasheet SCDS392. -- $R_{on}$ 2--2.5 $\Omega$, charge injection 1.5 pC, leakage 3 pA.
+\bibitem{ad5940} Analog Devices. AD5940/AD5941 high precision, impedance and electrochemical front end, datasheet. -- 16-bit 800 kSPS SAR ADC, 1.82 V reference, TIA current range 50 pA to 3 mA. (Only headline specifications were consulted.)
+\bibitem{sg} Savitzky A, Golay MJE (1964). Smoothing and differentiation of data by simplified least squares procedures. \emph{Anal Chem} 36:1627--1639. DOI: 10.1021/ac60214a047. -- as used in Layer 12; $\sum c_k^2$ recomputed numerically.
+\bibitem{hh} Horowitz P, Hill W. \emph{The Art of Electronics}, Ch.~8; and Bard AJ, Faulkner LR. \emph{Electrochemical Methods}, App.~A. -- cited by the planning file; \textbf{not consulted directly here}. The source-capacitance noise-gain term and the Schottky formula are standard results used from first principles.
+\end{thebibliography}
+
+\small Web-accessed sources (DStat, datasheets) should be saved as PDFs in \texttt{electrochemical\_device/papers/layer\_14/}, following the convention of earlier layers.
+
+\end{document}
