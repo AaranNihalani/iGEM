@@ -34,6 +34,7 @@
 \newcommand{\Fk}{F_k}
 \newcommand{\Grtot}{\Gamma_{\rm tot}}
 \newcommand{\Grred}{\Gamma_{\rm red}}
+\newcommand{\Grox}{\Gamma_{\rm ox}}
 \newcommand{\Greq}{\Gamma_{\rm eq}}
 \newcommand{\kzero}{k^0}
 \newcommand{\Esw}{E_{\rm sw}}
@@ -198,26 +199,118 @@ appreciably to the measured signal.
 \end{itemize}
 \end{assump}
 
-\subsection{Equation and parameters}
+\subsection{Derivation}
 
-Treating the tether as an FJC gives a distance distribution that peaks
-right at the PEG6 spacer length and falls off further out:
+\textbf{Chain statistics.} The peptide segment of the tether (SGKIPRTLTA,
+$N_{\rm res}=10$ residues) is treated as a freely-jointed chain (FJC): a
+sequence of $N_K$ independent, freely-orienting rigid (Kuhn) segments,
+the standard coarse-grained model for a flexible, unfolded polymer
+\cit{3}. For a polypeptide backbone, the contour length per residue is
+$l_0 \approx 0.38$~nm and the Kuhn length is $b \approx 0.76$~nm (two
+residues per Kuhn segment) \cit{3}, giving
+\begin{equation}
+  N_K = \frac{N_{\rm res}\,l_0}{b} = \frac{10 \times 0.38}{0.76} = 5
+  \ \text{Kuhn segments.}
+  \label{eq:NK}
+\end{equation}
+Because the $N_K$ segments are oriented independently and isotropically,
+the end-to-end vector $\mathbf{R}$ of the chain is a sum of $N_K$
+independent, identically distributed random vectors. By the central
+limit theorem, for $N_K \gg 1$ each Cartesian component of $\mathbf{R}$
+is approximately normally distributed with mean zero and variance
+\begin{equation}
+  \langle R^2\rangle = N_K b^2, \qquad
+  \sigma_i^2 = \frac{\langle R^2 \rangle}{3} \quad (i=x,y,z),
+  \label{eq:fjc_var}
+\end{equation}
+the factor of 3 arising because the total mean-square displacement is
+shared equally among the three Cartesian directions by isotropy.
+Numerically,
 \[
-  P(d) \propto \exp\!\left(-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right),
-  \qquad d \geq d_{\rm PEG}
+  \langle R^2 \rangle = N_K b^2 = 5\times(0.76~{\rm nm})^2 = 2.888~{\rm nm^2},
+  \qquad
+  \sigma_z = \sqrt{\langle R^2\rangle/3} = 0.981~{\rm nm},
 \]
-where $d_{\rm PEG} \approx 14$~\AA\ is set by the PEG6 spacer and
-$\sigma_z \approx 9.8$~\AA\ by the conformational flexibility of the
-peptide. The electron-transfer rate at the near boundary of this
-distribution is $\kzero_{\rm ref} \approx 127$~s$^{-1}$ \FLAG, subject to
-the same validation caveat as $P(d)$ above. At the confirmed operating
-frequency of 10--20~Hz \cit{12}, this corresponds to
-$\kappa_{\rm tip} = \kzero_{\rm ref}/(2f) = 6.4$ at 10~Hz or $3.2$ at
-20~Hz, both within the quasi-reversible regime (Part~\ref{sec:core}) in
-which the signal is largest, although the precise value depends on the
-frequency employed for a given scan. An earlier version of this report
-assumed 15~Hz, giving $\kappa_{\rm tip}=4.2$; this value has been
-superseded by the confirmed operating frequency.
+where $z$ is the coordinate normal to the gold surface, along which
+distance from the electrode is measured.
+
+\textbf{Reference point.} The peptide is not anchored directly to the
+gold; it is attached via a PEG6 spacer, treated as a second, independent
+FJC segment of 6 ethylene-oxide units ($l_{\rm EO}=0.35$~nm per unit,
+same Kuhn length $b=0.76$~nm), giving $n_{K,\rm PEG} =
+6\times0.35/0.76 = 2.76$ Kuhn segments. Because this spacer is short, its
+equilibrium extension is estimated using Flory's excluded-volume scaling
+law for a self-avoiding chain in a good solvent,
+\begin{equation}
+  R_F = n_K^{3/5}\,b,
+  \label{eq:flory}
+\end{equation}
+rather than the ideal-chain ($R\propto N^{1/2}$) result used for the
+longer, more nearly ideal peptide above. This gives $R_F =
+2.76^{3/5}\times0.76~{\rm nm} = 1.40$~nm, taken as the mean distance
+$d_{\rm PEG}$ of the PEG6 tip from the gold surface.
+
+\textbf{Resulting distribution.} The MB label sits at the tip of the
+peptide segment, itself rooted at the PEG6 tip at mean distance $d_{\rm
+PEG}$ from the gold. Since the gold surface is impenetrable, only
+configurations with $d \geq d_{\rm PEG}$ are physically accessible;
+folding the Gaussian distribution of the $z$-displacement (variance
+$\sigma_z^2$, Eq.~\eqref{eq:fjc_var}) onto this half-line and
+renormalising gives the half-Gaussian distance distribution
+\begin{equation}
+  P(d) = \sqrt{\frac{2}{\pi}}\,\frac{1}{\sigma_z}
+  \exp\!\left(-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right),
+  \qquad d \geq d_{\rm PEG},
+  \label{eq:Pd}
+\end{equation}
+with $d_{\rm PEG}=1.40$~nm and $\sigma_z=0.981$~nm as derived above. The
+prefactor $\sqrt{2/\pi}$ restores $\int_{d_{\rm PEG}}^{\infty}
+P(d)\,{\rm d}d = 1$, since an unrestricted Gaussian of standard deviation
+$\sigma_z$ has exactly half its area on each side of its mean.
+
+\textbf{Electron-transfer rate versus distance.} MB undergoes
+non-adiabatic electron transfer with the gold electrode by
+quantum-mechanical tunnelling through the intervening tether. Marcus
+theory predicts that the electronic coupling element, and hence the
+standard rate constant $\kzero$, decays exponentially with tunnelling
+distance \cit{9,10}:
+\begin{equation}
+  \kzero(d) = \kzero(0)\,e^{-\beta d},
+  \label{eq:k0d}
+\end{equation}
+where $\beta$ is the tunnelling decay constant of the intervening medium
+and $\kzero(0)$ is the (extrapolated, not physically attainable) rate at
+zero distance. For alkanethiol-tethered ferrocene and methylene blue,
+$\beta = 1.0$~\AA$^{-1} = 10$~nm$^{-1}$ is a confirmed literature value
+\cit{4}; no PEG-specific value for $\beta$ exists in the papers consulted
+for this report, so the alkanethiol value is used as a placeholder
+\FLAG. Dauphin-Ducharme (2017) \cit{1} report $\kzero(0) =
+1.5\times10^8$~s$^{-1}$ for MB directly at the electrode (their
+Figure~4 extrapolation). Evaluating Eq.~\eqref{eq:k0d} at the PEG6 tip,
+$d=d_{\rm PEG}=1.40$~nm, gives the reference rate used throughout this
+report:
+\begin{equation}
+  \kzero_{\rm ref} = \kzero(d_{\rm PEG}) = 1.5\times10^8 \times
+  e^{-10\times1.40} = 127~{\rm s^{-1}} \quad \FLAG.
+  \label{eq:k0ref}
+\end{equation}
+Because $\kzero(d)$ falls by roughly an order of magnitude for every
+$\sim$2.3~\AA\ of additional distance, MB labels only slightly further
+from the PEG6 tip than average contribute negligibly to the measured
+signal, even though such distances are not rare under $P(d)$; this is
+the origin of the "near probes dominate" behaviour shown in
+Figure~\ref{fig:geom}B.
+
+\subsection{Operating point}
+
+At the confirmed operating frequency of 10--20~Hz \cit{12}, Eq.~\eqref{eq:k0ref}
+corresponds to $\kappa_{\rm tip} = \kzero_{\rm ref}/(2f) = 6.4$ at 10~Hz
+or $3.2$ at 20~Hz, both within the quasi-reversible regime
+(Part~\ref{sec:core}) in which the signal is largest, although the
+precise value depends on the frequency employed for a given scan. An
+earlier version of this report assumed 15~Hz, giving $\kappa_{\rm
+tip}=4.2$; this value has been superseded by the confirmed operating
+frequency.
 
 \subsection{Result}
 
@@ -284,13 +377,12 @@ ends, and the forward and backward currents cancel, again yielding a weak
 signal. The largest net signal therefore occurs at intermediate pulse
 durations, where the coverage advances partway towards equilibrium within
 each pulse; this accounts for the existence of an optimal scan frequency
-(Figure~\ref{fig:geom}D).
-
-Integrating this result over the full potential range, and summing the
-contribution of every MB label over the distance distribution $P(d)$
-(Part~\ref{sec:geom}), yields the predicted voltammogram $\DI(E)$: a peak
-centred near the MB formal potential, whose amplitude scales with the
-quantity of intact probe remaining on the electrode:
+(Figure~\ref{fig:geom}D). Integrating this result over the full potential
+range, and summing the contribution of every MB label over the distance
+distribution $P(d)$ (Part~\ref{sec:geom}), yields the predicted
+voltammogram $\DI(E)$: a peak centred near the MB formal potential, whose
+amplitude scales with the quantity of intact probe remaining on the
+electrode:
 \begin{equation}
   \DI(E;\Fk) \;\propto\; (1-\Fk)\,\Grtot
   \label{eq:DI_Fk}
@@ -299,7 +391,101 @@ where $\Fk$ denotes the fraction of probe cleaved by MMP-9. This
 proportionality was verified numerically and holds to within 2\% across
 the full range of $\Fk$: the peak amplitude decreases in direct proportion
 to the cleavage fraction, while its position and width remain
-approximately constant.
+approximately constant. The full derivation of Eqs.~\eqref{eq:ode}--\eqref{eq:DI_Fk}
+follows below.
+
+\subsection{Derivation}
+
+\textbf{Butler-Volmer rate constants.} For the one-electron-transfer step
+between the oxidised and reduced forms of a surface-confined redox
+couple, the Butler-Volmer model gives forward (reduction) and backward
+(oxidation) first-order rate constants
+\begin{equation}
+  k_f(E) = \kzero\exp\!\left[-\alpha \frac{n_e F(E-E^{0\prime})}{RT}\right],
+  \qquad
+  k_b(E) = \kzero\exp\!\left[(1-\alpha) \frac{n_e F(E-E^{0\prime})}{RT}\right],
+  \label{eq:bv_rates}
+\end{equation}
+where $\kzero$ is the standard (potential-independent) rate constant at
+the formal potential $E^{0\prime}$, $\alpha$ is the transfer coefficient
+($\alpha=0.37$ for MB \cit{1}), $n_e$ is the number of electrons
+transferred ($n_e=2$ for MB \cit{6}), and $E-E^{0\prime}$ is the
+overpotential. As $E$ moves positive of $E^{0\prime}$, $k_f$ decreases
+and $k_b$ increases, driving the couple towards the oxidised state, and
+vice versa.
+
+\textbf{Governing equation.} Let $\Grred(t)$ denote the surface coverage
+(mol~cm$^{-2}$) of reduced MB at time $t$, with total coverage
+$\Grtot=\Grred+\Grox$ conserved. The rate of interconversion is
+\begin{equation}
+  \frac{d\Grred}{dt} = k_f\,\Grox - k_b\,\Grred
+  = k_f\,(\Grtot-\Grred) - k_b\,\Grred = k_f\Grtot - (k_f+k_b)\Grred,
+  \label{eq:ode_full}
+\end{equation}
+which is Eq.~\eqref{eq:ode} written out. Because $E$, and therefore
+$k_f$ and $k_b$, is held fixed within a single SWV half-pulse
+(Part~\ref{sec:wave}), Eq.~\eqref{eq:ode_full} is a linear, first-order
+ODE with constant coefficients over that interval, and is exactly
+solvable.
+
+\textbf{Solution by integrating factor.} Writing $K \equiv k_f+k_b$,
+Eq.~\eqref{eq:ode_full} reads $\dot{\Grred} + K\Grred = k_f\Grtot$.
+Multiplying by the integrating factor $e^{Kt}$,
+\[
+  \frac{d}{dt}\left(\Grred\,e^{Kt}\right) = k_f\Grtot\,e^{Kt}.
+\]
+Integrating from $0$ to $\tau$ and dividing through by $e^{K\tau}$,
+\[
+  \Grred(\tau) = \Grred(0)\,e^{-K\tau}
+  + \frac{k_f\Grtot}{K}\left(1-e^{-K\tau}\right)
+  = \frac{k_f}{K}\Grtot + \left[\Grred(0) - \frac{k_f}{K}\Grtot\right]e^{-K\tau}.
+\]
+Identifying the equilibrium coverage $\Greq \equiv (k_f/K)\Grtot$, the
+coverage the system would reach at fixed $E$ as $\tau\to\infty$,
+recovers the closed-form result already stated as Eq.~\eqref{eq:soln}:
+\[
+  \Grred(\tau) = \Greq + [\Grred(0)-\Greq]\,e^{-(k_f+k_b)\tau}.
+\]
+
+\textbf{Current and the SWV waveform.} The measured current is
+proportional to the net rate of charge transfer,
+$I = n_eFA\,[k_b\Grred(\tau) - k_f\Grox(\tau)]$ (anodic-positive
+convention). Each SWV cycle at staircase potential $E_{\rm step}$
+consists of a forward half-pulse at $E_{\rm step}+\Esw$ of duration
+$\tau=1/(2f)$, followed immediately by a reverse half-pulse at
+$E_{\rm step}-\Esw$ of the same duration, with $\Grred$ carried
+continuously from the end of one half-pulse into the start of the next
+(Eq.~\eqref{eq:soln} applied twice in succession, not independently).
+The net SWV current at each step is the difference of the two sampled
+currents,
+\begin{equation}
+  \DI(E_{\rm step}) = I_{\rm fwd} - I_{\rm rev},
+  \label{eq:DI_step}
+\end{equation}
+evaluated after the simulator has been run through several full cycles
+at the initial potential to reach the periodic steady state, so that the
+reported $\DI$ is independent of the (arbitrary) initial condition
+$\Grred(0)$.
+
+\textbf{Averaging over the probe population.} Eqs.~\eqref{eq:soln}--\eqref{eq:DI_step}
+give the voltammogram for a single MB label at a fixed distance $d$ from
+the electrode, entering only through $\kzero=\kzero(d)$
+(Eq.~\eqref{eq:k0d}, Part~\ref{sec:geom}). Since different labels sit at
+different distances according to $P(d)$ (Eq.~\eqref{eq:Pd}), the total
+measured current is the coverage-weighted average over the distribution:
+\begin{equation}
+  \DI(E;\Fk) = (1-\Fk)\,\Grtot\,A \int_{d_{\rm PEG}}^{d_{\rm max}}
+  P(d)\,\DI_{\rm norm}\bigl(E; \kzero(d)\bigr)\,{\rm d}d,
+  \label{eq:dist_avg}
+\end{equation}
+where $\DI_{\rm norm}$ is Eq.~\eqref{eq:DI_step} evaluated per unit
+coverage and unit area, the factor $(1-\Fk)$ scales the total quantity
+of intact (uncleaved) probe remaining on the electrode, and the integral
+is evaluated numerically by quadrature (80 points, Figure~\ref{fig:ratio}D)
+since Eq.~\eqref{eq:DI_step} has no closed form in $d$. Equation~\eqref{eq:DI_Fk}
+is the empirical statement that, to within 2\%, Eq.~\eqref{eq:dist_avg}
+factorises as a peak shape independent of $\Fk$ multiplied by the scalar
+prefactor $(1-\Fk)\Grtot$.
 
 \subsection{Results}
 
@@ -348,10 +534,36 @@ reading both source publications in full.
 
 \textbf{Laviron (1979) \cit{2}.} The full-width-at-half-maximum (FWHM)
 expression used throughout this report is Laviron's closed-form analytic
-result (Equation~6 of that work, $|\Psi|=\eta/(1+\eta)^2$, with
-mid-height width $90.6/n$ at 25\textdegree C), giving
-$3.53\,RT/(n_eF) = 45.3$~mV at $n_e=2$. This expression is used here
-exactly as published and is not re-derived from the present simulator. Agreement between the
+result (Equation~6 of that work), the reversible-limit peak shape
+\begin{equation}
+  |\Psi(\eta)| = \frac{\eta}{(1+\eta)^2}, \qquad
+  \eta \equiv \exp\!\left[\frac{n_e F(E-E^{0\prime})}{RT}\right] \equiv e^{\xi}.
+  \label{eq:laviron_psi}
+\end{equation}
+\textit{Derivation of the FWHM.} The peak of Eq.~\eqref{eq:laviron_psi}
+is found by setting $d|\Psi|/d\eta=0$:
+$(1+\eta)^2 - \eta\cdot2(1+\eta) = 0 \;\Rightarrow\; (1+\eta)-2\eta=0
+\;\Rightarrow\; \eta=1$, giving $|\Psi|_{\rm max}=1/4$. The half-maximum
+points satisfy $\eta/(1+\eta)^2 = 1/8$, i.e.\ $8\eta = (1+\eta)^2$, a
+quadratic in $\eta$:
+\[
+  \eta^2 - 6\eta + 1 = 0
+  \;\Longrightarrow\;
+  \eta_\pm = 3\pm2\sqrt{2}.
+\]
+Since $(3+2\sqrt2)(3-2\sqrt2)=9-8=1$, the two roots are reciprocal, so
+$\xi_\pm=\ln\eta_\pm=\pm\ln(3+2\sqrt2)$ and the width in $\xi$ is
+$\Delta\xi = 2\ln(3+2\sqrt2) = 3.525$. Converting back to potential via
+$\xi=n_eF(E-E^{0\prime})/RT$,
+\begin{equation}
+  \mathrm{FWHM} = \Delta\xi\,\frac{RT}{n_eF}
+  = \frac{2\ln(3+2\sqrt2)\,RT}{n_eF}
+  \approx \frac{3.53\,RT}{n_eF} = \frac{90.6}{n_e}~\text{mV at }25^\circ\text{C},
+  \label{eq:fwhm}
+\end{equation}
+giving $45.3$~mV at $n_e=2$, the value used throughout this report. This
+expression is used here exactly as published and is not re-derived from
+the present simulator. Agreement between the
 simulator and the full \emph{shape} of the Laviron curve has not been
 established. Such agreement is not, in general, expected: the Laviron
 expression describes an idealised, continuously-swept system at
@@ -597,15 +809,32 @@ cleavage fraction follows simple first-order kinetics.
 \end{itemize}
 \end{assump}
 
-\subsection{Equation and parameters}
+\subsection{Derivation and parameters}
 
+With MMP-9 in large excess (Assumptions above), its concentration
+$[\text{MMP-9}]$ is effectively constant over the incubation, so the
+depletion of intact surface probe $\Grtot^{\rm intact}(t)$ follows
+first-order kinetics in the probe itself:
+\[
+  \frac{d\Grtot^{\rm intact}}{dt} = -k_{\rm eff}\,[\text{MMP-9}]\,\Grtot^{\rm intact},
+  \qquad k_{\rm eff} = \eta \times (k_{\rm cat}/K_m)_{\rm sol},
+\]
+where $(k_{\rm cat}/K_m)_{\rm sol}$ is the measured solution-phase
+second-order cleavage rate constant and $\eta$ is a surface correction
+factor (Assumptions above). This is separable and integrates directly:
+\[
+  \Grtot^{\rm intact}(T) = \Grtot^{\rm intact}(0)\,
+  e^{-k_{\rm eff}\,[\text{MMP-9}]\,T}.
+\]
+Since $\Fk \equiv 1 - \Grtot^{\rm intact}(T)/\Grtot^{\rm intact}(0)$ by
+definition, this gives the cleavage fraction directly:
 \begin{equation}
   \Fk(T) = 1 - e^{-k_{\rm eff}\,[\text{MMP-9}]\,T}
   \label{eq:Fk_kin}
 \end{equation}
-where $k_{\rm eff} = \eta \times (k_{\rm cat}/K_m)_{\rm sol}$, and
-$(k_{\rm cat}/K_m)_{\rm sol} = 67{,}500$~M$^{-1}$s$^{-1}$ is the measured
-solution-phase cleavage rate for this exact peptide \cit{7} \CONF.
+where $(k_{\rm cat}/K_m)_{\rm sol} = 67{,}500$~M$^{-1}$s$^{-1}$ is the
+measured solution-phase cleavage rate for this exact peptide \cit{7}
+\CONF.
 
 \subsection{Results}
 
