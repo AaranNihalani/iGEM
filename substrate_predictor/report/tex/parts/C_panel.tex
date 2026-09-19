@@ -55,38 +55,13 @@ M_t(w;\mathcal{P})=u_t(w)-\max_{j\in\mathcal{P}\setminus\{t\}}u_j(w)\ \in[-1,1].
 \end{equation}
 A margin near $+1$ indicates a window in the extreme tail for the target and
 near the bulk for every competitor; a margin near $0$ indicates that some
-competitor recognises the window as strongly as the target.
+competitor recognises the window as strongly as the target. Because each percentile is uniform on $[0,1]$ under the null by construction, percentiles are directly comparable across models.
 
 Sensor cores are often shorter than eight residues around the bond, leaving
-some positions unknown. Both scorers are additive over positions, which permits
-an exact treatment. For the logit, an unknown position contributes its training
-mean ($z_{id}=0$); for the PSSM it contributes the background expectation
-$\sum_a g(a)\log_2\bigl(p_i(a)/g(a)\bigr)$. Percentiles of such a window are taken
+some positions unknown. Both scorers are additive over positions, so an unknown position contributes
+its training mean to the logit and its background-expected log-odds to the PSSM. Percentiles of such a window are taken
 against a null computed with the same positions masked, so that the window is
 compared with equally uninformed random windows.
-
-\subsection{Derivation}
-
-\textbf{Comparability of percentiles.} Let $S$ have a continuous distribution
-function $F$. Then $\Prob(F(S)\le u)=\Prob(S\le F^{-1}(u))=u$, so
-$F(S)\sim\mathrm{Uniform}(0,1)$. Setting $F$ to each protease's own null
-distribution makes every percentile uniform on $[0,1]$ under the null: a
-percentile of $0.99$ signifies that $1\%$ of random windows score higher,
-irrespective of the raw scale of the model. For any strictly increasing $g$,
-$F_{g(S)}(g(s))=F_S(s)$, so a percentile does not depend on the monotone form of
-the score (logit against probability, for instance).
-
-\textbf{Unknown positions.} Let the logit be $L(\bm z)=b+\sum_i\bm\beta_i^{\top}\bm z_i$.
-If the block $\bm z_j$ of an unknown position is random with mean $\bm 0$ and
-independent of the rest, then $\E[L]=b+\sum_{i\ne j}\bm\beta_i^{\top}\bm z_i$, which
-is $L$ with $\bm z_j=\bm0$. The identity is exact for the logit and does not
-hold for $\sigma(L)$, which is why the imputation is applied to the logit. For
-the PSSM the expected contribution of position $j$ under the background is
-\begin{equation}
-\sum_a g(a)\log_2\frac{p_j(a)}{g(a)}=-D_{\mathrm{KL}}(g\,\|\,p_j)\le0,
-\end{equation}
-so an unknown position lowers the score by an amount that grows with the
-information carried by that position.
 
 \subsection{Parameters}
 

@@ -19,8 +19,8 @@ second is the property a multiplexed sensor requires, and it is the harder one.
 \begin{itemize}[leftmargin=*,noitemsep]
 \item \textbf{Label noise can only lower AUROC.} If a fraction $\pi$ of the
   negatives are hidden positives, the measured AUROC is
-  $(1-\pi)\,\mathrm{AUROC}_{\text{true}}+\tfrac12\pi$ (derivation below)
-  \CONF.
+  $(1-\pi)\,\mathrm{AUROC}_{\text{true}}+\tfrac12\pi$, at most $1-\pi/2$ even for
+  a perfect model \CONF.
 \item \textbf{Clusters at Hamming distance $2$ capture the dependence between
   windows.} Dependence at greater distance, for example homologous proteins,
   is not modelled \FLAG.
@@ -36,11 +36,7 @@ second is the property a multiplexed sensor requires, and it is the harder one.
 \subsection{Design}
 
 \textbf{Cluster-aware folds.} Clusters are the connected components of the
-Hamming-distance-$\le2$ graph over all training windows. They are found exactly
-by a pigeonhole argument: partition the eight positions into blocks
-$\{1,2,3\}$, $\{4,5,6\}$ and $\{7,8\}$; two windows differing at no more than two
-positions must agree exactly on at least one block, so only windows that share a
-block need be compared, and connected components follow by union--find. Folds
+Hamming-distance-$\le2$ graph over all training windows. Folds
 are drawn by stratified group $5$-fold cross-validation over clusters, so that no
 cluster straddles a train/test boundary and each fold preserves the class
 ratio. All metrics are computed on out-of-fold predictions pooled across folds.
@@ -62,19 +58,6 @@ and expected calibration error (ECE) describe agreement between score and
 outcome under the training prior. Intervals are $95\%$ cluster-bootstrap
 intervals ($500$ replicates); for model comparisons the same resampled clusters
 are used for both models (paired cluster bootstrap, $400$ replicates).
-
-\subsection{Derivation}
-
-\textbf{Label contamination.} Suppose a negative is, with probability $\pi$, a
-hidden positive drawn from the labelled-positive distribution and otherwise a
-true negative. For a fixed continuous scorer,
-\begin{equation}
-\mathrm{AUROC}_{\text{measured}}=(1-\pi)\Prob(S^{+}>S^{-}_{\text{true}})+\pi\,\Prob(S^{+}>S^{+\prime})=(1-\pi)\,\mathrm{AUROC}_{\text{true}}+\tfrac12\pi,
-\label{eq:contam}
-\end{equation}
-since two independent draws from one continuous distribution are ordered either
-way with probability $\tfrac12$. Contamination can only lower AUROC, and the
-measured value is at most $1-\pi/2$ even for a perfect scorer.
 
 \subsection{Results: detection performance}
 
@@ -265,10 +248,8 @@ MMP-2 ($0.57$) \CONF.
   \label{fig:selmat}
 \end{figure}
 
-A low competitor AUROC does not by itself indicate a poor model. By
-Eq.~\eqref{eq:contam}, if a fraction $\pi$ of a competitor's substrates are also
-cleaved by the target, the measured AUROC is at most $1-\pi/2$ for a perfect
-model. Exact-window overlap between protease positive sets is small, but the MMPs
+A low competitor AUROC does not by itself indicate a poor model. If a fraction $\pi$ of a competitor's substrates are also cleaved by the target,
+the measured AUROC is at most $1-\pi/2$ for a perfect model. Exact-window overlap between protease positive sets is small, but the MMPs
 share their dominant preferences \cit{1}, so many competitor windows are
 plausibly cleaved by the target as well; the ceiling for MMP-against-MMP AUROC is
 therefore below $1$ by an amount that sequence data alone cannot measure

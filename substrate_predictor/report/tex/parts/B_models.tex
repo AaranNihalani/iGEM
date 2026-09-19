@@ -69,31 +69,7 @@ Q_i=(1-\epsilon)\,q_i+\epsilon\,g,\qquad p_i(a)=\frac{n\,f_i(a)+\beta\,Q_i(a)}{n
 This is a heuristic pseudocount scheme rather than the block-based estimator
 from which BLOSUM62 itself derives \cit{7}. Position $i$ carries
 $\mathrm{IC}_i=\sum_a p_i(a)\log_2\bigl(p_i(a)/g(a)\bigr)$ bits, which sets the letter
-heights in Figure~\ref{fig:logos}.
-
-\subsection{Derivation}
-
-\textbf{Meaning of the balanced weights.} Equal total weight on the two
-classes is equivalent to fitting the posterior under a $50{:}50$ prior. If
-$\rho=p_{\mathrm{bal}}/(1-p_{\mathrm{bal}})$ is the fitted odds, the odds under
-the actual $1{:}3$ training mixture are $\rho/3$, so
-$p_{\mathrm{mix}}=p_{\mathrm{bal}}/(3-2p_{\mathrm{bal}})$. Neither quantity is
-the probability that a random window is cleaved, which is far smaller. The
-logistic-regression score is therefore reported as a ranking only.
-
-\textbf{Expressive capacity of the encoding.} A linear model on $\bm x$ gives
-at each position an effect $c_i^{\top}\varphi(w_i)$, a linear combination of
-the eight columns of the descriptor matrix $\Phi\in\R^{20\times8}$. Together
-with a constant this confines each position's twenty-dimensional effect vector
-to a subspace of dimension $\operatorname{rank}[\Phi,\bm1]=9$, whereas a
-one-hot encoding leaves $19$ free parameters per position. For a centred PSSM
-log-odds vector $\bm v\in\R^{20}$ and $P$ the orthogonal projector onto
-$\operatorname{span}[\Phi,\bm1]$, the fraction of variance expressible by the
-encoding is $R^2=1-\|(\bm I-P)\bm v\|^2/\|\bm v\|^2$. Averaged over positions
-with weights $\|\bm v\|^2$ it lies between $\subspaceMin\%$ and $\subspaceMax\%$
-across the proteases (table in Part~\ref{sec:eval}). The reduction from $19$ to
-$8$ parameters per position is the variance benefit; the unexpressed remainder
-is bias.
+heights in Figure~\ref{fig:logos}. Balanced class weights fit the posterior under a $50{:}50$ prior, so the logistic-regression score ranks windows but is not the probability that a window is cleaved. A linear model on the VHSE features can express only $\subspaceMin$--$\subspaceMax\%$ of the position-specific variation that a one-hot encoding can, which is the price of having $8$ instead of $19$ parameters per position.
 
 \subsection{Parameters}
 
