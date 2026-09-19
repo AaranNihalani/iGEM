@@ -26,6 +26,7 @@ fi
 echo "Regenerating tables ..."
 python "$REPORTS_DIR/make_tables.py" > /dev/null
 
+cd "$TEX_DIR"
 echo "Compiling $NAME (pass 1)..."
 pdflatex -interaction=nonstopmode -output-directory "$TEX_DIR" "$TEX_FILE" > /dev/null
 echo "Compiling $NAME (pass 2, cross-refs)..."

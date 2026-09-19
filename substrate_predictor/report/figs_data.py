@@ -40,7 +40,7 @@ def fig_logos():
     fig, axes = plt.subplots(len(ORDER), 1, figsize=(6.4, 1.32 * len(ORDER)))
     for ax, pid in zip(axes, ORDER):
         logo(ax, MODELS[pid].log_odds)
-        ax.text(-0.075, 0.5, f"{SHORT[pid]}\n(n={MODELS[pid].meta['n_pos']:,})", transform=ax.transAxes, ha="right", va="center",
+        ax.text(-0.13, 0.5, f"{SHORT[pid]}\n(n={MODELS[pid].meta['n_pos']:,})", transform=ax.transAxes, ha="right", va="center",
                 fontsize=8.5, fontweight="bold", color=COL[pid])
         if pid != ORDER[-1]:
             ax.set_xticklabels([])

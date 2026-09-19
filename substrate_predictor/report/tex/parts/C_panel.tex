@@ -1,0 +1,107 @@
+%=======================================================================
+\section{Part C: Percentile Scale and Panel Selectivity}
+\label{sec:panel}
+
+\subsection{Overview}
+
+Independently trained models produce scores on different scales: their logits
+and PSSM scores depend on the positives and negatives each was given. A
+selectivity measure built from raw scores, such as the ratio of the target's
+probability to the largest competitor probability, therefore reflects the
+training sets rather than the peptide. The mean logistic-regression score on
+random windows ranges from $0.11$ (faecal group) to $0.35$ (MMP-14) across the
+final models (Part~\ref{sec:eval}), which is sufficient to make such a ratio
+uninformative. Each score is instead expressed as a percentile of a common
+background distribution, and selectivity is defined on percentiles.
+
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{Random Swiss-Prot windows represent the non-substrate
+  background.} The percentile of a window is the fraction of random windows
+  that score below it. Some random windows may be true substrates, which lowers
+  percentiles slightly \FLAG.
+\item \textbf{The harmonic-mean consensus is a suitable combination.} It is
+  high only when the logistic regression and the PSSM agree. It was reasoned,
+  not tuned, and has not been validated against a selectivity ground truth
+  \FLAG.
+\item \textbf{The margin is defined relative to a chosen panel.} Adding or
+  removing a competitor changes the margin by construction \CONF.
+\item \textbf{The percentile scale saturates at $10^{-3}$.} The null is stored
+  as a $1{,}001$-point quantile grid \CONF.
+\end{itemize}
+\end{assump}
+
+\subsection{Equations}
+
+For protease $k$ let $F_k^{\mathrm{LR}}$ and $F_k^{\mathrm{PSSM}}$ be the
+distribution functions of its logistic-regression score and PSSM score over
+random background windows. The percentile scores are
+\begin{equation}
+u_k^{\mathrm{LR}}(w)=F_k^{\mathrm{LR}}\bigl(s_k^{\mathrm{LR}}(w)\bigr),\qquad
+u_k^{\mathrm{PSSM}}(w)=F_k^{\mathrm{PSSM}}\bigl(s_k^{\mathrm{PSSM}}(w)\bigr),
+\label{eq:pct}
+\end{equation}
+and their harmonic mean is the consensus
+\begin{equation}
+u_k(w)=\frac{2\,u_k^{\mathrm{LR}}(w)\,u_k^{\mathrm{PSSM}}(w)}{u_k^{\mathrm{LR}}(w)+u_k^{\mathrm{PSSM}}(w)}.
+\label{eq:cons}
+\end{equation}
+For a target $t$ in a panel $\mathcal{P}$ the specificity margin is
+\begin{equation}
+M_t(w;\mathcal{P})=u_t(w)-\max_{j\in\mathcal{P}\setminus\{t\}}u_j(w)\ \in[-1,1].
+\label{eq:margin}
+\end{equation}
+A margin near $+1$ indicates a window in the extreme tail for the target and
+near the bulk for every competitor; a margin near $0$ indicates that some
+competitor recognises the window as strongly as the target.
+
+Sensor cores are often shorter than eight residues around the bond, leaving
+some positions unknown. Both scorers are additive over positions, which permits
+an exact treatment. For the logit, an unknown position contributes its training
+mean ($z_{id}=0$); for the PSSM it contributes the background expectation
+$\sum_a g(a)\log_2\bigl(p_i(a)/g(a)\bigr)$. Percentiles of such a window are taken
+against a null computed with the same positions masked, so that the window is
+compared with equally uninformed random windows.
+
+\subsection{Derivation}
+
+\textbf{Comparability of percentiles.} Let $S$ have a continuous distribution
+function $F$. Then $\Prob(F(S)\le u)=\Prob(S\le F^{-1}(u))=u$, so
+$F(S)\sim\mathrm{Uniform}(0,1)$. Setting $F$ to each protease's own null
+distribution makes every percentile uniform on $[0,1]$ under the null: a
+percentile of $0.99$ signifies that $1\%$ of random windows score higher,
+irrespective of the raw scale of the model. For any strictly increasing $g$,
+$F_{g(S)}(g(s))=F_S(s)$, so a percentile does not depend on the monotone form of
+the score (logit against probability, for instance).
+
+\textbf{Properties of the consensus.} The harmonic mean
+$H(a,b)=2ab/(a+b)$ satisfies $\min(a,b)\le H(a,b)\le\tfrac12(a+b)$ and equals $1$
+only when $a=b=1$, so the consensus is high only when both percentiles are.
+
+\textbf{Unknown positions.} Let the logit be $L(\bm z)=b+\sum_i\bm\beta_i^{\top}\bm z_i$.
+If the block $\bm z_j$ of an unknown position is random with mean $\bm 0$ and
+independent of the rest, then $\E[L]=b+\sum_{i\ne j}\bm\beta_i^{\top}\bm z_i$, which
+is $L$ with $\bm z_j=\bm0$. The identity is exact for the logit and does not
+hold for $\sigma(L)$, which is why the imputation is applied to the logit. For
+the PSSM the expected contribution of position $j$ under the background is
+\begin{equation}
+\sum_a g(a)\log_2\frac{p_j(a)}{g(a)}=-D_{\mathrm{KL}}(g\,\|\,p_j)\le0,
+\end{equation}
+so an unknown position lowers the score by an amount that grows with the
+information carried by that position.
+
+\subsection{Parameters}
+
+The null for full windows uses $100{,}000$ random windows, stored as a
+$1{,}001$-point quantile grid and interpolated linearly. The null for gapped
+windows uses $20{,}000$ random windows per gap pattern. Random windows are drawn
+from the Swiss-Prot composition \cit{9}.
+
+\subsection{Result}
+
+Percentile scores place every protease on one scale and permit a panel-level
+margin. Under the null the percentile is uniform by construction; on held-out
+positives it concentrates near the top of the scale for every protease
+(Part~\ref{sec:eval}).

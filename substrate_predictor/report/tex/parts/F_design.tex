@@ -1,0 +1,136 @@
+%=======================================================================
+\section{Part F: Application to Sensor Candidate Design}
+\label{sec:design}
+
+\subsection{Overview}
+
+The candidate design analysis defines sensor cores as short motifs and scores
+them as eight-residue windows. Three of the four cores, PRSLSGLK, PLGLAGQS and
+PLGVALAA, are motifs whose scissile bond lies after the third residue
+(Pro-Arg-Ser$\downarrow$Leu and Pro-Leu-Gly$\downarrow$Leu, with $\pos{3}=\mathrm{Pro}$
+and $\prm{1}=\mathrm{Leu}$, matching the consensus of Kridel et al.\ \cit{1}).
+Read as a P4--P4$'$ window, whose bond follows the fourth character, every
+residue is displaced by one position from its intended subsite: for PRSLSGLK the
+window has $\pos{2}=\mathrm{S}$ and $\prm{1}=\mathrm{S}$ in place of
+$\pos{2}=\mathrm{R}$ and $\prm{1}=\mathrm{L}$. The design plan itself states the
+intended features as $\pos{2}=\mathrm{Arg}$, $\prm{1}=\mathrm{Leu}$,
+$\prm{2}=\mathrm{Ser}$, which the displaced window does not encode.
+
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{The scissile bond of each core lies where its motif places it.}
+  After the third residue for the Pro-X-X$\downarrow$Leu cores and after the
+  fourth for AAPV$\downarrow$SGIG \FLAG.
+\item \textbf{Device constraints are those of the design filter.} No Cys
+  (reserved for the gold-thiol anchor), no Trp (electroactive near the methylene
+  blue window), net charge $-1$ to $+2$, no Pro-Pro, core mass $600$--$1100$~Da.
+  These are team design rules, not model output \CONF.
+\item \textbf{Optimised sequences extrapolate.} Candidates selected from a
+  random pool lie far from any training window, where neither the models nor
+  their percentile scales have been checked \FLAG.
+\end{itemize}
+\end{assump}
+
+\subsection{Equations}
+
+Each candidate carries the position after which its bond lies and is scored as a
+gapped window (Part~\ref{sec:panel}): unknown positions (the $\pos{4}$ of the
+three cores, and any residue beyond $\prm{4}$) are marginalised as described
+there, and percentiles use a null with the same positions masked. The
+specificity margin is Eq.~\eqref{eq:margin}.
+
+\subsection{Results: effect of the alignment correction}
+
+The model responded correctly to the displaced input: PRSLSGLK scored at the
+$7$th percentile for MMP-9. Scored as the gapped window \texttt{-PRSLSGL} with
+the bond after the third residue, it scores at the $100$th percentile, and at
+the top for MMP-2 and MMP-8 as well. The correction also changes a design
+conclusion. The $3\times3$ specificity matrix of the MMP-2/MMP-9/NE design
+analysis has condition number $61.7$ with the displaced windows (poorly
+conditioned; pivot to a two-plex, by the analysis's own rule) and $16.1$ with
+the corrected windows (marginal). The corrected matrix still shows that the
+MMP-2 and MMP-9 candidates are not separable by score, as the selectivity
+results of Part~\ref{sec:eval} predict \CONF.
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.25}
+\input{../tables/design_candidates}
+\end{center}
+
+The table gives the candidates scored in the MMP-2/MMP-9/NE panel with correctly
+aligned, gapped windows; the pool percentile is that of the margin within the
+PSSM top-3 enumeration pool for the target, with the same gap pattern.
+
+\subsection{Results: candidate landscape in the wound panel}
+
+The figure and table below rank candidates in the five-protease wound panel
+(MMP-2, MMP-8, MMP-9, NE, LasB). The pool combines $150{,}000$ random windows with
+the PSSM top-3 enumerations of each target, filtered by the device constraints.
+
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{The best-scoring sequences are model optima, not
+  recommendations.} They are extreme points of a search over a random pool and
+  are hypotheses for wet-lab testing.
+\item \textbf{The MMP-family reference cores have margin near zero.} The
+  corrected MMP-9 cores (\texttt{IPRTLTA-} and \texttt{-PRSLSGL}) score at the top
+  for MMP-2, MMP-8 and MMP-9 alike, so no selectivity among MMPs is predicted.
+  Kridel et al.\ found A11 to be $2.9$-fold and $9.6$-fold more active on MMP-9
+  than on MMP-13 and MMP-7 \cit{1}; neither is in the panel, so this cannot be
+  tested here.
+\item \textbf{The panel changes the answer.} AAPVSGIG has margin $+0.51$ in the
+  three-protease panel and $0.00$ in the wound panel, because the LasB model,
+  trained largely on Gly/Ala/Pro-rich elastin sequence, scores it at the $99$th
+  percentile. Whether LasB cleaves AAPV-type sites cannot be settled from these
+  data \FLAG.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{../figures/F17_candidate_landscape.pdf}
+  \caption{Consensus background percentiles of the four highest-margin
+    sensor-compatible candidates for each target (above the white bar) and of
+    four reference cores (below), across the five wound-panel proteases. Red
+    boxes mark the intended target; margins are listed at the right. Reference
+    cores are scored as gapped windows.}
+  \label{fig:cand}
+\end{figure}
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.25}
+\input{../tables/candidates}
+\end{center}
+
+\subsection{Results: contribution of each position}
+
+The scan below scores every single-residue substitution of \texttt{IPRTLTA-} (the
+A11 core). Panel A shows the change in the MMP-9 logistic-regression log-odds,
+which does not saturate; panel B shows the change in specificity margin, which
+is near zero for most substitutions because the wild type already lies at the
+top of the MMP percentile scale. Substitutions at $\pos{3}$ are the most
+damaging (replacement of Pro costs roughly $1$ to $2.5$ log-odds units); Thr to
+Arg or Lys at $\pos{1}$ raises the score, consistent with the measured effect of
+A11m1; and $\prm{1}$ is comparatively tolerant in this model, the same
+underestimation seen for A11m2.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/F18_mutation_scan.pdf}
+  \caption{Single-substitution scan of the A11 core. \textbf{A:} change in MMP-9
+    logistic-regression log-odds. \textbf{B:} change in specificity margin in the
+    wound panel.}
+  \label{fig:scan}
+\end{figure}
+
+\subsection{Result: the interactive tool}
+
+The browser tool embeds the seven models and the five structures and loads the
+3Dmol.js renderer from a CDN. Its JavaScript scoring engine was compared with
+the Python package on $154$ random and $8$ gapped windows across all seven
+proteases: logistic-regression scores, PSSM scores, per-position contributions
+and percentiles of full windows agree to about $10^{-15}$, and percentiles of
+gapped windows agree within $0.012$, the only difference being the random-number
+generator behind the matched null \CONF. The built page was exercised in a
+headless browser (no script errors; controls, presets, scan clicks and structure
+switching respond; no horizontal overflow at phone width) \CONF.

@@ -11,6 +11,7 @@ python -m spred rank --target MMP9 --panel wound --pool 50000
 python -m spred mutate IPRTLTAA --target MMP9      # every single substitution
 python -m spred scan protein.fasta --target NE
 make test study validate                # tests, methodology study, external validation
+make report                             # rebuild figures' tables and compile report/substrate_predictor_report.pdf
 make web                                # build report/substrate_predictor_explorer.html (needs node; 3Dmol.js loads from cdnjs)
 ```
 

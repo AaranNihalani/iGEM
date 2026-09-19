@@ -1,0 +1,45 @@
+%=======================================================================
+\section{Summary: Confirmed Results, Working Assumptions, and Open Questions}
+\label{sec:summary}
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}p{1cm}p{4.6cm}p{8.6cm}l@{}}
+\toprule
+\textbf{Part} & \textbf{Component} & \textbf{Status} & \\
+\midrule
+A & Positive windows & Rebuilt from MEROPS, Eckhard and Yang sources; counts reproduce the earlier pipeline; $75$ of $75$ elastin rows verified against UniProt & \CONF \\
+A & Removal of synthetic LasB positives & Rule-generated and hand-typed windows removed; LasB uses source windows only & \CONF \\
+A & Negatives as true non-substrates & Unlabelled windows assumed negative; contamination bounded but unknown & \FLAG \\
+A & LasB positives & $76\%$ from one protein (elastin); model behaves as an elastin-likeness score & \CONF \\
+B & VHSE table and labels & Regenerated from the archived source and unit-tested; the earlier table had $35$ of $160$ values wrong & \CONF \\
+B & Additive position-specific model & Trees do not exceed additive models by more than $0.007$ AUROC & \CONF \\
+B & PSSM smoothing $\beta,\epsilon$ & Fixed, not tuned & \FLAG \\
+C & Percentile comparability & Uniform under the null by construction; resolution $10^{-3}$ & \CONF \\
+C & Harmonic-mean consensus and max-competitor margin & Reasoned, not validated against a selectivity ground truth & \FLAG \\
+D & Detection performance & Cluster-aware AUROC $0.77$ (MMP-9) to $0.95$ (faecal); random and clustered folds differ by at most $0.007$; label-shuffle $0.49$--$0.53$ & \CONF \\
+D & Representation choice & VHSE leads below about $200$ positives; PSSM and one-hot lead on MMP-2 and MMP-8; consensus retained & \CONF \\
+D & Panel negatives & Improve cross-protease AUROC on every protease at $0.01$--$0.02$ cost against background & \CONF \\
+D & Selectivity within the MMPs & Held-out AUROC $0.53$--$0.72$; partly reflects genuine promiscuity in the labels & \CONF \\
+E & MMP-9 consensus recovery & Pro at $\pos{3}$ first, Leu/Ile at $\prm{1}$ first and second; Ser/Thr not recovered, as expected from the phage-vector artefact & \CONF \\
+E & Structures & Catalytic-site residues derived from coordinates; HEXXHXXGXXH confirmed in three MMPs & \CONF \\
+E & Measured kinetics ($n=11$) & Positive rank association (PSSM $\rho=0.70$, logistic regression $0.58$); intervals wide; not corrected for multiplicity & \CONF \\
+E & Single-mutant effects & Direction correct for both; Leu to Ala at $\prm{1}$ underestimated & \CONF \\
+F & Alignment of sensor cores & Three of four cores corrected to scissile-aware windows; 3-plex condition number $61.7 \to 16.1$ & \CONF \\
+F & Optimised candidates & Extrapolate beyond the training distribution & \FLAG \\
+F & Prospective wet-lab test & Not yet performed & \FLAG \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Bottom line.} The models discriminate confirmed cleavage windows from
+background reliably (cluster-aware AUROC $0.77$ to $0.95$), the result is
+robust to near-duplicate leakage and to label shuffling, and the learned
+specificity agrees with published MMP-9 specificity and with the active-site
+structures of the enzymes. What the models cannot do is equally clear. Selectivity
+among the MMPs cannot be obtained from a P4--P4$'$ window, the LasB model reflects
+its single-protein source, scores rank resemblance to observed sites and are not
+rates, and the external validation ($n=11$) supports direction but not
+magnitude. What requires direct experimental attention is a prospective test:
+measured relative activities of new peptides across the panel, against which the
+percentile margin can be checked.
