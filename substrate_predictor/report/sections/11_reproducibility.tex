@@ -1,0 +1,17 @@
+\section{Reproducibility}
+\label{sec:repro}
+
+Everything in this report is regenerated from the repository by the following commands (Python $\ge3.10$; scikit-learn, NumPy, pandas, SciPy, LightGBM for the model comparison; a TeX distribution for the document):
+\begin{Verbatim}[fontsize=\small,frame=single,rulecolor=\color{ink!40}]
+python -m spred build-data              # positives from source files
+python -m spred train                   # cross-validation, nested tuning, final models
+python scripts/methodology.py           # models, learning curves, negative designs
+python scripts/leakage_check.py         # random vs cluster folds
+python scripts/representation_analysis.py
+python scripts/coefficient_stability.py
+python scripts/validation.py            # external validation (Kridel et al.)
+python scripts/prepare_structures.py    # structure facts from coordinates
+python report/figs_*.py; python report/make_tables.py
+python -m pytest tests -q               # 28 tests
+\end{Verbatim}
+Random seeds are fixed ($42$ throughout; the background null uses seed $43$). Each trained model records its training-data fingerprint, cross-validated metrics, and selected regularisation. Reference tables (VHSE, BLOSUM62, Swiss-Prot composition) are archived with their provenance under \texttt{references/} and are compared with the code's tables by unit tests. The trained models are plain JSON and are embedded in the accompanying browser tool, which is tested for numerical agreement with the Python package.

@@ -1,0 +1,18 @@
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\color{slate}\small\bfseries ETON iGEM 2026 \quad\textbar\quad DRY LAB \quad\textbar\quad SOFTWARE TOOL}\\[1.4em]
+{\sffamily\bfseries\fontsize{25}{28}\selectfont\color{ink} Substrate Predictor}\\[0.5em]
+{\sffamily\large\color{ink!80} Position-specific protease substrate models\\ with percentile-based panel selectivity}\\[1.1em]
+{\small\color{slate} Methodology, validation and design analysis}
+\end{center}
+\vspace{0.6em}\noindent\textcolor{ink!35}{\rule{\textwidth}{0.8pt}}\vspace{0.3em}
+
+\begin{abstract}\noindent
+We describe a set of per-protease models that read an eight-residue substrate window (positions P4 to P4$'$ around the scissile bond) and return how strongly the window resembles that protease's confirmed cleavage sites, together with a panel-level measure of how specifically a peptide is recognised by one protease rather than its competitors. Training data are confirmed cleavage windows from MEROPS, a proteomic profiling study of MMPs, and an elastin-digestion study, giving seven trainable proteases and $10{,}472$ positive windows. Each model combines a $64$-feature physicochemical logistic regression with a position-specific scoring matrix; scores are converted to percentiles of a background null so that different proteases become comparable, and selectivity is the margin between the target and its strongest competitor. The methodology is built to resist the failure modes typical of small sequence-classification problems: cross-validation folds are formed over clusters of near-duplicate sequences, regularisation is chosen inside each fold, all intervals are cluster-bootstrap intervals, and model choices are tested against baselines with paired significance tests. Cross-validated AUROC ranges from \aucConsMMPnine{} (MMP-9) to \aucConsFaecal{} (faecal serine proteases). A held-out comparison against measured MMP-9 kinetics (Kridel et al., 2001) shows a positive rank association (Spearman $\rho=\rhoNElevenPSSM$ for the PSSM, $n=11$) and correct predicted direction for two designed point mutants. We also report, without softening, what the model cannot do: selectivity among the MMPs from a P4--P4$'$ window is weak, and the LasB model is confounded by its single-protein training source.
+\end{abstract}
+
+\begin{keybox}[Reader's guide]
+\textbf{ML readers:} Sections~\ref{sec:problem}--\ref{sec:eval} formalise the task, models and evaluation; the derivations that are not essential to the narrative are collected in Appendix~\ref{app:deriv}. \textbf{Biology is introduced from scratch} in Section~\ref{sec:bio}, in boxes marked ``Biology note''. \textbf{Results} start at Section~\ref{sec:results}. \textbf{Threats to validity} are stated in Section~\ref{sec:limits} and are referenced wherever a result depends on them. Every number in the tables and text is generated from the result files in the repository by \texttt{report/make\_tables.py}.
+\end{keybox}
+\tableofcontents
+\clearpage

@@ -1,0 +1,42 @@
+\section{Derivations}
+\label{app:deriv}
+
+\subsection{AUROC equals the Mann--Whitney probability}
+Let $S^{+}$ and $S^{-}$ be independent scores of a random positive and a random negative, with densities $f_1$ and $f_0$ and survival functions $\bar F_1(\tau)=\Prob(S^{+}>\tau)$, $\bar F_0(\tau)=\Prob(S^{-}>\tau)$. The ROC curve traces $(\mathrm{FPR},\mathrm{TPR})=(\bar F_0(\tau),\bar F_1(\tau))$ as $\tau$ decreases from $+\infty$ to $-\infty$, so, since $d\bar F_0(\tau)=-f_0(\tau)\,d\tau$,
+\begin{equation}
+\mathrm{AUROC}=\int \mathrm{TPR}\;d\mathrm{FPR}=\int_{-\infty}^{\infty}\bar F_1(\tau)\,f_0(\tau)\,d\tau=\Prob(S^{+}>S^{-}).
+\end{equation}
+With ties, $\mathrm{AUROC}=\Prob(S^{+}>S^{-})+\tfrac12\Prob(S^{+}=S^{-})$. Its empirical estimator is $U/(n_+n_-)$, where $U$ is the Mann--Whitney statistic. This shows AUROC is threshold-free, invariant under any strictly increasing transformation of the score, and unaffected by the class ratio, which is why it is comparable across our $1{:}3$ training sets and across models on different scales.
+
+\subsection{Label contamination}
+Suppose the negatives are a mixture: with probability $\pi$ a ``negative'' is a hidden positive drawn from the same distribution as the labelled positives, and with probability $1-\pi$ a true negative. For a fixed continuous scorer,
+\begin{align}
+\mathrm{AUROC}_{\text{measured}}&=\Prob(S^{+}>S_{\text{neg}})=(1-\pi)\Prob(S^{+}>S^{-}_{\text{true}})+\pi\,\Prob(S^{+}>S^{+\prime})\notag\\
+&=(1-\pi)\,\mathrm{AUROC}_{\text{true}}+\tfrac12\pi,
+\label{eq:contam}
+\end{align}
+since two independent draws from the same continuous distribution are ordered either way with probability $\tfrac12$. The measured value therefore lies between $0.5$ and $\mathrm{AUROC}_{\text{true}}$ (whenever $\mathrm{AUROC}_{\text{true}}>0.5$) and is at most $1-\pi/2$ even for a perfect scorer. Contamination can only lower AUROC.
+
+\subsection{Exact near-duplicate clustering by pigeonhole}
+Partition the eight positions into blocks $B_1=\{1,2,3\}$, $B_2=\{4,5,6\}$, $B_3=\{7,8\}$. If two windows differ at no more than two positions, those positions occupy at most two of the three blocks, so at least one block contains no mismatch and the two windows are identical on that block. Hence every pair at Hamming distance $\le2$ appears together in at least one bucket of windows keyed by the content of a single block. Comparing only windows within a bucket therefore finds \emph{all} such pairs; the connected components are found with union--find. The result is exact, and its cost is governed by bucket sizes rather than by $n^2$. The implementation is tested against brute-force comparison.
+
+\subsection{Convexity of the logistic objective}
+Write $m_i=\bm\beta^{\top}\bm z_i+b$, $p_i=\sigma(m_i)$, $\tilde y_i=2y_i-1$. Since $\frac{d}{dm}\log(1+e^{-\tilde ym})=-\tilde y\,\sigma(-\tilde ym)$, the gradient of Eq.~\eqref{eq:lr} is
+\begin{equation}
+\nabla_{\bm\beta}\mathcal{L}=\bm\beta-C\sum_i\omega_{y_i}\tilde y_i\,\sigma(-\tilde y_im_i)\,\bm z_i,\qquad
+\partial_b\mathcal{L}=-C\sum_i\omega_{y_i}\tilde y_i\,\sigma(-\tilde y_im_i).
+\end{equation}
+The Hessian with respect to $(\bm\beta,b)$ is $\mathrm{diag}(\bm I,0)+C\sum_i\omega_{y_i}p_i(1-p_i)\tilde{\bm z}_i\tilde{\bm z}_i^{\top}$ with $\tilde{\bm z}_i=[\bm z_i;1]$. For a direction $\bm v=(\bm v_\beta,v_b)$, $\bm v^{\top}H\bm v=\|\bm v_\beta\|^2+C\sum_i\omega_{y_i}p_i(1-p_i)(\bm z_i^{\top}\bm v_\beta+v_b)^2\ge0$, and it vanishes only if $\bm v_\beta=\bm 0$ and then $v_b^2\sum_i\omega_{y_i}p_i(1-p_i)=0$, i.e.\ $v_b=0$. The Hessian is therefore positive definite, the objective is strictly convex, and the minimiser is unique.
+
+\subsection{Percentile scores are comparable across models}
+Let $S$ have a continuous distribution function $F$. Then $\Prob(F(S)\le u)=\Prob(S\le F^{-1}(u))=u$, so $F(S)\sim\mathrm{Uniform}(0,1)$. For each protease we set $F$ to the null distribution of its own score over random windows, so under the null every protease's percentile is uniform on $[0,1]$: a percentile of $0.99$ means the same thing (exceeded by $1\%$ of random windows) for every model, regardless of how its raw score is scaled. For any strictly increasing $g$, $F_{g(S)}(g(s))=F_S(s)$, so the percentile does not depend on the monotone form of the score (logit versus probability, for instance). The harmonic mean $H(a,b)=2ab/(a+b)$ satisfies $\min(a,b)\le H(a,b)\le\tfrac12(a+b)$ and equals $1$ only when $a=b=1$, so it is high only when both percentiles are.
+
+\subsection{Unknown positions}
+Let the logit be $L(\bm z)=b+\sum_i\bm\beta_i^{\top}\bm z_i$. If the block $\bm z_j$ of an unknown position is random with mean $\bm 0$ (its standardised training mean) and independent of the rest, then $\E[L]=b+\sum_{i\ne j}\bm\beta_i^{\top}\bm z_i$, which is $L$ with $\bm z_j$ set to $\bm 0$. This is exact for the logit and does not hold for the probability $\sigma(L)$, which is why the imputation is applied to the logit. For the PSSM, the expected contribution of position $j$ under the background $g$ is
+\begin{equation}
+\sum_a g(a)\log_2\frac{p_j(a)}{g(a)}=-D_{\mathrm{KL}}(g\,\|\,p_j)\le0,
+\end{equation}
+so an unknown position lowers the score by an amount that grows with how informative that position is.
+
+\subsection{Coverage of the VHSE subspace}
+Let $\Phi\in\R^{20\times8}$ hold the VHSE descriptors and $\bm 1$ a column of ones; $\operatorname{rank}[\Phi,\bm1]=9$ (numerically). For a position with centred log-odds vector $\bm v\in\R^{20}$ and $P$ the orthogonal projector onto $\operatorname{span}[\Phi,\bm1]$, the fraction of its variance expressible by the encoding is $R^2=1-\|(\bm I-P)\bm v\|^2/\|\bm v\|^2$; Table~\ref{tab:controls} reports the average over positions weighted by $\|\bm v\|^2$. The unexpressible remainder is the encoding's approximation bias for that protease.

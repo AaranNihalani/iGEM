@@ -1,0 +1,19 @@
+\section{Limitations and threats to validity}
+\label{sec:limits}
+
+Each item states the limitation, the evidence for it where we have any, and what it means for use of the tool.
+
+\begin{enumerate}
+\item \textbf{Labels are positive--unlabelled.} No window is confirmed uncleaved, so every AUROC is compressed toward $0.5$ by an unknown contamination (Eq.~\ref{eq:contam-main}). \emph{Implication:} reported AUROCs are conservative for detection, and low cross-protease AUROCs partly reflect real promiscuity (Section~\ref{sec:contam}).
+\item \textbf{The window is the whole input.} Only P4--P4$'$ is modelled. Distal exosite contacts, secondary structure, the flanking construct (linker, anchor, label), pH, ionic strength and temperature are all absent. \emph{Implication:} a sensor construct may behave differently from its core.
+\item \textbf{Cleavage is binary, not a rate.} The models rank windows by resemblance to observed sites. External kinetics correlate positively but modestly ($n=11$), large single-residue kinetic effects are underestimated (A11m2), and no rate constant is predicted. \emph{Implication:} use scores to shortlist, then measure $\kcat/\Km$.
+\item \textbf{Selectivity within the MMP family is weak.} Held-out AUROC between MMP substrate sets is $0.53$--$0.72$, and MMP-family cores reach margin $\approx0$. \emph{Implication:} do not rely on sequence alone to distinguish MMP-2, -8, -9 and -14.
+\item \textbf{The LasB model is confounded by its source.} $97$ of $128$ positives ($76\%$) are windows from one protein, elastin, and composition alone separates them from background as well as the full model does ($0.886$ versus $0.877$). \emph{Implication:} the LasB score behaves as an elastin-likeness score; it inflates competitor percentiles for Gly/Ala/Pro-rich peptides (as for AAPVSGIG) and should not be read as LasB specificity.
+\item \textbf{The faecal group is heterogeneous.} It pools three unrelated digestive proteases from three species and its data are dominated by a Lys/Arg preference at $\pos{1}$. \emph{Implication:} it is a distinctness control, not a model of a single enzyme.
+\item \textbf{Source biases.} MEROPS mixes physiological and synthetic substrates and is curated by literature attention; PICS libraries are generated with trypsin or GluC, constraining composition at peptide ends; the NE model ranks Cys among its top residues at several positions, possibly reflecting cysteine-rich source proteins. \emph{Implication:} learned specificity is that of the sampled substrates, not of the enzyme in the abstract.
+\item \textbf{Percentile scale resolution.} Percentiles are interpolated from a $1{,}001$-point grid, so the top of the scale saturates at $10^{-3}$ and margins near zero can hide real score differences among strong candidates (Figure~\ref{fig:scan}). \emph{Implication:} for fine ranking among strong candidates use the raw logit and PSSM scores alongside the margin.
+\item \textbf{The consensus and margin are heuristics.} The harmonic-mean combination and the max-competitor margin are reasoned but not tuned or validated against a selectivity ground truth. \emph{Implication:} treat margins as ordinal.
+\item \textbf{Extrapolation.} Optimised candidates lie far from the training distribution, where neither the models nor their percentile scales have been checked. \emph{Implication:} candidate lists are hypotheses.
+\item \textbf{Small external validation.} Eleven peptides, all phage-selected for MMP-9 activity, six uncorrected tests, and no MMP-13/MMP-7 models with which to test the reported selectivity. \emph{Implication:} the external result supports direction, not magnitude.
+\item \textbf{No prospective wet-lab test yet.} The strongest test of the tool is a blind prediction of measured relative activity of new peptides across the panel. It has not been done.
+\end{enumerate}

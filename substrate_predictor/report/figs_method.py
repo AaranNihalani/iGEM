@@ -38,7 +38,6 @@ def fig_model_comparison():
     ax.set_yticks(range(len(ORDER))); ax.set_yticklabels([]); ax.invert_yaxis()
     ax.set_xlabel("AUROC(alternative) − AUROC(VHSE LR)\n(filled: 95% interval excludes 0)")
     ax.set_title("Paired differences vs VHSE LR"); panel_letter(ax, "b", -0.08)
-    ax.text(0.045, -0.75, "composition-LR\n(−ca. 0.2) off scale", fontsize=6.5, color=MUTE, ha="center")
     fig.tight_layout(); save(fig, "F05_model_comparison")
 
 

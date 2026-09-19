@@ -1,0 +1,37 @@
+\section{Evaluation methodology}
+\label{sec:eval}
+
+This section lists what could make the reported performance wrong and the design choice that addresses each threat.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}p{4.1cm}p{5.2cm}p{5.6cm}@{}}\toprule
+Threat & Why it matters here & Control \\\midrule
+Near-duplicate leakage & Repeats and overlapping peptides let a model memorise neighbours & Folds built over Hamming-distance clusters (Section~\ref{sec:cv}); comparison with random folds \\
+Optimistic hyperparameters & Tuning on the evaluation data inflates the estimate & Regularisation chosen in an inner loop that sees only the training fold \\
+Optimistic auxiliary models & A PSSM scored on its own training positives is trivially high & PSSM refit in every fold and scored out-of-fold \\
+Shortcut features & Composition alone may separate classes & Composition-only and label-shuffled controls \\
+Selection among many models & The best of several models is biased upward & All models on identical folds; paired tests; intervals, not point estimates \\
+Dependent samples & Ordinary bootstrap treats near-duplicates as independent & Cluster bootstrap for every interval \\
+Label noise (PU) & Unlabelled windows may be positives & Analysed formally (Section~\ref{sec:contam}) \\
+Scale mismatch across models & Ratios of raw scores are training-set artefacts & Percentile scale; base rates reported \\
+External validity & Cross-validation shares the data-generating process & Held-out measured kinetics (Section~\ref{sec:bio-val}) \\\bottomrule
+\end{tabular}
+\caption{Threats to validity and the control applied to each.}
+\end{table}
+
+\subsection{Cluster-aware cross-validation}
+\label{sec:cv}
+Clusters are the connected components of the Hamming-distance-$\le2$ graph over \emph{all} training windows (positives and negatives). They are computed exactly and efficiently by a pigeonhole argument (Appendix~\ref{app:deriv}): two windows differing at at most two of eight positions must agree exactly on at least one of three blocks of sizes $3,3,2$, so only windows sharing a block need be compared. Folds are drawn with stratified group $5$-fold cross-validation over the clusters, so that no cluster straddles a train/test boundary and each fold keeps the class ratio. Every reported AUROC, PR-AUC, MCC and Brier score is computed on out-of-fold predictions pooled across the five folds.
+
+\subsection{Nested regularisation and per-fold auxiliary models}
+Within each outer training set, the logistic-regression $C$ is chosen from $\{10^{-3},\dots,10^{2}\}$ by an inner $3$-fold cluster-aware cross-validation (mean AUROC), and only then is the model refit on the whole outer training set and applied to the outer test fold. The PSSM is rebuilt from the positives of each training fold. The background null used for percentiles is likewise rebuilt per fold from that fold's models ($5{,}000$ random windows), so the cross-validated consensus score uses no information from its test fold.
+
+\subsection{Metrics}
+\emph{AUROC} is the probability that a random positive outranks a random negative (equal to the Mann--Whitney statistic; Appendix~\ref{app:deriv}); it is threshold-free and insensitive to the arbitrary $1{:}3$ ratio. \emph{PR-AUC} is reported against a positive prior of $0.25$. \emph{MCC} uses the logistic-regression score at the fixed threshold $0.5$ and is therefore only indicative under balanced class weighting. The \emph{Brier score} and the \emph{expected calibration error} (ECE) describe agreement between score and outcome under the training prior and are reported to show that scores are not probabilities.
+
+\subsection{Uncertainty and comparisons}
+Intervals are $95\%$ cluster-bootstrap intervals: whole clusters are resampled with replacement ($500$ replicates), which respects the dependence that an ordinary bootstrap ignores. When two models are compared, the same resampled clusters are used for both and the interval is for the difference in AUROC (paired cluster bootstrap, $400$ replicates); a difference is called significant when its $95\%$ interval excludes zero. We make no multiplicity correction across the $35$ paired comparisons ($5$ alternatives $\times$ $7$ proteases; $28$ are shown in Table~\ref{tab:paired}); readers should treat isolated borderline results accordingly.
+
+\subsection{External validation protocol}
+Section~\ref{sec:bio-val} compares model scores with kinetics measured on peptides that were \emph{not} in the training data. Before scoring, every training window (positive or cross-negative, any protease) that coincides with a validation peptide on at least seven of its positions is removed and the model is retrained, so the validation set cannot leak into training; four windows were removed. Peptides shorter than eight positions around the bond are scored as gapped windows (Section~\ref{sec:null}).

@@ -1,0 +1,15 @@
+\section{Problem formulation}
+\label{sec:problem}
+
+Let $\mathcal{A}$ be the twenty standard residues and $\mathcal{X}=\mathcal{A}^{8}$ the space of P4--P4$'$ windows. For a protease $k$ in a registry $\mathcal{K}$ we hold a set $\mathcal{D}_k^{+}\subset\mathcal{X}$ of windows at which cleavage by $k$ has been observed. The learning problem for each $k$ is to produce a function $s_k:\mathcal{X}\to\R$ that ranks windows by resemblance to $\mathcal{D}_k^{+}$, and from the collection $\{s_k\}$ a selectivity functional $M_t(x;\mathcal{P})$ for a target $t$ within a panel $\mathcal{P}\subseteq\mathcal{K}$.
+
+\paragraph{This is positive--unlabelled learning.} We observe positives, but no window is confirmed \emph{not} to be cleaved. Every ``negative'' is an unlabelled window assumed negative. Two consequences drive the design. First, if a fraction $\pi$ of the negatives are in fact positives, the measured AUROC is (Appendix~\ref{app:deriv}, Eq.~\ref{eq:contam})
+\begin{equation}
+\mathrm{AUROC}_{\text{measured}}=(1-\pi)\,\mathrm{AUROC}_{\text{true}}+\tfrac12\pi,
+\label{eq:contam-main}
+\end{equation}
+so label noise compresses every reported AUROC toward $0.5$; it cannot inflate one. Second, the noise is not uniform across negative types: random background windows are almost never true positives, whereas another protease's confirmed substrates may well be cleaved by the target too. We return to this in Section~\ref{sec:contam}.
+
+\paragraph{The score is not a probability.} Training uses a fixed ratio of three negatives per positive, so the fitted model estimates a posterior under a training mixture that has no relation to how often cleavage sites occur in a real protein. Class weights further rebalance the classes (Section~\ref{sec:lr}). We therefore treat $s_k$ only as a ranking function, and convert it to a percentile of a stated background distribution whenever different proteases must be compared (Section~\ref{sec:null}).
+
+\paragraph{Two evaluation targets.} \emph{Detection:} does $s_k$ rank held-out confirmed sites for $k$ above unlabelled windows? \emph{Discrimination:} does $s_k$ rank held-out sites for $k$ above confirmed sites for a different protease? The second is the property a multiplexed sensor needs, and it is the harder one.

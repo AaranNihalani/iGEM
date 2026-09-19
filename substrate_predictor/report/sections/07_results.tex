@@ -1,0 +1,142 @@
+\section{Results}
+\label{sec:results}
+
+\subsection{Detection performance}
+\label{sec:res-main}
+Table~\ref{tab:main} gives cluster-aware, out-of-fold AUROC for the logistic regression, the PSSM, and their consensus (Eq.~\ref{eq:cons}). Discrimination is well above chance for every protease, ranging from \aucConsMMPnine{} for MMP-9 to \aucConsFaecal{} for the faecal group. The serine-protease models (NE, faecal) and LasB are best, the MMPs least so. The consensus is at or near the best single scorer for all proteases; for MMP-2 and MMP-8 the PSSM alone is slightly higher, with overlapping intervals. Secondary metrics are in Table~\ref{tab:secondary}; Figure~\ref{fig:roc} shows ROC and precision-recall curves.
+
+\begin{table}[!htbp]
+\centering\small\input{tables/main_results}
+\caption{Cluster-aware $5$-fold cross-validated AUROC with $95\%$ cluster-bootstrap intervals (bold: highest of the three scorers). ``Positive clusters'' is the number of distinct near-duplicate clusters among the positives.}
+\label{tab:main}
+\end{table}
+
+\begin{table}[!htbp]
+\centering\small\input{tables/secondary_metrics}
+\caption{Secondary metrics for the logistic regression. PR-AUC is measured against a prior of $0.25$; MCC at threshold $0.5$; ECE under the training prior. Selected $C$ is listed per outer fold.}
+\label{tab:secondary}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F09_roc_pr.pdf}
+\caption{Out-of-fold performance of the consensus score. \textbf{(a)} ROC curves. \textbf{(b)} Precision-recall curves. \textbf{(c)} Distribution of the consensus percentile of held-out positives; positives concentrate near the top of the background distribution for every protease.}
+\label{fig:roc}
+\end{figure}
+
+\subsection{Which model, and which representation?}
+\label{sec:res-models}
+Figure~\ref{fig:models} and Table~\ref{tab:models} compare seven models on identical folds: a constant prior, a composition-only logistic regression, one-hot and VHSE logistic regressions, the PSSM, and gradient-boosted trees on both encodings. Three conclusions follow.
+
+\begin{enumerate}
+\item \textbf{Position matters; composition mostly does not.} For six of seven proteases, composition alone gives $0.60$--$0.74$ AUROC and the VHSE model beats it significantly (Table~\ref{tab:paired}); label-shuffled controls sit at chance (Table~\ref{tab:controls}). \textbf{LasB is the exception:} composition alone reaches $0.886$, statistically indistinguishable from the full model ($-0.008$, interval including zero). The LasB model is largely detecting elastin-like composition, as expected from a positive set that is $76\%$ elastin (Section~\ref{sec:limits}).
+\item \textbf{There is no evidence of strong position--position interaction.} Gradient-boosted trees, which can represent interactions, reach within $0.013$ AUROC of the better of the one-hot regression and the PSSM on every protease and exceed it only on NE, by $0.007$. An additive model is adequate at these data sizes, and it is also the interpretable one.
+\item \textbf{The representation trade-off is real.} On data-rich proteases (MMP-2, MMP-8) the one-hot logistic regression and the PSSM are significantly better than the VHSE model by $0.017$ to $0.034$ AUROC, consistent with the bias measured in Table~\ref{tab:controls}. On NE and LasB the VHSE model is significantly better than the one-hot model ($+0.021$ and $+0.033$). The learning curves (Figure~\ref{fig:lc}) show the same crossover: VHSE is ahead at small training sizes and is overtaken as data grow.
+\end{enumerate}
+The PSSM has no fitted hyperparameter and is at or within its interval of the best model everywhere, which is why the shipped score combines it with the logistic regression rather than choosing one.
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F05_model_comparison.pdf}
+\caption{\textbf{(a)} Cluster-aware AUROC of six models on identical folds with $95\%$ cluster-bootstrap intervals. \textbf{(b)} Paired difference (alternative minus VHSE LR); filled markers have intervals excluding zero. The composition-only model is $0.12$--$0.21$ AUROC below for every protease except LasB and is omitted from panel (b) for scale.}
+\label{fig:models}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering\small\input{tables/model_comparison}
+\caption{Cross-validated AUROC by model and protease (bold: best). The prior is constant and gives $0.5$.}
+\label{tab:models}
+\end{table}
+
+\begin{table}[!htbp]
+\centering\small\input{tables/paired_differences}
+\caption{AUROC of each alternative minus the VHSE logistic regression, with a paired cluster bootstrap (the composition-only model, which is far below, is omitted). $^{*}$: $95\%$ interval excludes zero. No multiplicity correction is applied.}
+\label{tab:paired}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F06_learning_curves.pdf}
+\caption{Learning curves: AUROC as a function of the number of training positives for the VHSE and one-hot logistic regressions. The physicochemical encoding is more sample-efficient at small sizes.}
+\label{fig:lc}
+\end{figure}
+
+\subsection{Training against other proteases}
+\label{sec:res-neg}
+The training negatives determine what the model learns to reject. We compare three designs on a \emph{common} held-out test set, trained inside identical folds: (i) composition-shuffled positives plus background (the design used in earlier work), (ii) background only, and (iii) our panel design. Each is scored on held-out target positives against (a) background windows and (b) held-out positives of the other proteases (Table~\ref{tab:neg}, Figure~\ref{fig:neg}). The panel design costs $0.01$--$0.02$ AUROC against background but gains against competitors on every protease, most where it matters: for LasB from $0.80$ (background only) and $0.68$ (shuffled) to $0.86$, for MMP-14 from $0.65$ to $0.73$, and for MMP-2 from $0.76$ to $0.79$.
+
+\begin{table}[!htbp]
+\centering\small\input{tables/negative_design}
+\caption{Held-out AUROC by negative-set design against random background (bkg) and against other proteases' substrates (comp.).}
+\label{tab:neg}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F07_negative_design.pdf}
+\caption{Effect of the training negatives on detection (a) and cross-protease discrimination (b).}
+\label{fig:neg}
+\end{figure}
+
+\subsection{Regularisation, leakage and controls}
+Choosing $C$ by inner cross-validation raises or matches the $C=1$ default (Table~\ref{tab:controls}, Figure~\ref{fig:tune}), selecting $C=0.01$--$0.1$ for every protease except the faecal group (strong regularisation for a $64$-feature model on hundreds of examples). Random and cluster-aware folds differ by at most \maxLeakGap{} AUROC, so near-duplicate leakage is not a material source of optimism in these data, even though the folds guard against it. Label-shuffled models score \shuffleMin--\shuffleMax{}.
+
+\begin{table}[!htbp]
+\centering\small\input{tables/controls}
+\caption{Controls. Regularisation: AUROC with $C=1$ versus $C$ chosen in the inner loop. Fold construction: random versus cluster-aware folds (fixed $C=0.1$). Label shuffle: mean over five permutations. VHSE span: variance-weighted share of the learned PSSM log-odds that lies within the VHSE subspace.}
+\label{tab:controls}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F08_tuning_and_leakage.pdf}
+\caption{\textbf{(a)} Nested regularisation selection versus fixed $C=1$. \textbf{(b)} Random versus cluster-aware folds.}
+\label{fig:tune}
+\end{figure}
+
+\subsection{Calibration and scale}
+\label{sec:res-calib}
+Reliability curves of the logistic-regression score lie below the diagonal (Figure~\ref{fig:calib}a): with balanced class weights the score is a posterior under a $50{:}50$ prior, whereas the training mixture has a positive prior of $0.25$ and real sequences far lower. Expected calibration error is $0.06$--$0.20$ (Table~\ref{tab:secondary}). Base rates also differ by model: the mean score on random windows ranges from $0.11$ (faecal) to $0.35$ (MMP-14) (Figure~\ref{fig:calib}b), which is precisely what makes raw probability ratios unsuitable as selectivity measures and motivates the percentile scale.
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F10_calibration.pdf}
+\caption{\textbf{(a)} Reliability curves of the out-of-fold logistic-regression score. \textbf{(b)} Mean logistic-regression score on random background windows for each final model.}
+\label{fig:calib}
+\end{figure}
+
+\subsection{Selectivity between proteases}
+\label{sec:res-sel}
+Table~\ref{tab:selmat} and Figure~\ref{fig:selmat} report, for each target model, the held-out AUROC for separating the target's substrates from a competitor's substrates (the competitor's windows were in training as negatives, but each is scored out-of-fold). The pattern follows the biology of Section~\ref{sec:bio}. The NE and faecal models separate their own substrates from every competitor's at $0.90$--$0.98$. The MMP models separate theirs from NE's at $0.89$--$0.93$, but from LasB's and the faecal group's at only $0.63$--$0.89$. And \emph{within} the MMP family discrimination is modest ($0.53$--$0.72$), lowest for MMP-14 versus MMP-2 ($0.53$) and MMP-8 versus MMP-2 ($0.57$).
+
+\begin{table}[!htbp]
+\centering\small\input{tables/selectivity_matrix}
+\caption{Held-out AUROC for separating the row protease's substrates from the column protease's substrates.}
+\label{tab:selmat}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=0.62\textwidth]{figures/F11_selectivity_matrix.pdf}
+\caption{Cross-protease discrimination matrix (same data as Table~\ref{tab:selmat}).}
+\label{fig:selmat}
+\end{figure}
+
+\subsubsection{How to read a low competitor AUROC}
+\label{sec:contam}
+A low value does not by itself indicate a poor model. By Eq.~\eqref{eq:contam-main}, if a fraction $\pi$ of a competitor's substrates are also cleaved by the target, the measured AUROC is at most $(1-\pi)\cdot1+\tfrac12\pi=1-\pi/2$ even for a perfect model. Exact-window overlap between protease positive sets is small (Section~\ref{sec:data}), but the MMPs share their dominant preferences (Section~\ref{sec:bio}), so many unlabelled or ``competitor'' windows are plausibly cleaved by the target as well; the ceiling for MMP-versus-MMP AUROC is therefore below $1$ by an amount we cannot measure from sequence data alone. In other words, part of the within-MMP figure reflects genuine biological promiscuity in the labels. Either way, the practical conclusion is the same: from a P4--P4$'$ window alone, the MMPs cannot be reliably told apart, and a sensor design should not depend on it.
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F16_score_distributions.pdf}
+\caption{Out-of-fold consensus percentiles of held-out positives (``target'') and of each competitor's substrates and random windows, for the MMP-9 model (a) and the NE model (b). The MMP-9 model places MMP-2 and MMP-8 substrates almost as high as its own; the NE model separates them sharply.}
+\label{fig:dist}
+\end{figure}
+
+\subsection{What the models learned}
+\label{sec:interp}
+Coefficient stability by cluster bootstrap (Figure~\ref{fig:coef}) shows which learned effects are reliable: between $17$ (MMP-14) and $35$ (MMP-2) of the $64$ standardised coefficients per model have intervals excluding zero, so most individual coefficients are not reliably nonzero and the position-level pattern is more trustworthy than any single descriptor weight. Figure~\ref{fig:pos} shows that the total contribution is concentrated at $\pos{3}$ and $\prm{1}$ for the MMPs, at $\pos{1}$ for NE and the faecal group, and is spread across positions for LasB; the electronic family, which accounts for four of the eight descriptors, carries the largest share for every protease.
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=0.97\textwidth]{figures/F12_coefficients.pdf}
+\caption{Standardised logistic-regression coefficients by position and VHSE descriptor. Dots mark coefficients whose $95\%$ cluster-bootstrap interval excludes zero. Colours are scaled to each protease's largest coefficient.}
+\label{fig:coef}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering\includegraphics[width=\textwidth]{figures/F13_position_importance.pdf}
+\caption{\textbf{(a)} Share of mean absolute logit contribution by position, computed on training positives. \textbf{(b)} Share by descriptor family.}
+\label{fig:pos}
+\end{figure}
