@@ -132,7 +132,7 @@ footer{margin-top:24px;padding-top:14px;border-top:1px solid var(--line2);font-s
   <div class="card">
     <h2><span>2 · Panel and target</span><span class="hint">click a protease to include it; TARGET picks the one you want to detect</span></h2>
     <div class="row"><label class="f" for="preset" style="margin:0">Preset</label>
-      <select id="preset"><option value="wound">Wound panel (MMP-2, -8, -9, NE, LasB)</option><option value="mmp_triplex">MMP-2 / MMP-9 / NE</option><option value="mmp9_ne">MMP-9 / NE</option><option value="all">All seven</option><option value="custom" hidden>Custom</option></select></div>
+      <select id="preset"><option value="mmp9_ne" selected>MMP-9 / NE</option><option value="wound">Wound panel (MMP-2, -8, -9, NE, LasB)</option><option value="mmp_triplex">MMP-2 / MMP-9 / NE</option><option value="all">All seven</option><option value="custom" hidden>Custom</option></select></div>
     <div class="pcs" id="pcs"></div>
   </div>
 
@@ -244,7 +244,7 @@ const $ = id => document.getElementById(id);
 const fmt = (x,d=2) => (x>=0?"":"−") + Math.abs(x).toFixed(d);
 const pct = x => x.toFixed(2);
 
-const state = { input:"SGKIPRT|LTA", parsed:null, members:PRESETS.wound.slice(), target:"MMP9", explain:"MMP9", scan:"dLogit", struct:"MMP9", structTouched:false };
+const state = { input:"SGKIPRT|LTA", parsed:null, members:PRESETS.mmp9_ne.slice(), target:"MMP9", explain:"MMP9", scan:"dLogit", struct:"MMP9", structTouched:false };
 
 // ------------------------------------------------------------------ presets (Kridel 2001 Table II + team cores)
 const EXAMPLES = EXTRA.examples;
@@ -325,9 +325,12 @@ function renderVerdict(){
   const v = verdictText();
   $("vbig").innerHTML = pct(v.s.u) + "<small>consensus percentile</small>";
   $("vtxt").innerHTML = '<span class="badge ' + v.cls + '">' + v.head + '</span><span class="d">' + SHORT[state.target] + ': ' + v.rec + '. Specificity margin <b class="mono">' + (v.m.margin >= 0 ? "+" : "−") + Math.abs(v.m.margin).toFixed(2) + '</b> against ' + SHORT[v.m.competitor] + ' (strongest competitor, ' + pct(v.m.competitorU) + ').</span>';
+  const per = state.members.filter(m => m !== state.target).map(m => { const d = scores[state.target].u - scores[m].u; return '<span class="chip" style="cursor:default;color:' + (d >= 0.5 ? "var(--good)" : d >= 0.2 ? "var(--warn)" : "var(--bad)") + '">vs ' + SHORT[m] + ' ' + (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2) + '</span>'; }).join("");
+  $("vtxt").innerHTML += '<div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="font-size:12px;color:var(--faint)">Margin against each competitor:</span>' + per + '</div>';
   const w = []; const t = state.target;
   if (t === "LASB") w.push("The LasB model is trained mostly on elastin windows, so this score behaves largely as an elastin-likeness score.");
   const mm = ["MMP2","MMP8","MMP9","MMP14"]; if (mm.includes(t) && mm.includes(v.m.competitor) && Math.abs(v.m.margin) < 0.3) w.push("Selectivity among MMPs from a P4–P4′ window is weak: MMP-family substrates commonly score similarly across the family.");
+  if (v.m.margin < 0.5 && v.s.u >= 0.7 && state.members.length > 2) w.push("A single strong competitor is enough to lower the margin. Look at the per-competitor margins above, or remove a competitor from the panel (click it) to see specificity against the others.");
   if (state.parsed.missing.length) w.push("Unknown position(s) " + state.parsed.missing.map(i=>E.POSITIONS[i]).join(", ") + ": scored as a gapped window, compared with an equally uninformed null.");
   $("warns").innerHTML = w.map(x => '<div class="warnbox">' + x + '</div>').join("");
 }
