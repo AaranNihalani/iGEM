@@ -1,85 +1,44 @@
-# Substrate Predictor
+# Substrate predictor
 
-ML tool for ranking candidate 8-mer substrate peptides for each protease in the Eton iGEM 2026 diagnostic panel. Primary candidate for the iGEM Best Software Tool prize.
-
-## Install
-
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Train models
-
-```bash
-# Full pipeline: download data (via Task 6), build training sets, train, generate figures
-python train_models.py
-
-# Skip data prep if training sets already exist
-python train_models.py --skip-data
-
-# Include ESM2 embeddings (requires torch + transformers)
-python train_models.py --esm2
-```
-
-### Predict
-
-```bash
-# Rank top 10 candidate motifs for MMP14
-python predict.py --protease MMP14 --top-k 10
-
-# Scan a FASTA sequence for MMP-8 cleavage sites
-python predict.py --protease MMP-8 --scan SEQUENCE.fasta --top-k 5
-
-# Save predictions to CSV
-python predict.py --protease MMP14 --top-k 10 --save
-```
-
-### Run tests
-
-```bash
-pytest tests/ -v
-```
-
-## Validation: SGRSENIRTA (MMP14)
-
-The known MMP14 sensor motif (8-mer core: SGRSENIR) must rank in the top 3, with
-selectivity index >= 5 over MMP-9 and MMP-8.
+Per-protease models that score 8-residue substrate windows (P4-P4') and rank candidate peptides by
+how specifically they are recognised by a target protease within a panel.
 
 ```
-[ACTUAL OUTPUT TO BE PASTED HERE AFTER TRAINING]
+python -m spred build-data              # rebuild data/positives/ from source files
+python -m spred train                   # cluster-aware CV, nested tuning, fit + save models/*.json
+python -m spred predict GPLGIAGQ AAPVSGIG --panel wound
+python -m spred rank --target MMP9 --panel wound --pool 50000
+python -m spred mutate IPRTLTAA --target MMP9      # every single substitution
+python -m spred scan protein.fasta --target NE
+make test study validate                # tests, methodology study, external validation
 ```
 
-## How it works
+## Layout
 
-**Data:** Positive training examples are confirmed P4-P4' cleavage windows from the MEROPS
-substrate database. Negatives are shuffled positives (composition-matched) plus random
-sequences sampled from Swiss-Prot background amino acid frequencies, combined at a 1:3
-positive-to-negative ratio.
-
-**Features:** Each 8-mer is encoded as a 64-dimensional VHSE8 physicochemical vector
-(8 positions x 8 descriptors: hydrophobicity, steric bulk, 3 electronic components,
-H-bond donor, H-bond acceptor, charge). This encoding is biologically interpretable
-and maps directly to the protease subsite specificity framework.
-
-**Models:** Per-protease logistic regression (L2, primary) trained on VHSE8 features.
-A LightGBM comparison model is also trained where sufficient data exists. Both are
-evaluated with stratified 5-fold cross-validation (AUROC, MCC, PR-AUC, Brier score).
-
-**Selectivity:** For a candidate peptide, all 6 per-protease classifiers return predicted
-cleavage probabilities. The selectivity index is `p_target / max(p_competitors)`. The
-joint ranking score is `p_target * log(selectivity + 1)`.
-
-**Candidate generation (default mode):** 6,561 candidates are enumerated from the top-3
-PSSM-preferred amino acids at each of the 8 positions (3^8). All are scored and ranked.
-
-## Confidence tiers
-
-| Tier | Training positives |
+| Path | Contents |
 |---|---|
-| high | >= 200 |
-| medium | 50-199 |
-| low | < 50 |
+| `spred/` | package: `tables` (verified VHSE8, BLOSUM62, Swiss-Prot background), `features`, `pssm`, `data`, `evaluation`, `model`, `panel`, `candidates`, `validation`, `train`, `cli` |
+| `data/sources/` | derived source tables (Eckhard 2016 windows, Yang 2015 Table S1, tropoelastin sequence) |
+| `data/positives/` | final positive windows per protease with provenance |
+| `data/validation/` | Kridel et al. 2001 Table II (measured MMP-9 kinetics) |
+| `data/raw/` | downloaded originals, not tracked (MEROPS `Substrate_search.txt`, Eckhard xlsx, Yang PDF) |
+| `models/` | one JSON per protease (arrays only; shared with the browser tool) |
+| `references/` | archived reference tables and `PROVENANCE.md` |
+| `results/` | cross-validation, methodology study, external validation, legacy audit |
+| `scripts/` | methodology study, validation, source extraction |
 
-FAP has only 2 MEROPS entries and is low-confidence throughout.
+## Method in one paragraph
+
+Positives are confirmed cleavage windows (MEROPS, Eckhard 2016 PICS, Yang 2015). Each protease is trained
+one-vs-rest: negatives are half other proteases' positives (equal share per competitor) and half
+random Swiss-Prot 8-mers, at 3:1. Features are the 64 VHSE8 descriptors; the model is L2 logistic
+regression (C chosen by inner cluster-aware CV) alongside a PSSM with BLOSUM62 pseudocounts. Scores are
+converted to percentiles of a background null, combined by the harmonic mean, and selectivity is the
+margin between the target and its strongest competitor. All performance figures come from
+similarity-clustered cross-validation (sequences within Hamming distance 2 never straddle train and test).
+Scores are relative to the training mixture, not absolute cleavage probabilities.
+
+## Scope
+
+Trainable proteases: MMP-2, MMP-8, MMP-9, MMP-14, neutrophil elastase, LasB, and the faecal serine-protease
+group. FAP is registered but has only two confirmed windows in MEROPS and cannot be trained.
