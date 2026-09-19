@@ -33,12 +33,31 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def fit_logistic(X, y):
-    """Standardise, then L2 logistic regression (C=1, balanced class weights)."""
+C_GRID = (1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+
+
+def fit_logistic(X, y, C: float = 1.0):
+    """Standardise, then L2 logistic regression (balanced class weights)."""
     sc = StandardScaler().fit(X)
-    clf = LogisticRegression(C=1.0, class_weight="balanced", max_iter=5000, solver="lbfgs",
+    clf = LogisticRegression(C=C, class_weight="balanced", max_iter=5000, solver="lbfgs",
                              random_state=RANDOM_SEED).fit(sc.transform(X), y)
     return sc.mean_, sc.scale_, clf.coef_[0], float(clf.intercept_[0])
+
+
+def select_C(X, y, groups, seed: int = RANDOM_SEED, n_splits: int = 3) -> float:
+    """Regularisation strength chosen by inner cluster-aware CV (mean AUROC over C_GRID)."""
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedGroupKFold
+    inner = list(StratifiedGroupKFold(n_splits, shuffle=True, random_state=seed).split(X, y, groups))
+    best, best_score = 1.0, -1.0
+    for C in C_GRID:
+        sc = []
+        for a, b in inner:
+            mean, scale, coef, i0 = fit_logistic(X[a], y[a], C)
+            sc.append(roc_auc_score(y[b], ((X[b] - mean) / scale) @ coef + i0))
+        if np.mean(sc) > best_score:
+            best, best_score = C, float(np.mean(sc))
+    return best
 
 
 def _monotone(q):
@@ -121,10 +140,16 @@ def build_null(model: ProteaseModel, n: int = NULL_SIZE, seed: int = RANDOM_SEED
     model.null_pssm = _monotone(np.quantile(model.pssm(seqs), GRID))
 
 
-def fit_model(protease: str, frame, positives, meta=None) -> ProteaseModel:
-    """Fit on a training frame (sequence, label, ...) and the target's positives."""
+def fit_model(protease: str, frame, positives, meta=None, groups=None) -> ProteaseModel:
+    """Fit on a training frame (sequence, label, ...) and the target's positives; C by inner CV."""
+    from .evaluation import hamming_clusters
     X = encode(frame["sequence"].tolist())
-    mean, scale, coef, b = fit_logistic(X, frame["label"].values.astype(int))
-    m = ProteaseModel(protease, mean, scale, coef, b, pssm_mod.fit_log_odds(positives), meta=meta or {})
+    y = frame["label"].values.astype(int)
+    if groups is None:
+        groups = hamming_clusters(frame["sequence"].tolist())
+    C = select_C(X, y, groups)
+    mean, scale, coef, b = fit_logistic(X, y, C)
+    meta = dict(meta or {}, C=C)
+    m = ProteaseModel(protease, mean, scale, coef, b, pssm_mod.fit_log_odds(positives), meta=meta)
     build_null(m)
     return m

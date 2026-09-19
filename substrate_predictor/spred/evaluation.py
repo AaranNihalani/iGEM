@@ -11,7 +11,7 @@ from sklearn.model_selection import StratifiedGroupKFold
 from . import pssm as pssm_mod
 from .constants import RANDOM_SEED
 from .features import encode, index_matrix
-from .model import fit_logistic, sigmoid
+from .model import GRID, _monotone, fit_logistic, select_C, sigmoid
 
 
 def hamming_clusters(seqs, max_dist: int = 2) -> np.ndarray:
@@ -48,22 +48,38 @@ def hamming_clusters(seqs, max_dist: int = 2) -> np.ndarray:
     return np.array([find(i) for i in range(n)])
 
 
-def cross_validate(frame, positives_col="label", n_splits=5, seed=RANDOM_SEED, max_dist=2):
-    """Out-of-fold LR probabilities and PSSM scores, with cluster ids."""
+def cross_validate(frame, positives_col="label", n_splits=5, seed=RANDOM_SEED, max_dist=2, tune=True,
+                   n_null=5000):
+    """Out-of-fold LR probability, PSSM score and LR+PSSM consensus percentile, with cluster ids.
+
+    Within every outer fold the regularisation strength is chosen by an inner cluster-aware CV on the
+    training part only (nested selection), and the background null used for percentiles is built from
+    that fold's own models.
+    """
+    from .data import background_sequences
     seqs = frame["sequence"].tolist()
     y = frame[positives_col].values.astype(int)
     X = encode(seqs)
     groups = hamming_clusters(seqs, max_dist)
-    oof_p, oof_s = np.zeros(len(y)), np.zeros(len(y))
+    oof_p, oof_s, oof_c = np.zeros(len(y)), np.zeros(len(y)), np.zeros(len(y))
     fold = np.zeros(len(y), dtype=int)
+    chosen = []
     splitter = StratifiedGroupKFold(n_splits, shuffle=True, random_state=seed)
+    null_seqs = background_sequences(n_null, np.random.default_rng(seed + 7))
+    Xn = encode(null_seqs)
     for k, (tr, te) in enumerate(splitter.split(X, y, groups)):
-        mean, scale, coef, b = fit_logistic(X[tr], y[tr])
+        C = select_C(X[tr], y[tr], groups[tr], seed) if tune else 1.0
+        chosen.append(C)
+        mean, scale, coef, b = fit_logistic(X[tr], y[tr], C)
         oof_p[te] = sigmoid(b + ((X[te] - mean) / scale) @ coef)
         lo = pssm_mod.fit_log_odds([seqs[i] for i in tr if y[i] == 1])
         oof_s[te] = pssm_mod.score(lo, [seqs[i] for i in te])
+        nq_lr = _monotone(np.quantile(sigmoid(b + ((Xn - mean) / scale) @ coef), GRID))
+        nq_ps = _monotone(np.quantile(pssm_mod.score(lo, null_seqs), GRID))
+        a, c = np.interp(oof_p[te], nq_lr, GRID), np.interp(oof_s[te], nq_ps, GRID)
+        oof_c[te] = 2 * a * c / (a + c + 1e-12)
         fold[te] = k
-    return {"y": y, "p": oof_p, "s": oof_s, "groups": groups, "fold": fold}
+    return {"y": y, "p": oof_p, "s": oof_s, "u": oof_c, "groups": groups, "fold": fold, "C": chosen}
 
 
 def metrics(y, p) -> dict:
