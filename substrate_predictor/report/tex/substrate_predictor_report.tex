@@ -1,0 +1,216 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm,top=2.6cm,bottom=2.2cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{array,booktabs,tabularx}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,float}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
+\renewcommand\thesection{\Roman{section}}
+\numberwithin{equation}{section}
+
+\titleformat{\section}{\large\bfseries}{\thesection.\;}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{1.6ex plus .2ex}{0.6ex}
+\titlespacing{\subsection}{0pt}{1.0ex}{0.3ex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyhead[L]{\small\textit{Substrate Predictor}}
+\fancyhead[R]{\small Eton iGEM Dry Lab 2026}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+\newcommand{\cit}[1]{[#1]}
+\newcommand{\FLAG}{\textit{(unconfirmed)}}
+\newcommand{\CONF}{\textit{(confirmed)}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\kcat}{k_{\mathrm{cat}}}
+\newcommand{\Km}{K_m}
+\newcommand{\pos}[1]{\mathrm{P}#1}
+\newcommand{\prm}[1]{\mathrm{P}#1'}
+\input{../numbers}
+
+\newenvironment{assump}{%
+  \small}{%
+  \smallskip}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries Substrate Predictor}\\[0.4em]
+{\large How a P4--P4$'$ Substrate Window Becomes a Panel Selectivity Score}\\[0.25em]
+{\small\color{gray}
+Eton iGEM 2026, Dry Lab \quad$|$\quad
+Tasks 7 and 8 \quad$|$\quad
+\texttt{spred} package}
+\end{center}
+\vspace{0.4em}\hrule\vspace{0.7em}
+
+\noindent\textbf{Scope.}
+This document presents the software tool that scores an eight-residue
+peptide window against a panel of proteases, the methodology by which its
+models were built and evaluated, and the extent to which its outputs can be
+relied upon. It is organised into six sections, each corresponding to one
+stage from source data to design decision. Each section follows a
+consistent structure: a plain-language description of the stage; the
+assumptions required for the stated result, given explicitly; the governing
+equations, with derivations where the result is not standard; and the
+resulting evidence. Values obtained by direct computation, or verified
+against a source held in the repository, are annotated \CONF. Values that
+represent a working assumption, or that could not be checked
+independently, are annotated \FLAG.
+
+%=======================================================================
+\section{Overview: Model Structure and Operating Principle}
+\label{sec:story}
+
+A protease hydrolyses one peptide bond, the \emph{scissile bond}. Residues
+on its amino-terminal side are numbered outward from the bond as
+$\pos{1},\pos{2},\dots$ and residues on the carboxy-terminal side as
+$\prm{1},\prm{2},\dots$ \cit{1}. The enzyme surface that receives residue
+$\pos{i}$ is subsite S$i$, and $\prm{i}$ binds S$i'$. Specificity is
+therefore positional: a protease may require proline at $\pos{3}$ and a large
+hydrophobic residue at $\prm{1}$, and these preferences are largely
+independent of one another. The unit of data throughout this document is the
+eight-residue window
+\[
+\underbrace{\pos{4}\ \pos{3}\ \pos{2}\ \pos{1}}_{\text{non-primed}}\ \ \downarrow\ \ \underbrace{\prm{1}\ \prm{2}\ \prm{3}\ \prm{4}}_{\text{primed}},
+\]
+so that the scissile bond always lies between the fourth and fifth character.
+For example, the MMP-9 substrate SGKIPRT$\downarrow$LTA measured by
+Kridel et al.\ \cit{1} has $\pos{4}\pos{3}\pos{2}\pos{1}=\mathrm{IPRT}$ and
+$\prm{1}\prm{2}\prm{3}=\mathrm{LTA}$; its window is \texttt{IPRTLTA}$-$, with
+$\prm{4}$ unknown because the peptide ends there.
+
+The panel comprises the matrix metalloproteinases MMP-2, MMP-8, MMP-9 and
+MMP-14, neutrophil elastase (NE), LasB (pseudolysin of \emph{Pseudomonas
+aeruginosa}), and a pooled group of digestive serine proteases (trypsin~1,
+chymotrypsin~B and elastase-1; MEROPS S01.151--153), giving seven
+trainable proteases and $10{,}472$ confirmed cleavage windows \CONF. The MMPs
+are zinc-dependent endopeptidases whose catalytic domain of about 170
+residues carries the zinc-binding motif HEXXHXXGXXH and a conserved
+methionine (the ``Met-turn''), together with a structural zinc and two to
+three calcium ions \cit{2}. MMP-9 substrates selected by phage display
+carry Pro at $\pos{3}$ and a large hydrophobic residue at $\prm{1}$, with
+Arg favoured at $\pos{2}$ and Ser/Thr at $\prm{2}$; the same authors note
+that many MMPs recognise this Pro-X-X-Hy core and that selectivity must
+therefore arise from subsite interactions outside $\pos{3}$ and $\prm{1}$
+\cit{1}. MMPs are reported to be elevated in chronic wound fluid relative to
+acute wound fluid, with MMP-9 the predominant elevated gelatinase, while the
+evidence for neutrophil elastase is mixed \cit{3}.
+
+The tool produces, for each protease in a chosen panel, (i) a cleavage
+score from a logistic regression on physicochemical features, (ii) a score
+from a position-specific scoring matrix (PSSM), (iii) each score expressed as
+a percentile of random background windows, so that different proteases are
+comparable, and (iv) a specificity margin: the target's consensus percentile
+minus that of its strongest competitor. The remainder of this document is
+organised into six sections, each addressing one stage:
+\begin{center}
+\small
+\begin{tabular}{@{}cll@{}}
+\toprule
+Part & Content & Section \\
+\midrule
+A & Confirmed cleavage windows and negative sets & \ref{sec:data} \\
+B & Feature representation and per-protease models & \ref{sec:models} \\
+C & Percentile scale and panel selectivity & \ref{sec:panel} \\
+D & Evaluation methodology and cross-validated results & \ref{sec:eval} \\
+E & Validation against independent data and structures & \ref{sec:valid} \\
+F & Application to sensor candidate design & \ref{sec:design} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/F01_pipeline.pdf}
+  \caption{Pipeline from source data to panel selectivity. Positives are
+    confirmed cleavage windows; negatives combine other proteases' windows
+    with random background windows; each protease receives a logistic
+    regression and a PSSM; scores are converted to percentiles of a
+    background null and combined into a consensus and a specificity margin.}
+  \label{fig:pipeline}
+\end{figure}
+
+An interactive browser version of the tool accompanies this document
+(\texttt{substrate\_predictor\_explorer.html}); it embeds the trained models,
+the protease structures used in Part~\ref{sec:valid}, and a scoring engine
+verified against the Python package (Part~\ref{sec:design}).
+
+\input{parts/A_data}
+\input{parts/B_models}
+\input{parts/C_panel}
+\input{parts/D_evaluation}
+\input{parts/E_validation}
+\input{parts/F_design}
+\input{parts/summary}
+
+%=======================================================================
+\section*{References}
+
+\begin{enumerate}[label={[\arabic*]},noitemsep,leftmargin=*]
+\item Kridel SJ, Chen E, Kotra LP, Howard EW, Mobashery S, Smith JW (2001).
+  Substrate hydrolysis by matrix metalloproteinase-9.
+  \textit{J Biol Chem} 276(23):20572--20578. \textbf{kridel2001.pdf}
+  (papers/layer\_09/)
+
+\item Nagase H, Woessner JF Jr (1999). Matrix metalloproteinases.
+  \textit{J Biol Chem} 274(31):21491--21494. \textbf{nagase\_woessner1999.pdf}
+  (papers/layer\_00/)
+
+\item Trengove NJ, Stacey MC, MacAuley S, Bennett N, Gibson J, Burslem F,
+  Murphy G, Schultz G (1999). Analysis of the acute and chronic wound
+  environments: the role of proteases and their inhibitors.
+  \textit{Wound Repair Regen} 7:442--452. \textbf{trengove1999.pdf}
+  (papers/layer\_00/)
+
+\item Eckhard U, Huesgen PF, Schilling O, Bellac CL, Butler GS, Cox JH, Dufour A,
+  Goebeler V, Kappelhoff R, Keller UAD, Klein T, Lange PF, Marino G, Morrison CJ,
+  Prudova A, Rodriguez D, Starr AE, Wang Y, Overall CM (2016). Active site
+  specificity profiling of the matrix metalloproteinase family: proteomic
+  identification of 4300 cleavage sites by nine MMPs explored with structural and
+  synthetic peptide cleavage analyses. \textit{Matrix Biol} 49:37--60.
+  \textbf{1-s2.0-S0945053X15001298-mmc4.xlsx, -mmc5.xlsx}
+  (substrate\_predictor/data/raw/eckhard2016/)
+
+\item Yang J, Zhao HL, Ran LY, Li CY, Zhang XY, Su HN, Shi M, Zhou BC, Chen XL,
+  Zhang YZ (2015). Mechanistic insights into elastin degradation by pseudolysin,
+  the major virulence factor of the opportunistic pathogen \textit{Pseudomonas
+  aeruginosa}. \textit{Sci Rep} 5:9936. \textbf{srep09936-s1.pdf}
+  (substrate\_predictor/data/raw/yang2015/)
+
+\item Mei H, Liao ZH, Zhou Y, Li SZ (2005). A new set of amino acid descriptors
+  and its application in peptide QSARs. \textit{Biopolymers} 80(6):775--786.
+  Descriptor definition checked against the published abstract; values archived
+  as \textbf{vhse8\_table\_peptides\_0.5.0.json} (substrate\_predictor/references/)
+
+\item Henikoff S, Henikoff JG (1992). Amino acid substitution matrices from
+  protein blocks. \textit{Proc Natl Acad Sci USA} 89:10915--10919. Matrix values
+  archived as \textbf{blosum62\_biopython.json} (substrate\_predictor/references/)
+
+\item MEROPS peptidase database, \texttt{Substrate\_search} and peptidase-unit
+  records. \textbf{Substrate\_search.txt} (cross\_reactivity\_matrix/data/raw/)
+
+\item UniProtKB/Swiss-Prot release 2026\_03, amino-acid composition (Expasy
+  release statistics, section 6.1) and sequence P04985.
+  \textbf{swissprot\_composition\_2026\_03.json} (substrate\_predictor/references/)
+
+\item RCSB Protein Data Bank entries 1GKC, 1QIB, 1JAN, 1HNE and 1EZM.
+  \textbf{MMP9.pdb, MMP2.pdb, MMP8.pdb, NE.pdb, LASB.pdb}
+  (substrate\_predictor/data/structures/processed/)
+
+\end{enumerate}
+
+\end{document}

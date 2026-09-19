@@ -552,7 +552,7 @@ function modelCard(){
   }
   $("cvline").textContent = ORDER.length + " proteases · " + ORDER.reduce((s, m) => s + MODELS[m].meta.n_pos, 0).toLocaleString() + " training windows";
 }
-buildChips(); readHash(); modelCard(); update(); initViewers();
+buildChips(); readHash(); modelCard(); update(); initViewers(); if (scores) colourPeptide();
 window.addEventListener("resize", () => { if (scores) renderExplain(); });
 window.__SP = { state: state, update: update, E: E, MODELS: MODELS };
 })();

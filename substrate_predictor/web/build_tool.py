@@ -40,3 +40,11 @@ out = (tpl.replace("__MODELS__", script_safe(json.dumps(models, separators=(",",
 dest = ROOT / "report" / "substrate_predictor_explorer.html"
 dest.write_text(out)
 print(f"wrote {dest}  ({len(out) / 1e6:.2f} MB)")
+
+# lighter variant for an online host: 3Dmol.js (pinned) from cdnjs; models, tables and structures stay inlined
+cdn = "https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"
+light = out.replace("<script>" + (WEB / "vendor" / "3Dmol-min.js").read_text() + "</script>", f'<script src="{cdn}"></script>')
+assert len(light) < len(out)
+dest2 = ROOT / "report" / "substrate_predictor_explorer_cdn.html"
+dest2.write_text(light)
+print(f"wrote {dest2}  ({len(light) / 1e6:.2f} MB)")
