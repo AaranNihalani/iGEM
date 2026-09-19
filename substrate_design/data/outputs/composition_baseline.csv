@@ -1,4 +1,0 @@
-protease,auroc_vhse8,auroc_bag_of_aas,delta,status
-MMP-2,0.8834,0.5544,0.329,positional encoding contributing
-MMP-9,0.7743,0.5448,0.2295,positional encoding contributing
-NE,0.8257,0.4619,0.3638,positional encoding contributing

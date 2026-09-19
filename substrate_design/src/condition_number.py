@@ -16,20 +16,16 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
+from spred import data as spred_data, pssm as spred_pssm
+
 log = logging.getLogger(__name__)
 
 STANDARD_AAS = list("ACDEFGHIKLMNPQRSTVWY")
 AA_INDEX = {aa: i for i, aa in enumerate(STANDARD_AAS)}
-SWISSPROT_BG = {
-    'A': 0.0777, 'R': 0.0526, 'N': 0.0427, 'D': 0.0530, 'C': 0.0157,
-    'Q': 0.0391, 'E': 0.0629, 'G': 0.0691, 'H': 0.0228, 'I': 0.0591,
-    'L': 0.0960, 'K': 0.0573, 'M': 0.0237, 'F': 0.0405, 'P': 0.0492,
-    'S': 0.0694, 'T': 0.0550, 'W': 0.0130, 'Y': 0.0322, 'V': 0.0667,
-}
-PSEUDOCOUNT = 0.5
 FLAG_THRESHOLD = 0.20
 
 TRIPLEX_PROTEASES = ['MMP-2', 'MMP-9', 'NE']
+SPRED_ID = {'MMP-2': 'MMP2', 'MMP-9': 'MMP9', 'NE': 'NE'}
 
 # Stage 1 candidate sequences, one per target protease
 STAGE1_SEQS = {
@@ -39,41 +35,10 @@ STAGE1_SEQS = {
 }
 
 
-def _build_pssm_from_csv(csv_path: Path) -> np.ndarray:
-    """Build an (8, 20) PSSM from a training set CSV (positive rows only)."""
-    df = pd.read_csv(csv_path)
-    sequences = df.loc[df['label'] == 1, 'sequence'].dropna().tolist()
-    if not sequences:
-        raise ValueError(f"No positive sequences in {csv_path}")
-
-    counts = np.zeros((8, len(STANDARD_AAS)), dtype=float)
-    for seq in sequences:
-        for pos, aa in enumerate(seq.upper()):
-            if aa in AA_INDEX:
-                counts[pos, AA_INDEX[aa]] += 1.0
-    counts += PSEUDOCOUNT
-    freq = counts / counts.sum(axis=1, keepdims=True)
-    bg = np.array([SWISSPROT_BG[aa] for aa in STANDARD_AAS])
-    pssm = np.log2(freq / bg)
-    log.info(f"  Built PSSM from {len(sequences)} positives in {csv_path.name}")
-    return pssm
-
-
-def load_triplex_pssms(predictor_processed_dir: Path) -> dict[str, np.ndarray]:
-    """
-    Build PSSMs for MMP-2, MMP-9, NE from substrate_predictor training CSVs.
-    """
-    pssms = {}
-    for protease in TRIPLEX_PROTEASES:
-        fname = f"training_set_{protease.replace('-', '_')}.csv"
-        csv_path = predictor_processed_dir / fname
-        if not csv_path.exists():
-            raise FileNotFoundError(
-                f"Training set not found: {csv_path}. "
-                "Run substrate_predictor/train_models.py first."
-            )
-        pssms[protease] = _build_pssm_from_csv(csv_path)
-    return pssms
+def load_triplex_pssms(_unused=None) -> dict[str, np.ndarray]:
+    """PSSMs (8 x 20 log2-odds) for MMP-2, MMP-9 and NE from the predictor's positive windows."""
+    pos = spred_data.load_positives()
+    return {p: spred_pssm.fit_log_odds(pos[SPRED_ID[p]]) for p in TRIPLEX_PROTEASES}
 
 
 def score_motif(motif: str, pssm: np.ndarray) -> float:
@@ -147,7 +112,7 @@ def flag_pairs(normed_df: pd.DataFrame) -> list[tuple[str, str, float]]:
     return sorted(flagged, key=lambda x: -x[2])
 
 
-def run(predictor_processed_dir: Path, output_dir: Path) -> dict:
+def run(output_dir: Path) -> dict:
     """
     Full 3×3 specificity matrix + condition number pipeline.
     Returns dict with matrix DataFrames and kappa.
@@ -155,7 +120,7 @@ def run(predictor_processed_dir: Path, output_dir: Path) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     log.info("Building 3-plex PSSMs ...")
-    pssms = load_triplex_pssms(predictor_processed_dir)
+    pssms = load_triplex_pssms()
 
     log.info("Building 3×3 specificity matrix ...")
     raw_df, normed_df = build_specificity_matrix(pssms, STAGE1_SEQS)

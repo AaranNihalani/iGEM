@@ -1,5 +1,5 @@
-name,sequence,target,stage,p_target,selectivity,joint_score,p_MMP_2,p_MMP_9,p_NE,percentile_in_pssm_pool,pool_size,source
-Cand1_MMP9,PRSLSGLK,MMP-9,1,0.052,0.082,0.0041,0.0351,0.052,0.6347,0.0,6561,"Kridel 2001 (phage display, P2=Arg/P1=Leu MMP-9 bias)"
-Cand2_MMP2,PLGLAGQS,MMP-2,1,0.1753,0.439,0.0638,0.1753,0.1921,0.3992,0.0,6561,Whitney/Tsien ACPP PLGLAG core; kcat/KM ≈ 2.8×10⁴ M⁻¹s⁻¹ (MMP-2)
-Cand4_NE,AAPVSGIG,NE,1,0.9408,1.563,0.8855,0.0086,0.6018,0.9408,44.4,6561,Kasperkiewicz 2014 canonical AAPV core; NE Val-P1 preference
-Cand3_MMP2b,PLGVALAA,MMP-2,2,0.0811,0.098,0.0076,0.0811,0.3996,0.8234,0.0,6561,Murphy 1994; Nva→Val approx; kcat/KM = 3.97×10⁵ M⁻¹s⁻¹ (MMP-2)
+name,sequence,target,stage,P_MMP2,P_MMP9,P_NE,u_MMP2,u_MMP9,u_NE,margin,margin_percentile_in_pssm_pool,pool_size,source
+Cand1_MMP9,PRSLSGLK,MMP-9,1,0.0231,0.1121,0.8205,0.0773,0.0666,0.9035,-0.8369,0.0,6561,"Kridel 2001 phage-display consensus (P3 Pro, P2 Arg, P1' Leu)"
+Cand2_MMP2,PLGLAGQS,MMP-2,1,0.219,0.2247,0.6842,0.5128,0.3309,0.8306,-0.3178,0.0,6561,PLGLAG core
+Cand4_NE,AAPVSGIG,NE,1,0.0198,0.255,0.9803,0.0661,0.4877,0.9979,0.5102,26.2,6561,AAPV core
+Cand3_MMP2b,PLGVALAA,MMP-2,2,0.5983,0.3066,0.8961,0.8288,0.607,0.9644,-0.1356,0.0,6561,PLGLAG variant
