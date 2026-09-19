@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Substrate Predictor Explorer</title>
+<meta name="description" content="Score a protease substrate window against a panel of proteases, see what drives the score, and view the protease structures.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#090d12; --panel:#10161e; --panel2:#151d27; --panel3:#1b2532; --line:#243040; --line2:#1a2330;
+  --text:#e6edf5; --dim:#8b9db3; --faint:#5b6d82; --accent:#3ecfb2; --warn:#f0a53a; --bad:#ef6b7f; --good:#3ecf8e;
+  --c-MMP2:#a084e8; --c-MMP8:#4aa3e0; --c-MMP9:#3ecf8e; --c-MMP14:#f0a020; --c-NE:#ef6b7f; --c-LASB:#c9a35a; --c-FECAL:#8a97a8;
+  --pos:#f0785f; --neg:#4f8fe6;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;padding:22px 20px 60px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace}
+.wrap{max-width:1420px;margin:0 auto}
+a{color:var(--accent)}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{margin:4px 0 4px;font-size:clamp(24px,3vw,32px);letter-spacing:-.015em}
+.sub{color:var(--dim);font-size:14px;max-width:70ch}
+.hmeta{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--faint);text-align:right;line-height:1.7}
+.grid{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(360px,0.82fr);gap:18px;align-items:start}
+@media(max-width:1060px){.grid{grid-template-columns:minmax(0,1fr)}}
+.leftcol,.rightcol{min-width:0}
+@media(max-width:520px){body{padding:16px 12px 40px}.card{padding:14px 12px 16px}.big{font-size:34px}.verdict{grid-template-columns:1fr}.win .cell .aa{font-size:17px}.win{gap:3px}.hmeta{text-align:left}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px 18px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h2 .hint{letter-spacing:0;text-transform:none;font-weight:400;color:var(--faint)}
+label.f{display:block;font-size:12px;color:var(--dim);margin-bottom:5px}
+input[type=text],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-family:"IBM Plex Mono",monospace;font-size:17px;letter-spacing:.06em}
+select{font-family:"IBM Plex Sans",sans-serif;font-size:13.5px;letter-spacing:0;padding:8px 10px;width:auto}
+input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.msg{font-size:12.5px;margin-top:7px;min-height:18px}
+.msg.err{color:var(--bad)} .msg.note{color:var(--dim)}
+.win{display:grid;grid-template-columns:repeat(4,1fr) 10px repeat(4,1fr);gap:5px;margin-top:12px}
+.win .cell{background:var(--panel2);border:1px solid var(--line);border-radius:8px;text-align:center;padding:6px 0 5px}
+.win .cell .aa{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;line-height:1.1}
+.win .cell .pp{font-size:10.5px;color:var(--faint);letter-spacing:.06em}
+.win .cell.unk{background:repeating-linear-gradient(135deg,var(--panel2) 0 5px,#111923 5px 10px);border-style:dashed}
+.win .cell.unk .aa{color:var(--faint)}
+.win .bond{position:relative}
+.win .bond::before{content:"";position:absolute;left:4px;top:-4px;bottom:-4px;width:2px;background:var(--bad);border-radius:2px}
+.win .bond::after{content:"scissile bond";position:absolute;left:50%;top:100%;transform:translateX(-50%);font-size:9.5px;color:var(--bad);white-space:nowrap;margin-top:3px;letter-spacing:.05em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:"IBM Plex Mono",monospace;transition:all .12s}
+.chip:hover{color:var(--text);border-color:#33465c}
+.chip .k{color:var(--faint);font-family:"IBM Plex Sans",sans-serif;margin-left:5px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pc{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:5px 9px;font-size:12.5px;cursor:pointer;user-select:none}
+.pc .dot{width:9px;height:9px;border-radius:50%}
+.pc.off{opacity:.42}
+.pc.tgt{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.pc button{background:none;border:none;color:var(--faint);font-size:10.5px;cursor:pointer;padding:0 0 0 4px;font-family:"IBM Plex Mono",monospace;letter-spacing:.06em}
+.pc.tgt button{color:var(--accent)}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.big{font-family:"IBM Plex Mono",monospace;font-size:44px;font-weight:600;line-height:1;letter-spacing:-.03em}
+.big small{font-size:14px;color:var(--faint);font-weight:400;margin-left:4px;letter-spacing:0}
+.vtxt{font-size:14px;color:var(--text)} .vtxt .d{color:var(--dim);font-size:12.5px;display:block;margin-top:3px}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;padding:3px 9px;border-radius:999px;text-transform:uppercase}
+.b-good{background:rgba(62,207,142,.14);color:var(--good)} .b-warn{background:rgba(240,165,58,.14);color:var(--warn)} .b-bad{background:rgba(239,107,127,.14);color:var(--bad)}
+.warnbox{margin-top:12px;border:1px solid rgba(240,165,58,.35);background:rgba(240,165,58,.07);color:#f3c98a;border-radius:9px;padding:9px 12px;font-size:12.5px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:600;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 8px;border-bottom:1px solid var(--line2);text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+td:first-child{font-family:"IBM Plex Sans",sans-serif}
+tr.tgt td{background:rgba(62,207,178,.06)}
+.tblwrap{overflow-x:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+svg text{font-family:"IBM Plex Sans",sans-serif}
+.tabs{display:flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px}
+.tabs button{background:none;border:none;color:var(--dim);font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+.tabs button.on{background:var(--panel3);color:var(--text);font-weight:600}
+.viewer{position:relative;width:100%;height:360px;border-radius:9px;overflow:hidden;background:#070a0e;border:1px solid var(--line2)}
+.vbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:center}
+.vbar button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:7px;padding:4px 9px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.vbar button:hover{color:var(--text)} .vbar button.on{color:var(--accent);border-color:var(--accent)}
+.vinfo{font-size:11.5px;color:var(--faint);margin-top:8px;line-height:1.55}
+.sticky{position:sticky;top:14px}
+@media(max-width:1060px){.sticky{position:static}}
+canvas{display:block;width:100%}
+details{margin-top:10px} summary{cursor:pointer;color:var(--dim);font-size:13px}
+details p,details li{color:var(--dim);font-size:12.5px}
+.mc{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
+.mc div{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;font-size:12px;color:var(--dim)}
+.mc b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+footer{margin-top:24px;padding-top:14px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--faint);line-height:1.7}
+.tt{position:fixed;pointer-events:none;background:#000d;border:1px solid var(--line);color:var(--text);font-size:12px;padding:6px 9px;border-radius:7px;z-index:50;display:none;font-family:"IBM Plex Mono",monospace}
+.kbtn{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}
+.kbtn:hover{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="kicker">Eton iGEM 2026 · Dry Lab</div>
+    <h1>Substrate Predictor Explorer</h1>
+    <div class="sub">Score an eight-residue substrate window (P4 to P4′) against a panel of proteases, see which positions drive the score, and view the protease structures. Runs entirely in your browser.</div>
+  </div>
+  <div class="hmeta">companion to the technical report<br><span id="cvline"></span></div>
+</header>
+
+<div class="grid">
+<div class="leftcol">
+
+  <div class="card">
+    <h2><span>1 · Peptide</span><span class="hint">mark the scissile bond with |</span></h2>
+    <label class="f" for="pep">Peptide or window</label>
+    <input type="text" id="pep" spellcheck="false" autocomplete="off" value="SGKIPRT|LTA" aria-describedby="pmsg">
+    <div class="msg" id="pmsg"></div>
+    <div class="win" id="win"></div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card">
+    <h2><span>2 · Panel and target</span><span class="hint">click a protease to include it; TARGET picks the one you want to detect</span></h2>
+    <div class="row"><label class="f" for="preset" style="margin:0">Preset</label>
+      <select id="preset"><option value="wound">Wound panel (MMP-2, -8, -9, NE, LasB)</option><option value="mmp_triplex">MMP-2 / MMP-9 / NE</option><option value="mmp9_ne">MMP-9 / NE</option><option value="all">All seven</option><option value="custom" hidden>Custom</option></select></div>
+    <div class="pcs" id="pcs"></div>
+  </div>
+
+  <div class="card" id="verdictcard">
+    <h2><span>3 · Result</span><span class="hint">scores are relative, not probabilities</span></h2>
+    <div class="verdict"><div class="big" id="vbig">–</div><div class="vtxt" id="vtxt"></div></div>
+    <div id="warns"></div>
+    <div style="margin-top:14px" id="barchart"></div>
+    <div class="legend"><span><i style="background:#8b9db3"></i>consensus percentile (bar)</span><span><i style="background:#fff;border-radius:50%"></i>logistic-regression percentile</span><span><i style="background:#fff;transform:rotate(45deg)"></i>PSSM percentile</span></div>
+  </div>
+
+  <div class="card">
+    <h2><span>4 · Scores in detail</span><span class="hint">percentile = fraction of random 8-mers scoring lower</span></h2>
+    <div class="tblwrap"><table id="tbl"></table></div>
+  </div>
+
+  <div class="card">
+    <h2><span>5 · What drives the score</span>
+      <span class="row"><label class="f" for="explain" style="margin:0">Explain</label><select id="explain"></select></span></h2>
+    <div id="contrib"></div>
+    <div class="legend"><span><i style="background:var(--pos)"></i>supports cleavage</span><span><i style="background:var(--neg)"></i>argues against</span><span>Top: logistic-regression contribution to the logit. Bottom: PSSM log-odds per position (bits).</span></div>
+    <div style="margin-top:14px"><canvas id="logo" height="170"></canvas></div>
+    <div class="legend"><span>Learned specificity of the selected protease. Your residues are underlined and shaded.</span></div>
+  </div>
+
+  <div class="card">
+    <h2><span>6 · Single-substitution scan</span>
+      <span class="tabs" id="scantabs"><button data-m="dLogit" class="on">Target score</button><button data-m="dMargin">Specificity margin</button></span></h2>
+    <div id="scan"></div>
+    <div class="legend" id="scanleg"></div>
+    <div class="chips" id="sugg" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h2><span>About the models</span></h2>
+    <div class="mc" id="mc"></div>
+    <details><summary>How to read these numbers</summary>
+      <ul>
+        <li><b>Percentile.</b> The score is compared with 100,000 random 8-mers. 0.95 means only 5% of random windows score higher. This puts every protease on the same scale.</li>
+        <li><b>Consensus.</b> The harmonic mean of the logistic-regression and PSSM percentiles; high only if both agree.</li>
+        <li><b>Specificity margin.</b> Target consensus minus the strongest competitor's, within the panel you chose. Near +1: strongly specific. Near 0: a competitor recognises it as well as the target. Negative: a competitor prefers it.</li>
+        <li><b>Unknown positions.</b> Shown as “-”. They are handled exactly for the additive models and compared with an equally uninformed null.</li>
+      </ul></details>
+    <details><summary>What these models cannot tell you</summary>
+      <ul>
+        <li>They see only the eight residues around the bond: no flanking construct, structure, pH, or enzyme concentration.</li>
+        <li>Scores rank resemblance to observed cleavage sites. They are not rate constants or probabilities.</li>
+        <li>Selectivity among MMP-2, -8, -9 and -14 is weak from sequence alone.</li>
+        <li>The LasB model is trained mostly on one protein (elastin) and behaves largely as an elastin-likeness score.</li>
+        <li>Optimised sequences far from natural substrates are extrapolations; test before relying on them.</li>
+      </ul></details>
+  </div>
+</div>
+
+<div class="rightcol"><div class="sticky">
+  <div class="card">
+    <h2><span>Protease structure</span><span class="hint" id="sname"></span></h2>
+    <div class="viewer" id="v1"></div>
+    <div class="vbar" id="v1bar">
+      <select id="structsel" aria-label="Protease structure"></select>
+      <button id="b-site" class="on">Active site</button><button id="b-whole">Whole protein</button><button id="b-surf">Surface</button><button id="b-lig" class="on">Inhibitor</button><button id="b-spin1">Spin</button>
+    </div>
+    <div class="vinfo" id="sinfo"></div>
+  </div>
+  <div class="card">
+    <h2><span>Your peptide, coloured by the model</span><span class="hint">schematic</span></h2>
+    <div class="viewer" id="v2" style="height:300px"></div>
+    <div class="vbar"><button id="b-spin2" class="on">Spin</button><span class="vinfo" style="margin:0">Colour = each position's contribution to the logistic-regression logit for the selected protease.</span></div>
+    <div class="vinfo">An extended-strand cartoon for orientation. Side-chain beads are schematic and not to scale; this is not a predicted structure or a docked complex.</div>
+  </div>
+</div></div>
+</div>
+
+<footer>
+  Experimental protease structures from the RCSB Protein Data Bank (1GKC, 1QIB, 1JAN, 1HNE, 1EZM); catalytic-site residues derived from the coordinates. Models trained on MEROPS, Eckhard et al. (2016) and Yang et al. (2015) cleavage windows; see the technical report for methods, validation and limitations.
+  3D rendering by 3Dmol.js (© 2014 University of Pittsburgh and contributors, BSD-3-Clause). Not for clinical use.
+</footer>
+</div>
+<div class="tt" id="tt"></div>
+
+<script id="d-models" type="application/json">__MODELS__</script>
+<script id="d-tables" type="application/json">__TABLES__</script>
+<script id="d-structs" type="application/json">__STRUCTS__</script>
+<script id="d-pdb" type="application/json">__PDB__</script>
+<script id="d-extra" type="application/json">__EXTRA__</script>
+<script>__3DMOL__</script>
+<script>__ENGINE__</script>
+<script>
+(function(){
+"use strict";
+const E = window.SPEngine;
+const J = id => JSON.parse(document.getElementById(id).textContent);
+const TABLES = J("d-tables"), MODELS_JSON = J("d-models"), STRUCTS = J("d-structs"), PDB = J("d-pdb"), EXTRA = J("d-extra");
+E.init(TABLES);
+const MODELS = {}; for (const k in MODELS_JSON) MODELS[k] = E.makeModel(MODELS_JSON[k]);
+const ORDER = ["MMP2","MMP8","MMP9","MMP14","NE","LASB","FECAL"];
+const NAME = {MMP2:"MMP-2",MMP8:"MMP-8",MMP9:"MMP-9",MMP14:"MMP-14",NE:"Neutrophil elastase",LASB:"LasB",FECAL:"Faecal serine proteases"};
+const SHORT = {MMP2:"MMP-2",MMP8:"MMP-8",MMP9:"MMP-9",MMP14:"MMP-14",NE:"NE",LASB:"LasB",FECAL:"Faecal"};
+const COL = {MMP2:"#a084e8",MMP8:"#4aa3e0",MMP9:"#3ecf8e",MMP14:"#f0a020",NE:"#ef6b7f",LASB:"#c9a35a",FECAL:"#8a97a8"};
+const PRESETS = {wound:["MMP2","MMP8","MMP9","NE","LASB"], mmp_triplex:["MMP2","MMP9","NE"], mmp9_ne:["MMP9","NE"], all:ORDER.slice()};
+const PRESET_TARGET = {wound:"MMP9", mmp_triplex:"MMP9", mmp9_ne:"MMP9", all:"MMP9"};
+const $ = id => document.getElementById(id);
+const fmt = (x,d=2) => (x>=0?"":"−") + Math.abs(x).toFixed(d);
+const pct = x => x.toFixed(2);
+
+const state = { input:"SGKIPRT|LTA", parsed:null, members:PRESETS.wound.slice(), target:"MMP9", explain:"MMP9", scan:"dLogit", struct:"MMP9", structTouched:false };
+
+// ------------------------------------------------------------------ presets (Kridel 2001 Table II + team cores)
+const EXAMPLES = EXTRA.examples;
+function buildChips(){
+  const c = $("chips"); c.innerHTML = "";
+  for (const ex of EXAMPLES){
+    const b = document.createElement("button"); b.className = "chip"; b.type = "button";
+    b.innerHTML = ex.label + (ex.note ? '<span class="k">' + ex.note + '</span>' : "");
+    b.title = ex.title || ""; b.onclick = () => { $("pep").value = ex.input; state.input = ex.input; update(); };
+    c.appendChild(b);
+  }
+}
+
+// ------------------------------------------------------------------ panel controls
+function buildPanel(){
+  const c = $("pcs"); c.innerHTML = "";
+  for (const id of ORDER){
+    const on = state.members.includes(id), tgt = state.target === id && on;
+    const d = document.createElement("div"); d.className = "pc" + (on ? "" : " off") + (tgt ? " tgt" : "");
+    d.innerHTML = '<span class="dot" style="background:' + COL[id] + '"></span><span>' + SHORT[id] + '</span>' + (on ? '<button type="button" title="Make this the target">' + (tgt ? "TARGET" : "target") + '</button>' : "");
+    d.onclick = (e) => {
+      if (e.target.tagName === "BUTTON"){ state.target = id; state.explain = id; }
+      else { const i = state.members.indexOf(id); if (i >= 0){ if (state.members.length > 2){ state.members.splice(i,1); if (state.target === id) state.target = state.members[0]; } } else state.members.push(id); }
+      if (!state.members.includes(state.target)) state.target = state.members[0];
+      $("preset").value = "custom"; state.members.sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b)); update();
+    };
+    c.appendChild(d);
+  }
+  const ex = $("explain"); ex.innerHTML = "";
+  for (const m of state.members){ const o = document.createElement("option"); o.value = m; o.textContent = NAME[m]; ex.appendChild(o); }
+  if (!state.members.includes(state.explain)) state.explain = state.target;
+  ex.value = state.explain;
+}
+$("preset").onchange = function(){ if (this.value === "custom") return; state.members = PRESETS[this.value].slice(); if (!state.members.includes(state.target)) state.target = PRESET_TARGET[this.value]; state.explain = state.target; update(); };
+$("explain").onchange = function(){ state.explain = this.value; renderExplain(); colourPeptide(); };
+$("pep").addEventListener("input", function(){ state.input = this.value; update(); });
+$("scantabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; state.scan = b.dataset.m; for (const x of $("scantabs").children) x.classList.toggle("on", x === b); renderScan(); };
+
+// ------------------------------------------------------------------ main update
+let scores = null, scan = null;
+function update(){
+  const p = E.parseInput(state.input); state.parsed = p;
+  $("pmsg").className = "msg " + (p.error ? "err" : "note"); $("pmsg").textContent = p.error || p.note || "";
+  buildPanel(); renderWindow();
+  if (p.error){ scores = null; $("vbig").textContent = "–"; $("vtxt").innerHTML = ""; $("barchart").innerHTML = ""; $("tbl").innerHTML = ""; $("contrib").innerHTML = ""; $("scan").innerHTML = ""; $("warns").innerHTML = ""; $("sugg").innerHTML = ""; return; }
+  scores = E.scorePanel(MODELS, state.members, p.window);
+  scan = E.mutationScan(MODELS, state.members, p.window, state.target);
+  renderVerdict(); renderBars(); renderTable(); renderExplain(); renderScan(); colourPeptide();
+  if (!state.structTouched && state.struct !== state.target && STRUCTS[state.target]){ state.struct = state.target; $("structsel").value = state.target; loadStructure(); }
+  try { history.replaceState(null, "", "#p=" + encodeURIComponent(state.input) + "&t=" + state.target + "&m=" + state.members.join(",")); } catch(e){}
+}
+
+function renderWindow(){
+  const p = state.parsed, w = $("win"); w.innerHTML = "";
+  const P = ["P4","P3","P2","P1","","P1′","P2′","P3′","P4′"];
+  const win = p && p.window ? p.window : "--------";
+  let k = 0;
+  for (let i = 0; i < 9; i++){
+    const d = document.createElement("div");
+    if (i === 4){ d.className = "bond"; w.appendChild(d); continue; }
+    const c = win[k++]; d.className = "cell" + (c === "-" ? " unk" : "");
+    d.innerHTML = '<div class="aa">' + (c === "-" ? "–" : c) + '</div><div class="pp">' + P[i] + '</div>'; w.appendChild(d);
+  }
+}
+
+function verdictText(){
+  const t = state.target, s = scores[t], m = E.margin(scores, state.members, t);
+  let cls, head, tail;
+  const rec = s.u >= 0.9 ? "in the top 10% of random windows for " + SHORT[t] : (s.u >= 0.7 ? "moderately above background for " + SHORT[t] : "not clearly recognised by " + SHORT[t]);
+  if (s.u < 0.7){ cls = "b-bad"; head = "Weak match to " + SHORT[t]; }
+  else if (m.margin >= 0.5){ cls = "b-good"; head = "Specific for " + SHORT[t]; }
+  else if (m.margin >= 0.2){ cls = "b-warn"; head = "Moderately specific"; }
+  else if (m.margin > -0.2){ cls = "b-warn"; head = "Not specific"; }
+  else { cls = "b-bad"; head = "Competitor preferred"; }
+  return {cls, head, rec, m, s};
+}
+function renderVerdict(){
+  const v = verdictText();
+  $("vbig").innerHTML = pct(v.s.u) + "<small>consensus percentile</small>";
+  $("vtxt").innerHTML = '<span class="badge ' + v.cls + '">' + v.head + '</span><span class="d">' + SHORT[state.target] + ': ' + v.rec + '. Specificity margin <b class="mono">' + (v.m.margin >= 0 ? "+" : "−") + Math.abs(v.m.margin).toFixed(2) + '</b> against ' + SHORT[v.m.competitor] + ' (strongest competitor, ' + pct(v.m.competitorU) + ').</span>';
+  const w = []; const t = state.target;
+  if (t === "LASB") w.push("The LasB model is trained mostly on elastin windows, so this score behaves largely as an elastin-likeness score.");
+  const mm = ["MMP2","MMP8","MMP9","MMP14"]; if (mm.includes(t) && mm.includes(v.m.competitor) && Math.abs(v.m.margin) < 0.3) w.push("Selectivity among MMPs from a P4–P4′ window is weak: MMP-family substrates commonly score similarly across the family.");
+  if (state.parsed.missing.length) w.push("Unknown position(s) " + state.parsed.missing.map(i=>E.POSITIONS[i]).join(", ") + ": scored as a gapped window, compared with an equally uninformed null.");
+  $("warns").innerHTML = w.map(x => '<div class="warnbox">' + x + '</div>').join("");
+}
+
+// ------------------------------------------------------------------ bar chart (SVG)
+function renderBars(){
+  const W = 620, rowH = 34, H = state.members.length * rowH + 24, L = 108, R = 14, x = u => L + u * (W - L - R);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Consensus percentile per protease">';
+  for (const g of [0, .25, .5, .75, 1]) s += '<line x1="' + x(g) + '" y1="4" x2="' + x(g) + '" y2="' + (H - 18) + '" stroke="#243040" stroke-width="1"/><text x="' + x(g) + '" y="' + (H - 4) + '" fill="#5b6d82" font-size="10" text-anchor="middle">' + g.toFixed(g === 0 || g === 1 ? 0 : 2) + '</text>';
+  s += '<line x1="' + x(.9) + '" y1="4" x2="' + x(.9) + '" y2="' + (H - 18) + '" stroke="#3ecfb2" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>';
+  state.members.forEach((m, i) => {
+    const y = 8 + i * rowH, sc = scores[m], tgt = m === state.target;
+    s += '<text x="' + (L - 10) + '" y="' + (y + 15) + '" fill="' + (tgt ? "#e6edf5" : "#8b9db3") + '" font-size="12.5" font-weight="' + (tgt ? 700 : 500) + '" text-anchor="end">' + SHORT[m] + '</text>';
+    s += '<rect x="' + L + '" y="' + (y + 4) + '" width="' + (W - L - R) + '" height="16" rx="4" fill="#151d27"/>';
+    s += '<rect x="' + L + '" y="' + (y + 4) + '" width="' + Math.max(1, sc.u * (W - L - R)) + '" height="16" rx="4" fill="' + COL[m] + '" opacity="' + (tgt ? 1 : .55) + '"' + (tgt ? ' stroke="#fff" stroke-width="1.4"' : "") + '/>';
+    s += '<circle cx="' + x(sc.pctLR) + '" cy="' + (y + 12) + '" r="4.2" fill="#fff" stroke="#090d12" stroke-width="1.2"><title>logistic regression percentile ' + pct(sc.pctLR) + '</title></circle>';
+    s += '<rect x="' + (x(sc.pctPSSM) - 3.6) + '" y="' + (y + 8.4) + '" width="7.2" height="7.2" fill="#fff" stroke="#090d12" stroke-width="1.2" transform="rotate(45 ' + x(sc.pctPSSM) + ' ' + (y + 12) + ')"><title>PSSM percentile ' + pct(sc.pctPSSM) + '</title></rect>';
+    const inside = sc.u > 0.8;
+    s += '<text x="' + (inside ? x(sc.u) - 8 : x(sc.u) + 8) + '" y="' + (y + 16.5) + '" fill="' + (inside ? "#0b1016" : "#e6edf5") + '" font-size="11.5" font-weight="600" text-anchor="' + (inside ? "end" : "start") + '" style="font-family:IBM Plex Mono,monospace">' + pct(sc.u) + '</text>';
+  });
+  s += '</svg>'; $("barchart").innerHTML = s;
+}
+
+// ------------------------------------------------------------------ table
+function renderTable(){
+  let h = '<thead><tr><th>Protease</th><th>LR score*</th><th>LR logit</th><th>PSSM (bits)</th><th>LR pctl</th><th>PSSM pctl</th><th>Consensus</th><th>CV AUROC</th></tr></thead><tbody>';
+  for (const m of state.members){
+    const s = scores[m], cv = MODELS[m].meta.cv || {};
+    h += '<tr class="' + (m === state.target ? "tgt" : "") + '"><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + COL[m] + ';margin-right:7px"></span>' + NAME[m] + '</td><td>' + s.prob.toFixed(3) + '</td><td>' + fmt(s.logit) + '</td><td>' + fmt(s.pssm) + '</td><td>' + pct(s.pctLR) + '</td><td>' + pct(s.pctPSSM) + '</td><td><b>' + pct(s.u) + '</b></td><td>' + (cv.consensus_auroc ? cv.consensus_auroc.toFixed(2) : "–") + '</td></tr>';
+  }
+  h += '</tbody>'; $("tbl").innerHTML = h;
+  const f = document.createElement("caption"); f.style.cssText = "caption-side:bottom;text-align:left;color:#5b6d82;font-size:11.5px;padding-top:8px"; f.textContent = "*Logistic-regression score under a 50:50 training prior. It ranks windows; it is not the probability that the window is cleaved. CV AUROC: cluster-aware cross-validated performance of that protease's model.";
+  $("tbl").appendChild(f);
+}
+
+// ------------------------------------------------------------------ contributions
+function renderExplain(){
+  if (!scores) return;
+  const m = MODELS[state.explain], win = state.parsed.window;
+  const kap = E.contributions(m, win), ps = E.pssmPositions(m, win);
+  const W = 620, H = 250, L = 50, colW = (W - L - 10) / 8;
+  const mk = Math.max(0.6, ...kap.map(Math.abs)), mp = Math.max(1, ...ps.map(Math.abs));
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Per-position contributions">';
+  const draw = (vals, top, h, mx, label, unit) => {
+    const mid = top + h / 2;
+    s += '<text x="0" y="' + (top + 10) + '" fill="#8b9db3" font-size="11" font-weight="600">' + label + '</text>';
+    s += '<line x1="' + L + '" y1="' + mid + '" x2="' + (W - 6) + '" y2="' + mid + '" stroke="#243040"/>';
+    vals.forEach((v, i) => {
+      const bh = Math.min(h / 2 - 3, Math.abs(v) / mx * (h / 2 - 3)), bx = L + i * colW + colW * .2, bw = colW * .6, unk = win[i] === "-";
+      const y = v >= 0 ? mid - bh : mid;
+      s += '<rect x="' + bx + '" y="' + y + '" width="' + bw + '" height="' + Math.max(1, bh) + '" rx="3" fill="' + (unk ? "#33465c" : (v >= 0 ? "#f0785f" : "#4f8fe6")) + '" opacity="' + (unk ? .5 : 1) + '"><title>' + E.POSITIONS[i] + " " + win[i] + ": " + fmt(v) + unit + (unk ? " (unknown position: expected value)" : "") + '</title></rect>';
+      s += '<text x="' + (bx + bw / 2) + '" y="' + (v >= 0 ? y - 4 : y + bh + 12) + '" fill="#8b9db3" font-size="10.5" text-anchor="middle" class="mono" style="font-family:IBM Plex Mono,monospace">' + fmt(v, 1) + '</text>';
+    });
+  };
+  draw(kap, 8, 108, mk, "Logit", "");
+  draw(ps, 130, 108, mp, "PSSM", " bits");
+  for (let i = 0; i < 8; i++){
+    const cx = L + i * colW + colW / 2;
+    s += '<text x="' + cx + '" y="' + (H - 2) + '" fill="#e6edf5" font-size="13" font-weight="600" text-anchor="middle" style="font-family:IBM Plex Mono,monospace">' + (win[i] === "-" ? "–" : win[i]) + '</text>';
+    s += '<text x="' + cx + '" y="' + (H - 16) + '" fill="#5b6d82" font-size="9.5" text-anchor="middle">' + E.POSITIONS[i].replace("'", "′") + '</text>';
+  }
+  s += '<line x1="' + (L + 4 * colW) + '" y1="2" x2="' + (L + 4 * colW) + '" y2="' + (H - 26) + '" stroke="#ef6b7f" stroke-width="1.4" stroke-dasharray="4 3" opacity=".7"/>';
+  s += '</svg>'; $("contrib").innerHTML = s;
+  drawLogo(m, win);
+}
+function drawLogo(model, win){
+  const cv = $("logo"), dpr = window.devicePixelRatio || 1, cssW = cv.clientWidth || 620, cssH = 170;
+  cv.width = cssW * dpr; cv.height = cssH * dpr; const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, cssW, cssH);
+  const L = 42, colW = (cssW - L - 8) / 8, top = 8, bot = cssH - 26, H = bot - top;
+  const bg = E.AA.split("").map(a => TABLES.background[a]);
+  const info = [], probs = [];
+  for (let p = 0; p < 8; p++){ const pr = model.pssm[p].map((lo, j) => bg[j] * Math.pow(2, lo)); const s = pr.reduce((a, b) => a + b, 0); const pp = pr.map(v => v / s); probs.push(pp); info.push(pp.reduce((a, v, j) => a + v * Math.log2(v / bg[j]), 0)); }
+  const ymax = Math.max(0.5, Math.ceil(Math.max(...info) * 1.1 * 4) / 4);
+  const colr = a => "AVLIMFWC".includes(a) ? "#dfe6ee" : "GSTYNQ".includes(a) ? "#3ecf8e" : "KRH".includes(a) ? "#5b9cf0" : "DE".includes(a) ? "#ef6b7f" : "#f0a020";
+  c.strokeStyle = "#243040"; c.fillStyle = "#5b6d82"; c.font = "10px IBM Plex Sans, sans-serif"; c.textAlign = "right";
+  for (let t = 0; t <= ymax + 1e-9; t += ymax > 2 ? 1 : 0.25){ const y = bot - t / ymax * H; c.beginPath(); c.moveTo(L, y); c.lineTo(cssW - 6, y); c.stroke(); c.fillText(t.toFixed(t % 1 ? 2 : 0), L - 6, y + 3); }
+  c.save(); c.translate(11, top + H / 2); c.rotate(-Math.PI / 2); c.textAlign = "center"; c.fillText("bits", 0, 0); c.restore();
+  for (let p = 0; p < 8; p++){
+    const order = probs[p].map((v, j) => j).sort((a, b) => probs[p][a] - probs[p][b]); let y = bot;
+    for (const j of order){
+      const h = probs[p][j] * info[p] / ymax * H; if (h < 2.2) continue;
+      const a = E.AA[j]; c.save(); c.font = "700 100px IBM Plex Sans, sans-serif"; const mt = c.measureText(a), asc = mt.actualBoundingBoxAscent, desc = mt.actualBoundingBoxDescent, wd = mt.width;
+      const sx = colW * .84 / wd, sy = h / (asc + desc);
+      c.translate(L + p * colW + colW * 0.08, y - desc * sy); c.scale(sx, sy); c.fillStyle = colr(a); c.textBaseline = "alphabetic"; c.fillText(a, 0, 0); c.restore();
+      y -= h;
+    }
+    if (win[p] !== "-"){ c.fillStyle = "rgba(62,207,178,.09)"; c.fillRect(L + p * colW + 1, top, colW - 2, H); c.fillStyle = "#3ecfb2"; c.fillRect(L + p * colW + 4, bot + 2, colW - 8, 2.5); }
+    c.fillStyle = win[p] === "-" ? "#5b6d82" : "#e6edf5"; c.font = "600 12px IBM Plex Mono, monospace"; c.textAlign = "center"; c.fillText(win[p] === "-" ? "–" : win[p], L + p * colW + colW / 2, cssH - 8);
+    c.fillStyle = "#5b6d82"; c.font = "9.5px IBM Plex Sans, sans-serif"; c.fillText(E.POSITIONS[p].replace("'", "′"), L + p * colW + colW / 2, cssH - 19);
+  }
+  c.strokeStyle = "#ef6b7f88"; c.setLineDash([4, 3]); c.beginPath(); c.moveTo(L + 4 * colW, top); c.lineTo(L + 4 * colW, bot); c.stroke(); c.setLineDash([]);
+}
+
+// ------------------------------------------------------------------ mutation scan
+function divergingColor(v, lim){
+  const t = Math.max(-1, Math.min(1, v / lim));
+  const a = t >= 0 ? [240, 120, 95] : [79, 143, 230], base = [21, 29, 39], k = Math.abs(t);
+  return "rgb(" + a.map((x, i) => Math.round(base[i] + (x - base[i]) * k)).join(",") + ")";
+}
+function renderScan(){
+  if (!scan){ return; }
+  const key = state.scan, lim = key === "dLogit" ? 3 : 0.6, win = state.parsed.window;
+  const AAo = "AVLIMFWYCGPSTNQHKRDE".split(""), W = 620, L = 30, colW = (W - L - 6) / 8, rowH = 16, H = 20 * rowH + 34;
+  const cell = {}; scan.cells.forEach(c => cell[c.pos + c.aa] = c);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Single-substitution scan">';
+  for (let p = 0; p < 8; p++) s += '<text x="' + (L + p * colW + colW / 2) + '" y="12" fill="#8b9db3" font-size="10.5" text-anchor="middle">' + E.POSITIONS[p].replace("'", "′") + '</text><text x="' + (L + p * colW + colW / 2) + '" y="26" fill="#e6edf5" font-size="11.5" font-weight="600" text-anchor="middle" style="font-family:IBM Plex Mono,monospace">' + (win[p] === "-" ? "–" : win[p]) + '</text>';
+  AAo.forEach((a, r) => {
+    const y = 34 + r * rowH; s += '<text x="' + (L - 8) + '" y="' + (y + 12) + '" fill="#8b9db3" font-size="11" text-anchor="end" style="font-family:IBM Plex Mono,monospace">' + a + '</text>';
+    for (let p = 0; p < 8; p++){
+      const x = L + p * colW, c = cell[p + a];
+      if (win[p] === a) s += '<rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="' + (colW - 2) + '" height="' + (rowH - 2) + '" rx="3" fill="#243040"/><text x="' + (x + colW / 2) + '" y="' + (y + 12) + '" fill="#e6edf5" font-size="9.5" text-anchor="middle">wt</text>';
+      else if (!c) s += '<rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="' + (colW - 2) + '" height="' + (rowH - 2) + '" rx="3" fill="#0d131a"/>';
+      else s += '<rect class="sc" data-w="' + c.window + '" data-i="' + p + '" data-a="' + a + '" x="' + (x + 1) + '" y="' + (y + 1) + '" width="' + (colW - 2) + '" height="' + (rowH - 2) + '" rx="3" fill="' + divergingColor(c[key], lim) + '" style="cursor:pointer"/>';
+    }
+  });
+  s += '</svg>'; $("scan").innerHTML = s;
+  const tt = $("tt");
+  for (const r of $("scan").querySelectorAll(".sc")){
+    r.onmousemove = e => { const c = cell[r.dataset.i + r.dataset.a]; tt.style.display = "block"; tt.style.left = (e.clientX + 14) + "px"; tt.style.top = (e.clientY + 12) + "px"; tt.innerHTML = E.POSITIONS[r.dataset.i] + " " + win[r.dataset.i] + "→" + r.dataset.a + "<br>Δ target logit " + fmt(c.dLogit) + "<br>Δ margin " + fmt(c.dMargin) + "<br>consensus " + pct(c.u); };
+    r.onmouseleave = () => tt.style.display = "none";
+    r.onclick = () => { $("pep").value = r.dataset.w; state.input = r.dataset.w; update(); };
+  }
+  $("scanleg").innerHTML = '<span>' + (key === "dLogit" ? "Change in the target's logistic-regression log-odds (does not saturate)." : "Change in specificity margin (saturates when the window already sits at the top of the percentile scale).") + ' Click a cell to apply that substitution.</span>';
+  const best = scan.cells.slice().sort((a, b) => b.dMargin - a.dMargin || b.dLogit - a.dLogit).slice(0, 5);
+  $("sugg").innerHTML = '<span style="font-size:12px;color:var(--faint)">Largest margin gains:</span>' + best.map(c => '<button class="chip" type="button" data-w="' + c.window + '">' + E.POSITIONS[c.pos].replace("'", "′") + " " + win[c.pos] + "→" + c.aa + '<span class="k">' + (c.dMargin >= 0 ? "+" : "−") + Math.abs(c.dMargin).toFixed(2) + '</span></button>').join("");
+  for (const b of $("sugg").querySelectorAll("button")) b.onclick = () => { $("pep").value = b.dataset.w; state.input = b.dataset.w; update(); };
+}
+
+// ------------------------------------------------------------------ 3D: protease structure
+let v1 = null, v2 = null, surf = null, showLig = true, spin1 = false, spin2 = true;
+function initViewers(){
+  if (!window.$3Dmol){ $("v1").innerHTML = '<div class="vinfo" style="padding:20px">3D viewer unavailable.</div>'; return; }
+  v1 = $3Dmol.createViewer($("v1"), { backgroundColor: "#070a0e" });
+  v2 = $3Dmol.createViewer($("v2"), { backgroundColor: "#070a0e" });
+  const sel = $("structsel"); for (const k of ORDER){ if (!STRUCTS[k]) continue; const o = document.createElement("option"); o.value = k; o.textContent = NAME[k] + " (" + STRUCTS[k].pdb + ")"; sel.appendChild(o); }
+  sel.value = state.struct; sel.onchange = () => { state.struct = sel.value; state.structTouched = true; loadStructure(); };
+  $("b-site").onclick = () => focusSite(); $("b-whole").onclick = () => { v1.zoomTo(); v1.render(); toggleOn("b-whole"); };
+  $("b-surf").onclick = () => toggleSurface(); $("b-lig").onclick = () => { showLig = !showLig; $("b-lig").classList.toggle("on", showLig); styleStructure(); };
+  $("b-spin1").onclick = () => { spin1 = !spin1; $("b-spin1").classList.toggle("on", spin1); v1.spin(spin1 ? "y" : false); };
+  $("b-spin2").onclick = () => { spin2 = !spin2; $("b-spin2").classList.toggle("on", spin2); v2.spin(spin2 ? "y" : false); };
+  loadStructure();
+}
+function toggleOn(id){ for (const b of ["b-site","b-whole"]) $(b).classList.toggle("on", b === id); }
+function resis(list){ return list.map(x => parseInt(x.replace(/\D/g, ""), 10)); }
+function loadStructure(){
+  if (!v1) return; const k = state.struct, meta = STRUCTS[k]; if (!meta) return;
+  v1.removeAllModels(); v1.removeAllSurfaces(); v1.removeAllLabels(); surf = null; $("b-surf").classList.remove("on");
+  v1.addModel(PDB[k], "pdb"); styleStructure(); focusSite();
+  $("sname").textContent = meta.title;
+  const lig = meta.catalytic_metal_ligands.join(", ");
+  $("sinfo").innerHTML = '<b style="color:var(--dim)">PDB ' + meta.pdb + '</b> · ' + meta.resolution + ' Å · ' + meta.n_residues + ' residues · ' + meta.citation + '<br>Catalytic site: ' + lig + ' (identified from the coordinates). Orange sticks: residues within 6 Å of the bound ligand' + (meta.ligand.length ? "" : " (or 9 Å of the catalytic zinc when no ligand is present)") + '. ' + (k === "MMP9" ? "Shown from an active catalytic-domain entry: the pro-form's prodomain would occupy the cleft." : "");
+}
+function styleStructure(){
+  const k = state.struct, meta = STRUCTS[k], ch = meta.chains[0], col = COL[k], pocket = resis(meta.pocket_residues), cat = resis(meta.catalytic_metal_ligands);
+  v1.setStyle({}, {});
+  v1.setStyle({ chain: ch }, { cartoon: { color: "#8fa2b8", opacity: .92, thickness: .35 } });
+  v1.addStyle({ chain: ch, resi: pocket }, { stick: { colorscheme: { prop: "elem", map: Object.assign({}, $3Dmol.elementColors.Jmol, { C: col }) }, radius: .15 } });
+  v1.addStyle({ chain: ch, resi: cat }, { stick: { colorscheme: { prop: "elem", map: Object.assign({}, $3Dmol.elementColors.Jmol, { C: "#ffffff" }) }, radius: .22 } });
+  v1.addStyle({ elem: "Zn" }, { sphere: { color: "#d4af37", radius: .95 } });
+  v1.addStyle({ elem: "Ca" }, { sphere: { color: "#7d8b9d", radius: .6 } });
+  if (showLig && meta.chains.length > 1) v1.addStyle({ chain: meta.chains[1] }, { stick: { colorscheme: { prop: "elem", map: Object.assign({}, $3Dmol.elementColors.Jmol, { C: "#ffb454" }) }, radius: .22 } });
+  if (showLig && meta.ligand.length && meta.ligand[0].length === 3 && meta.chains.length === 1) v1.addStyle({ resn: meta.ligand }, { stick: { colorscheme: { prop: "elem", map: Object.assign({}, $3Dmol.elementColors.Jmol, { C: "#ffb454" }) }, radius: .22 } });
+  v1.removeAllLabels();
+  for (const r of cat){ v1.addLabel(meta.catalytic_metal_ligands[cat.indexOf(r)], { backgroundColor: "#000", backgroundOpacity: .55, fontColor: "#ffffff", fontSize: 11, showBackground: true, alignment: "center", inFront: true }, { chain: ch, resi: r, atom: "CA" }); }
+  v1.render();
+}
+function focusSite(){ const meta = STRUCTS[state.struct]; v1.zoomTo({ chain: meta.chains[0], resi: resis(meta.pocket_residues) }); v1.zoom(.9); v1.render(); toggleOn("b-site"); }
+function toggleSurface(){
+  const on = !surf; $("b-surf").classList.toggle("on", on);
+  if (on){ const meta = STRUCTS[state.struct]; surf = v1.addSurface($3Dmol.SurfaceType.VDW, { opacity: .55, color: "#c8d3e0" }, { chain: meta.chains[0] }); }
+  else { v1.removeAllSurfaces(); surf = null; }
+  v1.render();
+}
+
+// ------------------------------------------------------------------ 3D: peptide schematic
+function colourPeptide(){
+  if (!v2 || !scores) return;
+  const win = state.parsed.window, m = MODELS[state.explain], kap = E.contributions(m, win);
+  const mx = Math.max(0.5, ...kap.map(Math.abs)), toHex = v => { const t = Math.max(-1, Math.min(1, v / mx)), a = t >= 0 ? [240, 120, 95] : [79, 143, 230], base = [120, 132, 148], k = Math.abs(t); return "#" + a.map((x, i) => Math.round(base[i] + (x - base[i]) * k).toString(16).padStart(2, "0")).join(""); };
+  v2.removeAllShapes(); v2.removeAllLabels(); v2.removeAllModels();
+  const ca = [];
+  for (let i = 0; i < 8; i++) ca.push({ x: (i - 3.5) * 3.4, y: 0, z: (i % 2 ? .95 : -.95) });
+  for (let i = 0; i < 7; i++){
+    const bond = i === 3;
+    v2.addCylinder({ start: ca[i], end: ca[i + 1], radius: bond ? .2 : .26, color: bond ? "#ef6b7f" : "#8b9db3", dashed: bond, dashLength: .35, gapLength: .25, fromCap: 1, toCap: 1 });
+  }
+  for (let i = 0; i < 8; i++){
+    const unk = win[i] === "-", dir = i % 2 ? 1 : -1;
+    v2.addSphere({ center: ca[i], radius: .5, color: unk ? "#33465c" : "#c8d3e0" });
+    if (!unk && win[i] !== "G"){
+      const c = { x: ca[i].x, y: dir * 2.7, z: ca[i].z };
+      v2.addCylinder({ start: ca[i], end: c, radius: .13, color: "#8b9db3" });
+      v2.addSphere({ center: c, radius: 1.35, color: toHex(kap[i]) });
+      v2.addLabel(win[i], { position: c, fontSize: 15, fontColor: "#ffffff", backgroundOpacity: 0, alignment: "center", inFront: true, fontWeight: "bold" });
+    } else if (unk) v2.addLabel("?", { position: { x: ca[i].x, y: dir * 2.2, z: ca[i].z }, fontSize: 13, fontColor: "#5b6d82", backgroundOpacity: 0, alignment: "center" });
+    else v2.addLabel("G", { position: { x: ca[i].x, y: dir * 1.5, z: ca[i].z }, fontSize: 15, fontColor: "#ffffff", backgroundOpacity: 0, alignment: "center", fontWeight: "bold" });
+    v2.addLabel(E.POSITIONS[i].replace("'", "\u2032"), { position: { x: ca[i].x, y: -5.8, z: 0 }, fontSize: 10, fontColor: "#8b9db3", backgroundOpacity: 0, alignment: "center" });
+  }
+  v2.addLabel("scissile bond", { position: { x: (ca[3].x + ca[4].x) / 2, y: 0, z: 0 }, fontSize: 10, fontColor: "#ef6b7f", backgroundColor: "#090d12", backgroundOpacity: .8, alignment: "center", inFront: true });
+  v2.addLabel("N", { position: { x: ca[0].x - 2.6, y: 0, z: 0 }, fontSize: 11, fontColor: "#5b6d82", backgroundOpacity: 0 });
+  v2.addLabel("C", { position: { x: ca[7].x + 2.6, y: 0, z: 0 }, fontSize: 11, fontColor: "#5b6d82", backgroundOpacity: 0 });
+  const xyz = "8\nanchor\n" + ca.map(c => "C " + c.x.toFixed(3) + " " + c.y.toFixed(3) + " " + c.z.toFixed(3)).join("\n");
+  v2.addModel(xyz, "xyz"); v2.setStyle({}, {});
+  v2.zoomTo(); v2.zoom(1.55); v2.render(); v2.spin(spin2 ? "y" : false);
+}
+
+// ------------------------------------------------------------------ boot
+function readHash(){
+  try {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get("p")) { state.input = decodeURIComponent(h.get("p")); $("pep").value = state.input; }
+    if (h.get("m")) { const m = h.get("m").split(",").filter(x => ORDER.includes(x)); if (m.length >= 2){ state.members = m; $("preset").value = "custom"; } }
+    if (h.get("t") && state.members.includes(h.get("t"))) { state.target = h.get("t"); state.explain = state.target; state.struct = state.target; }
+  } catch (e) {}
+}
+function modelCard(){
+  const c = $("mc"); c.innerHTML = "";
+  for (const m of ORDER){
+    const cv = MODELS[m].meta.cv || {}, n = MODELS[m].meta.n_pos;
+    const d = document.createElement("div"); d.innerHTML = '<b style="color:' + COL[m] + '">' + NAME[m] + '</b>' + n.toLocaleString() + ' positives<br>cross-validated AUROC ' + (cv.consensus_auroc ? cv.consensus_auroc.toFixed(2) : "–") + (cv.consensus_auroc_lo ? ' [' + cv.consensus_auroc_lo.toFixed(2) + ', ' + cv.consensus_auroc_hi.toFixed(2) + ']' : ""); c.appendChild(d);
+  }
+  $("cvline").textContent = ORDER.length + " proteases · " + ORDER.reduce((s, m) => s + MODELS[m].meta.n_pos, 0).toLocaleString() + " training windows";
+}
+buildChips(); readHash(); modelCard(); update(); initViewers();
+window.addEventListener("resize", () => { if (scores) renderExplain(); });
+window.__SP = { state: state, update: update, E: E, MODELS: MODELS };
+})();
+</script>
+</body>
+</html>

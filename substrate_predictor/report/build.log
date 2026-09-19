@@ -244,26 +244,6 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
 [3{/usr/local/texlive/2026basic/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
-Underfull \hbox (badness 10000) in paragraph at lines 22--22
-[]|\T1/lmr/m/n/9 (+20) zinc met-al-lo-pro-
-
-Underfull \hbox (badness 10000) in paragraph at lines 23--23
-[]|\T1/lmr/m/n/9 (+20) zinc met-al-lo-pro-
-
-Underfull \hbox (badness 10000) in paragraph at lines 23--24
-[]|\T1/lmr/m/n/9 (+20) 1JAN (with Pro-Leu-Gly-
-
-Underfull \hbox (badness 10000) in paragraph at lines 24--24
-[]|\T1/lmr/m/n/9 (+20) zinc met-al-lo-pro-
-
-Underfull \hbox (badness 10000) in paragraph at lines 25--25
-[]|\T1/lmr/m/n/9 (+20) zinc met-al-lo-pro-
-
-Underfull \hbox (badness 4454) in paragraph at lines 26--27
-[]|\T1/lmr/m/n/9 (+20) 1HNE (with MeOSuc-AAPA-
-
-Underfull \hbox (badness 10000) in paragraph at lines 27--27
-[]|\T1/lmr/m/n/9 (+20) zinc met-al-lo-pro-
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -296,7 +276,8 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[7 <./figures/F02_data_composition.pdf>]
+[7 <./figures/F02_data_composition.pdf> <./figures/F04_protease_similarity.pdf>
+]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -304,7 +285,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[8 <./figures/F04_protease_similarity.pdf>]
+[8 <./figures/F03_sequence_logos.pdf> <./figures/F01_pipeline.pdf>]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -312,8 +293,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[9 <./figures/F03_sequence_logos.pdf> <./figures/F01_pipeline.pdf>])
-(./sections/06_evaluation.tex
+[9]) (./sections/06_evaluation.tex
 Underfull \hbox (badness 2512) in paragraph at lines 13--13
 []|\T1/lmr/m/n/9 (+20) Composition alone may sep-a-rate
 
@@ -329,7 +309,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[10]
+[10]) (./sections/07_results.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -337,8 +317,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[11]) (./sections/07_results.tex (./tables/main_results.tex)
-(./tables/secondary_metrics.tex)
+[11] (./tables/main_results.tex) (./tables/secondary_metrics.tex)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -346,7 +325,8 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[12] (./tables/model_comparison.tex) (./tables/paired_differences.tex)
+[12 <./figures/F09_roc_pr.pdf>] (./tables/model_comparison.tex)
+(./tables/paired_differences.tex)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -354,7 +334,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[13 <./figures/F09_roc_pr.pdf> <./figures/F05_model_comparison.pdf>]
+[13 <./figures/F05_model_comparison.pdf>]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -371,7 +351,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[15 <./figures/F07_negative_design.pdf>] (./tables/selectivity_matrix.tex)
+[15 <./figures/F07_negative_design.pdf>]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -380,6 +360,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
 [16 <./figures/F08_tuning_and_leakage.pdf> <./figures/F10_calibration.pdf>]
+(./tables/selectivity_matrix.tex)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -404,7 +385,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[19 <./figures/F12_coefficients.pdf>] (./tables/structures.tex)
+[19 <./figures/F12_coefficients.pdf>]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -413,6 +394,8 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
 [20 <./figures/F13_position_importance.pdf> <./figures/F14_mmp9_consensus.pdf>]
+(./tables/structures.tex) (./tables/kridel_scores.tex)
+(./tables/kridel_spearman.tex)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -420,9 +403,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[21 <./figures/F19_structures.pdf>] (./tables/kridel_scores.tex)
-(./tables/kridel_spearman.tex) (./tables/kridel_mutants.tex))
-(./sections/09_design.tex
+[21]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -430,7 +411,8 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[22] (./tables/design_candidates.tex)
+[22 <./figures/F19_structures.pdf>] (./tables/kridel_mutants.tex))
+(./sections/09_design.tex (./tables/design_candidates.tex)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -438,7 +420,8 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[23 <./figures/F15_kridel_validation.pdf>] (./tables/candidates.tex)
+[23 <./figures/F15_kridel_validation.pdf>] (./tables/candidates.tex))
+(./sections/10_limitations.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -446,7 +429,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[24 <./figures/F17_candidate_landscape.pdf>]
+[24]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -454,7 +437,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[25]) (./sections/10_limitations.tex
+[25 <./figures/F17_candidate_landscape.pdf>]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -462,8 +445,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[26 <./figures/F18_mutation_scan.pdf>]) (./sections/11_reproducibility.tex)
-(./sections/A_derivations.tex
+[26 <./figures/F18_mutation_scan.pdf>]) (./sections/11_reproducibility.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -471,7 +453,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-7.69997pt}.
 
-[27]
+[27]) (./sections/A_derivations.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 19.69997pt, for example:
@@ -538,5 +520,5 @@ ve/2026basic/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/local/texlive/202
 /texmf-dist/fonts/type1/public/lm/lmtt10.pfb></usr/local/texlive/2026basic/texm
 f-dist/fonts/type1/public/lm/lmtt9.pfb></usr/local/texlive/2026basic/texmf-dist
 /fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on main.pdf (31 pages, 1375215 bytes).
+Output written on main.pdf (31 pages, 1377146 bytes).
 Transcript written on main.log.

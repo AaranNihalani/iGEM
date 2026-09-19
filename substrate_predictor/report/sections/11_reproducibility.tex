@@ -12,6 +12,13 @@ python scripts/coefficient_stability.py
 python scripts/validation.py            # external validation (Kridel et al.)
 python scripts/prepare_structures.py    # structure facts from coordinates
 python report/figs_*.py; python report/make_tables.py
-python -m pytest tests -q               # 28 tests
+python -m pytest tests -q               # unit and integration tests
+python web/make_fixture.py; node web/test_engine.js   # browser engine vs Python
+python web/build_tool.py                # interactive tool
 \end{Verbatim}
 Random seeds are fixed ($42$ throughout; the background null uses seed $43$). Each trained model records its training-data fingerprint, cross-validated metrics, and selected regularisation. Reference tables (VHSE, BLOSUM62, Swiss-Prot composition) are archived with their provenance under \texttt{references/} and are compared with the code's tables by unit tests. The trained models are plain JSON and are embedded in the accompanying browser tool, which is tested for numerical agreement with the Python package.
+
+\subsection*{The browser tool}
+\texttt{substrate\_predictor\_explorer.html} is a single self-contained file (about $1.4$~MB) that embeds the seven models, the reference tables, the five structures and the 3Dmol.js renderer, and needs no server. It accepts a window or a peptide with the bond marked (for example \texttt{SGKIPRT|LTA}), scores it against a panel of the user's choosing, shows the consensus percentile and specificity margin, the per-position contributions of both scorers, the learned specificity logo, and a single-substitution scan whose cells can be applied with a click. Beside them it shows the selected protease's experimental structure (active-site residues, bound inhibitor and catalytic zinc, as in Section~\ref{sec:structures}) and a schematic extended-strand cartoon of the peptide coloured by each position's contribution; the cartoon is explicitly not a predicted structure or a docked complex.
+
+\emph{Verification.} The JavaScript scoring engine is compared with the Python package on $154$ random and $8$ gapped windows across all seven proteases: logistic-regression scores, PSSM scores, per-position contributions and percentiles of full windows agree to about $10^{-15}$; percentiles of gapped windows agree within $0.012$, the only difference being the random-number generator behind the matched null. The built page is also exercised in a headless browser (no script errors; controls, presets, scan clicks and structure switching respond; no horizontal overflow at phone width).

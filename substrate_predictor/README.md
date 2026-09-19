@@ -11,6 +11,7 @@ python -m spred rank --target MMP9 --panel wound --pool 50000
 python -m spred mutate IPRTLTAA --target MMP9      # every single substitution
 python -m spred scan protein.fasta --target NE
 make test study validate                # tests, methodology study, external validation
+make web                                # build report/substrate_predictor_explorer.html (needs node)
 ```
 
 ## Layout
@@ -26,6 +27,8 @@ make test study validate                # tests, methodology study, external val
 | `references/` | archived reference tables and `PROVENANCE.md` |
 | `results/` | cross-validation, methodology study, external validation, legacy audit |
 | `scripts/` | methodology study, validation, source extraction |
+| `web/` | browser tool: scoring engine (`engine.js`), template, build script, parity and browser tests |
+| `report/` | technical report (LaTeX), regenerable figures and tables, the built interactive tool |
 
 ## Method in one paragraph
 
