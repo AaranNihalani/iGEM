@@ -1,0 +1,239 @@
+{
+ "MMP9": {
+  "pdb": "1GKC",
+  "title": "MMP-9 catalytic domain with a reverse hydroxamate inhibitor",
+  "citation": "Rowsell et al. (2002) J Mol Biol 319:173",
+  "resolution": 2.3,
+  "chains": [
+   "A"
+  ],
+  "n_protein_atoms": 1271,
+  "n_residues": 159,
+  "catalytic_metal_ligands": [
+   "HIS401",
+   "HIS405",
+   "HIS411"
+  ],
+  "catalytic_zinc_coord": [
+   63.267,
+   29.95,
+   112.382
+  ],
+  "pocket_residues": [
+   "ASP185",
+   "GLY186",
+   "LEU187",
+   "LEU188",
+   "ALA189",
+   "HIS190",
+   "ALA191",
+   "TYR393",
+   "LEU397",
+   "VAL398",
+   "HIS401",
+   "GLU402",
+   "HIS405",
+   "HIS411",
+   "LEU418",
+   "TYR420",
+   "PRO421",
+   "MET422",
+   "TYR423",
+   "ARG424"
+  ],
+  "ligand": [
+   "NFH"
+  ]
+ },
+ "MMP2": {
+  "pdb": "1QIB",
+  "title": "MMP-2 (gelatinase A) catalytic domain",
+  "citation": "RCSB 1QIB",
+  "resolution": 2.8,
+  "chains": [
+   "A"
+  ],
+  "n_protein_atoms": 1272,
+  "n_residues": 160,
+  "catalytic_metal_ligands": [
+   "HIS201",
+   "HIS205",
+   "HIS211"
+  ],
+  "catalytic_zinc_coord": [
+   64.682,
+   24.46,
+   23.463
+  ],
+  "pocket_residues": [
+   "LEU163",
+   "LEU164",
+   "ALA165",
+   "HIS166",
+   "ALA167",
+   "VAL198",
+   "ALA200",
+   "HIS201",
+   "GLU202",
+   "PHE203",
+   "GLY204",
+   "HIS205",
+   "ALA206",
+   "LEU209",
+   "GLU210",
+   "HIS211",
+   "SER212",
+   "LEU218",
+   "MET219",
+   "ALA220",
+   "PRO221",
+   "ILE222",
+   "TYR223"
+  ],
+  "ligand": []
+ },
+ "MMP8": {
+  "pdb": "1JAN",
+  "title": "MMP-8 catalytic domain with Pro-Leu-Gly-hydroxylamine",
+  "citation": "RCSB 1JAN",
+  "resolution": 2.5,
+  "chains": [
+   "A",
+   "I"
+  ],
+  "n_protein_atoms": 1564,
+  "n_residues": 164,
+  "catalytic_metal_ligands": [
+   "HIS197",
+   "HIS201",
+   "HIS207"
+  ],
+  "catalytic_zinc_coord": [
+   25.672,
+   57.156,
+   54.566
+  ],
+  "pocket_residues": [
+   "THR82",
+   "ASP149",
+   "SER151",
+   "ILE159",
+   "LEU160",
+   "ALA161",
+   "HIS162",
+   "ALA163",
+   "PHE164",
+   "GLN165",
+   "ASP173",
+   "HIS197",
+   "GLU198",
+   "HIS201",
+   "SER202",
+   "GLY204",
+   "LEU205",
+   "ALA206",
+   "HIS207",
+   "MET215",
+   "PRO217"
+  ],
+  "ligand": [
+   "chain I"
+  ]
+ },
+ "NE": {
+  "pdb": "1HNE",
+  "title": "Human neutrophil elastase with MeOSuc-Ala-Ala-Pro-Ala-chloromethyl ketone",
+  "citation": "RCSB 1HNE",
+  "resolution": 1.84,
+  "chains": [
+   "E",
+   "I"
+  ],
+  "n_protein_atoms": 1636,
+  "n_residues": 210,
+  "catalytic_metal_ligands": [
+   "ASP102",
+   "HIS57",
+   "SER195"
+  ],
+  "catalytic_zinc_coord": null,
+  "pocket_residues": [
+   "PHE41",
+   "CYS42",
+   "HIS57",
+   "CYS58",
+   "TYR94",
+   "LEU99",
+   "ASP102",
+   "VAL190",
+   "CYS191",
+   "PHE192",
+   "GLY193",
+   "ASP194",
+   "SER195",
+   "GLY196",
+   "ALA213",
+   "SER214",
+   "PHE215",
+   "VAL216",
+   "ARG217",
+   "GLY218",
+   "GLY219",
+   "TYR224"
+  ],
+  "ligand": [
+   "chain I"
+  ]
+ },
+ "LASB": {
+  "pdb": "1EZM",
+  "title": "Pseudomonas aeruginosa elastase (pseudolysin, LasB)",
+  "citation": "RCSB 1EZM",
+  "resolution": 1.5,
+  "chains": [
+   "A"
+  ],
+  "n_protein_atoms": 2285,
+  "n_residues": 298,
+  "catalytic_metal_ligands": [
+   "GLU164",
+   "HIS140",
+   "HIS144"
+  ],
+  "catalytic_zinc_coord": [
+   49.202,
+   37.708,
+   19.451
+  ],
+  "pocket_residues": [
+   "TRP115",
+   "ASP136",
+   "VAL137",
+   "ALA138",
+   "ALA139",
+   "HIS140",
+   "GLU141",
+   "VAL142",
+   "SER143",
+   "HIS144",
+   "GLY145",
+   "TYR155",
+   "GLY160",
+   "GLY161",
+   "MET162",
+   "ASN163",
+   "GLU164",
+   "ALA165",
+   "PHE166",
+   "SER167",
+   "ASP168",
+   "ILE186",
+   "ARG198",
+   "ASP221",
+   "VAL222",
+   "HIS223",
+   "SER226"
+  ],
+  "ligand": []
+ }
+}
