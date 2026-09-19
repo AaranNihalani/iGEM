@@ -11,8 +11,9 @@ Strategy:
 
 Output: eckhard_{MMP}_positives.csv with column 'sequence' (8-mer, uppercase).
 
-Run from the substrate_predictor directory:
-    python data/raw/eckhard2016/parse_eckhard.py
+Requires network access (UniProt). Writes eckhard_*_positives.csv into data/raw/eckhard2016/;
+copy them to data/sources/eckhard2016_<PROTEASE>.csv.
+    python scripts/extract_eckhard2016.py
 """
 
 import re
@@ -28,7 +29,7 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s')
 log = logging.getLogger(__name__)
 
-HERE = Path(__file__).parent
+HERE = Path(__file__).resolve().parents[1] / 'data' / 'raw' / 'eckhard2016'
 
 TRYPTIC_FILE = HERE / '1-s2.0-S0945053X15001298-mmc4.xlsx'
 GLUC_FILE    = HERE / '1-s2.0-S0945053X15001298-mmc5.xlsx'
