@@ -47,7 +47,7 @@ def fig_position_importance():
         imp = np.abs(C).mean(axis=0); imp = imp / imp.sum()
         ax.plot(range(8), imp, "o-", color=COL[pid], lw=1.5, ms=4, label=SHORT[pid])
     ax.set_xticks(range(8)); ax.set_xticklabels(POSITIONS); ax.axvline(3.5, color=MUTE, lw=0.8, ls=(0, (3, 3)))
-    ax.set_ylabel("share of mean |logit contribution|"); ax.set_title("Which positions drive the score"); ax.legend(fontsize=6.8, ncol=2, loc="upper right")
+    ax.set_ylabel("share of |contribution|"); ax.set_title("Which positions drive the score"); ax.legend(fontsize=6.8, ncol=2, loc="upper right")
     panel_letter(ax, "a", -0.14)
     ax = axes[1]
     grp = {"hydrophobic": (0, 1), "steric": (2, 3), "electronic": (4, 5, 6, 7)}
@@ -128,7 +128,7 @@ def _pool():
     extra = []
     for pid in ("MMP2", "MMP8", "MMP9", "NE", "LASB"):
         extra += candidates.pssm_top_k(MODELS[pid].log_odds, 3)
-    return list(dict.fromkeys(rng_pool + extra))
+    return [x for x in dict.fromkeys(rng_pool + extra) if candidates.sensor_ok(x)]
 
 
 def fig_candidate_landscape():
@@ -141,7 +141,7 @@ def fig_candidate_landscape():
         s = s[s[f"u_{t}"] >= 0.9].sort_values("margin", ascending=False).head(4)
         rows.append(s)
     top = pd.concat(rows, ignore_index=True)
-    ref = panel.score(["IPRTLTAA", "PRSLSGLK", "PLGLAGQS", "AAPVSGIG"])
+    ref = panel.score_gapped(["IPRTLTA-", "-PRSLSGL", "-PLGLAGQ", "AAPVSGIG"])
     ref["target"] = ["MMP9", "MMP9", "MMP2", "NE"]; ref["margin"] = [panel.margin(ref.iloc[[i]], ref.target.iloc[i])[0] for i in range(len(ref))]
     top.to_csv(ROOT / "results" / "top_candidates_wound_panel.csv", index=False); ref.to_csv(ROOT / "results" / "reference_peptides_wound_panel.csv", index=False)
     allr = pd.concat([top, ref], ignore_index=True)
@@ -161,27 +161,41 @@ def fig_candidate_landscape():
     for k in range(1, 5):
         ax.axhline(4 * k - 0.5, color="white", lw=1.5)
     fig.colorbar(im, ax=ax, fraction=0.03, pad=0.16, label="consensus background percentile")
-    ax.set_title("Top-ranked candidates per target (150k random + PSSM top-3 pools), and the four\nreference peptides below the white bar. Red box = intended target", fontsize=8.5, pad=34)
+    ax.set_title("Top-ranked sensor-compatible candidates per target (150k random + PSSM top-3 pools) and four\nreference cores below the white bar (gapped windows). Red box = intended target", fontsize=8.5, pad=34)
     save(fig, "F17_candidate_landscape")
 
 
-def fig_mutation_scan(seq="IPRTLTAA", target="MMP9"):
+def fig_mutation_scan(seq="IPRTLTA-", target="MMP9"):
     panel = Panel(("MMP2", "MMP8", "MMP9", "NE", "LASB"), MODELS)
-    wt = panel.score([seq]); wm = float(panel.margin(wt, target)[0])
-    M = np.full((20, 8), np.nan)
-    muts = candidates.single_mutants(seq)
-    sc = panel.score([m[2] for m in muts]); mg = panel.margin(sc, target)
-    for (i, a, _), v in zip(muts, mg):
-        M[AA_ORDER.index(a), i] = v - wm
-    fig, ax = plt.subplots(figsize=(6.4, 5.0))
-    im = ax.imshow(M, cmap="RdBu_r", norm=TwoSlopeNorm(0, -0.6, 0.6), aspect="auto")
-    ax.set_xticks(range(8)); ax.set_xticklabels([f"{POSITIONS[i]}\n{seq[i]}" for i in range(8)]); ax.set_yticks(range(20)); ax.set_yticklabels(AA_ORDER); ax.grid(False)
-    for i, a in enumerate(seq):
-        ax.add_patch(plt.Rectangle((i - .5, AA_ORDER.index(a) - .5), 1, 1, fill=True, fc="#ddd", ec="#111", lw=1.2))
-        ax.text(i, AA_ORDER.index(a), "wt", ha="center", va="center", fontsize=6.5)
-    fig.colorbar(im, ax=ax, fraction=0.04, label=f"change in {SHORT[target]} specificity margin")
-    ax.set_title(f"Single-substitution scan of {seq} (wild-type margin {wm:+.2f} in the wound panel)", fontsize=9)
-    save(fig, "F18_mutation_scan")
+    model = MODELS[target]
+    known = [i for i, c in enumerate(seq) if c != "-"]
+    wm = float(panel.margin(panel.score_gapped([seq]), target)[0])
+    def logit(w):
+        f, miss = V.fill_gaps(w); p = float(V.masked_prob(model, [f], miss)[0]); return np.log(p / (1 - p))
+    wl = logit(seq)
+    wins, keys = [], []
+    for i in known:
+        for a in AMINO_ACIDS:
+            if a != seq[i]:
+                wins.append(seq[:i] + a + seq[i + 1:]); keys.append((i, a))
+    mg = panel.margin(panel.score_gapped(wins), target)
+    A = np.full((20, 8), np.nan); B = np.full((20, 8), np.nan)
+    for (i, a), w, v in zip(keys, wins, mg):
+        A[AA_ORDER.index(a), i] = logit(w) - wl; B[AA_ORDER.index(a), i] = v - wm
+    fig, axes = plt.subplots(1, 2, figsize=(7.8, 4.6))
+    for ax, M, lim, lab, title in ((axes[0], A, 3.0, f"change in {SHORT[target]} LR log-odds", f"(a) Target score ({SHORT[target]} logit)"),
+                                   (axes[1], B, 0.6, f"change in specificity margin", "(b) Specificity margin (wound panel)")):
+        im = ax.imshow(M, cmap="RdBu_r", norm=TwoSlopeNorm(0, -lim, lim), aspect="auto")
+        ax.set_xticks(range(8)); ax.set_xticklabels([f"{POSITIONS[i]}\n{seq[i]}" for i in range(8)], fontsize=7.5); ax.set_yticks(range(20)); ax.set_yticklabels(AA_ORDER, fontsize=7.5); ax.grid(False)
+        for i in known:
+            ax.add_patch(plt.Rectangle((i - .5, AA_ORDER.index(seq[i]) - .5), 1, 1, fill=True, fc="#ddd", ec="#111", lw=1.1))
+            ax.text(i, AA_ORDER.index(seq[i]), "wt", ha="center", va="center", fontsize=6)
+        for i in range(8):
+            if i not in known:
+                ax.add_patch(plt.Rectangle((i - .5, -.5), 1, 20, fill=True, fc="#f3f3f3", ec="none", hatch="///", alpha=0.5))
+        fig.colorbar(im, ax=ax, fraction=0.05, label=lab); ax.set_title(title, fontsize=9)
+    fig.suptitle(f"Single-substitution scan of {seq.replace('-', '')} (P4' unknown; hatched)", fontsize=9.5, fontweight="bold", y=1.0)
+    fig.tight_layout(); save(fig, "F18_mutation_scan")
 
 
 if __name__ == "__main__":

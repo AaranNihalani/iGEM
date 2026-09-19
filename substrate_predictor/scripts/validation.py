@@ -53,3 +53,17 @@ for name in ("lr_logit", "pssm", "consensus_z"):
 r = pd.DataFrame(res); r.to_csv(OUT / "kridel_spearman.csv", index=False)
 print(r.round(3).to_string(index=False))
 print(df[["peptide", "window", "kcat_km", "lr_logit", "pssm", "consensus_z"]].round(2).to_string(index=False))
+
+# ---- matched mutant pairs from Kridel 2001 (same peptide background, single substitution): direction and size of effect
+pairs = [("A11", "A11m1", "T7R at P1 (Thr to Arg)"), ("A11", "A11m2", "L8A at P1' (Leu to Ala)")]
+rows = []
+byname = kr.set_index("peptide")
+for a, b, note in pairs:
+    ra, rb = byname.loc[a], byname.loc[b]
+    la, lb = V.partial_logit(model, ra.window), V.partial_logit(model, rb.window)
+    pa, pb = V.partial_pssm(model, ra.window), V.partial_pssm(model, rb.window)
+    rows.append({"parent": a, "mutant": b, "change": note, "measured_fold": rb.mmp9_kcat_km / ra.mmp9_kcat_km,
+                 "measured_log2_fold": float(np.log2(rb.mmp9_kcat_km / ra.mmp9_kcat_km)),
+                 "model_delta_logit": lb - la, "model_delta_logit_bits": (lb - la) / np.log(2), "model_delta_pssm_bits": pb - pa})
+pd.DataFrame(rows).to_csv(OUT / "kridel_mutant_pairs.csv", index=False)
+print(pd.DataFrame(rows).round(3).to_string(index=False))
