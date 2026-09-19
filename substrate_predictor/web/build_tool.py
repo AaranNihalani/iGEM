@@ -1,4 +1,4 @@
-"""Assemble the self-contained interactive tool: models, tables, structures, 3Dmol.js and the engine are inlined."""
+"""Assemble the interactive tool as one HTML file. Models, tables, structures and the engine are inlined; 3Dmol.js (pinned) loads from cdnjs."""
 import json, sys
 from pathlib import Path
 import pandas as pd
@@ -35,16 +35,8 @@ out = (tpl.replace("__MODELS__", script_safe(json.dumps(models, separators=(",",
           .replace("__STRUCTS__", json.dumps(structs, separators=(",", ":")))
           .replace("__PDB__", script_safe(json.dumps(pdb, separators=(",", ":"))))
           .replace("__EXTRA__", json.dumps({"examples": examples}, separators=(",", ":")))
-          .replace("__ENGINE__", (WEB / "engine.js").read_text())
-          .replace("__3DMOL__", (WEB / "vendor" / "3Dmol-min.js").read_text()))
+          .replace("__ENGINE__", (WEB / "engine.js").read_text()))
 dest = ROOT / "report" / "substrate_predictor_explorer.html"
 dest.write_text(out)
 print(f"wrote {dest}  ({len(out) / 1e6:.2f} MB)")
 
-# lighter variant for an online host: 3Dmol.js (pinned) from cdnjs; models, tables and structures stay inlined
-cdn = "https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"
-light = out.replace("<script>" + (WEB / "vendor" / "3Dmol-min.js").read_text() + "</script>", f'<script src="{cdn}"></script>')
-assert len(light) < len(out)
-dest2 = ROOT / "report" / "substrate_predictor_explorer_cdn.html"
-dest2.write_text(light)
-print(f"wrote {dest2}  ({len(light) / 1e6:.2f} MB)")

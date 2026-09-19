@@ -43,7 +43,7 @@ def save(fig, name):
 
 
 def panel_letter(ax, letter, x=-0.12, y=1.14):
-    ax.text(x, y, letter, transform=ax.transAxes, fontsize=12, fontweight="bold", color=INK, va="bottom")
+    ax.text(x, y, letter.upper(), transform=ax.transAxes, fontsize=12, fontweight="bold", color=INK, va="bottom")
 
 
 def oof(pid):

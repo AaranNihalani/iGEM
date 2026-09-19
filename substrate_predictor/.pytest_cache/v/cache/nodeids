@@ -26,5 +26,6 @@
   "tests/test_tables.py::test_background_matches_archive_and_sums_to_one",
   "tests/test_tables.py::test_blosum62_matches_archive_and_is_symmetric",
   "tests/test_tables.py::test_glycine_is_not_zero",
-  "tests/test_tables.py::test_vhse_matches_archive"
+  "tests/test_tables.py::test_vhse_matches_archive",
+  "tests/test_web_engine.py::test_js_engine_matches_python"
 ]

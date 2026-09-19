@@ -1,0 +1,123 @@
+%=======================================================================
+\section{Part B: Feature Representation and Models}
+\label{sec:models}
+
+\subsection{Overview}
+
+Each protease receives two scorers. The first is a logistic regression on a
+64-feature physicochemical encoding of the window; the second is a PSSM with
+BLOSUM62-derived pseudocounts. Both are additive over the eight positions,
+which matches the positional nature of subsite specificity, and both can
+therefore be decomposed exactly into one contribution per position. The
+physicochemical encoding uses the VHSE descriptors of Mei et al.\ \cit{6}:
+eight principal-component score vectors derived from independent families of
+$18$ hydrophobic, $17$ steric and $15$ electronic properties, of which
+VHSE1--2 are hydrophobic, VHSE3--4 steric and VHSE5--8 electronic. The
+descriptor table is archived with its source and unit-tested against it.
+
+\subsection{Assumptions}
+
+\begin{assump}
+\begin{itemize}[leftmargin=*,noitemsep]
+\item \textbf{Position-specific effects are additive.} The effect of a residue
+  at one position is independent of the residues elsewhere in the window.
+  Gradient-boosted trees, which can represent interactions, do not exceed the
+  additive models by more than $0.007$ AUROC on any protease (Part~\ref{sec:eval})
+  \CONF.
+\item \textbf{The eight VHSE descriptors capture the relevant residue
+  properties.} They express $\subspaceMin$--$\subspaceMax\%$ of the learned
+  per-position specificity, depending on the protease; the remainder is
+  approximation bias \CONF.
+\item \textbf{The PSSM smoothing parameters are fixed.} The pseudocount weight
+  $\beta=5$ and the background mixing weight $\epsilon=0.05$ were not tuned
+  \FLAG.
+\item \textbf{The $1{:}3$ negative ratio is arbitrary.} It fixes the training
+  prior but not the deployment prior, so scores are treated as rankings only
+  \CONF.
+\end{itemize}
+\end{assump}
+
+\subsection{Equations}
+
+A residue $a$ is mapped to its VHSE vector $\varphi(a)\in\R^{8}$ and a window
+$w=(w_1,\dots,w_8)$ to
+\begin{equation}
+\bm{x}(w)=\bigl[\varphi(w_1);\,\varphi(w_2);\,\dots;\,\varphi(w_8)\bigr]\in\R^{64}.
+\label{eq:x}
+\end{equation}
+Features are standardised with the training fold's means and standard
+deviations, $\bm z=(\bm x-\bm\mu)\oslash\bm\sigma$. The logistic regression
+minimises the class-weighted, L2-regularised loss
+\begin{equation}
+\mathcal{L}(\bm\beta,b)=\tfrac12\|\bm\beta\|^2+C\sum_{i=1}^{n}\omega_{y_i}\log\bigl(1+e^{-\tilde y_i(\bm\beta^{\top}\bm z_i+b)}\bigr),\qquad \tilde y_i=2y_i-1,
+\label{eq:lr}
+\end{equation}
+with balanced class weights $\omega_c=n/(2n_c)$, that is $\omega_1=2$ and
+$\omega_0=2/3$ at the $1{:}3$ ratio. Because the logit is linear in $\bm z$, it
+decomposes exactly into one term per position:
+\begin{equation}
+\mathrm{logit}(w)=b+\sum_{i=1}^{8}\kappa_i(w),\qquad \kappa_i(w)=\sum_{d=1}^{8}\beta_{id}\,z_{id}(w).
+\label{eq:decomp}
+\end{equation}
+For the PSSM, let $f_i(a)=n_i(a)/n$ be the observed frequency of residue $a$
+at position $i$ among $n$ positives, $W$ the row-normalised positive part of
+BLOSUM62, $q_i=f_iW$, and $g$ the Swiss-Prot background:
+\begin{equation}
+Q_i=(1-\epsilon)\,q_i+\epsilon\,g,\qquad p_i(a)=\frac{n\,f_i(a)+\beta\,Q_i(a)}{n+\beta},\qquad S(w)=\sum_{i=1}^{8}\log_2\frac{p_i(w_i)}{g(w_i)}.
+\label{eq:pssm}
+\end{equation}
+This is a heuristic pseudocount scheme rather than the block-based estimator
+from which BLOSUM62 itself derives \cit{7}. Position $i$ carries
+$\mathrm{IC}_i=\sum_a p_i(a)\log_2\bigl(p_i(a)/g(a)\bigr)$ bits, which sets the letter
+heights in Figure~\ref{fig:logos}.
+
+\subsection{Derivation}
+
+\textbf{Convexity.} With $m_i=\bm\beta^{\top}\bm z_i+b$, $p_i=\sigma(m_i)$ and
+$\tilde{\bm z}_i=[\bm z_i;1]$, the gradient of Eq.~\eqref{eq:lr} is
+$\nabla_{\bm\beta}\mathcal{L}=\bm\beta-C\sum_i\omega_{y_i}\tilde y_i\,\sigma(-\tilde y_im_i)\,\bm z_i$, and the Hessian with respect to
+$(\bm\beta,b)$ is
+$\mathrm{diag}(\bm I,0)+C\sum_i\omega_{y_i}p_i(1-p_i)\tilde{\bm z}_i\tilde{\bm z}_i^{\top}$.
+For a direction $\bm v=(\bm v_\beta,v_b)$,
+$\bm v^{\top}H\bm v=\|\bm v_\beta\|^2+C\sum_i\omega_{y_i}p_i(1-p_i)(\bm z_i^{\top}\bm v_\beta+v_b)^2\ge0$,
+which vanishes only if $\bm v_\beta=\bm 0$ and then $v_b=0$. The Hessian is
+positive definite, the objective is strictly convex, and the minimiser found
+by L-BFGS is unique.
+
+\textbf{Meaning of the balanced weights.} Equal total weight on the two
+classes is equivalent to fitting the posterior under a $50{:}50$ prior. If
+$\rho=p_{\mathrm{bal}}/(1-p_{\mathrm{bal}})$ is the fitted odds, the odds under
+the actual $1{:}3$ training mixture are $\rho/3$, so
+$p_{\mathrm{mix}}=p_{\mathrm{bal}}/(3-2p_{\mathrm{bal}})$. Neither quantity is
+the probability that a random window is cleaved, which is far smaller. The
+logistic-regression score is therefore reported as a ranking only.
+
+\textbf{Expressive capacity of the encoding.} A linear model on $\bm x$ gives
+at each position an effect $c_i^{\top}\varphi(w_i)$, a linear combination of
+the eight columns of the descriptor matrix $\Phi\in\R^{20\times8}$. Together
+with a constant this confines each position's twenty-dimensional effect vector
+to a subspace of dimension $\operatorname{rank}[\Phi,\bm1]=9$, whereas a
+one-hot encoding leaves $19$ free parameters per position. For a centred PSSM
+log-odds vector $\bm v\in\R^{20}$ and $P$ the orthogonal projector onto
+$\operatorname{span}[\Phi,\bm1]$, the fraction of variance expressible by the
+encoding is $R^2=1-\|(\bm I-P)\bm v\|^2/\|\bm v\|^2$. Averaged over positions
+with weights $\|\bm v\|^2$ it lies between $\subspaceMin\%$ and $\subspaceMax\%$
+across the proteases (table in Part~\ref{sec:eval}). The reduction from $19$ to
+$8$ parameters per position is the variance benefit; the unexpressed remainder
+is bias.
+
+\subsection{Parameters}
+
+The regularisation strength $C\in\{10^{-3},10^{-2},\dots,10^{2}\}$ is chosen by
+an inner cluster-aware cross-validation (Part~\ref{sec:eval}). The PSSM uses
+$\beta=5$ and $\epsilon=0.05$. All random seeds are fixed at $42$. Each trained
+model is stored as a JSON file of arrays (feature means and scales,
+coefficients, intercept, the $8\times20$ PSSM and two null quantile grids),
+and records the fingerprint of its training data and its cross-validated
+metrics.
+
+\subsection{Result}
+
+Seven models were trained. The regularisation selected by the inner loop is
+strong for a 64-feature model on hundreds of examples: $C=0.01$--$0.1$ for every
+protease except the faecal group (secondary-metrics table, Part~\ref{sec:eval}).
