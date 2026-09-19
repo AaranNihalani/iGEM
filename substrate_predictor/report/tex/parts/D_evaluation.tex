@@ -92,7 +92,7 @@ the selected $C$ is listed for each outer fold.
   \label{fig:roc}
 \end{figure}
 
-\subsection{Results: model and representation comparison}
+\subsection{Results: models, representations and negative design}
 
 Seven models were compared on identical folds: a constant prior, a
 composition-only logistic regression, one-hot and VHSE logistic regressions, the
@@ -157,7 +157,6 @@ excludes zero).
   \label{fig:lc}
 \end{figure}
 
-\subsection{Results: training against other proteases}
 
 Three negative-set designs were compared on a common held-out test set within
 identical folds: composition-shuffled positives plus background (the earlier
@@ -182,7 +181,7 @@ from $0.76$ to $0.79$ \CONF.
   \label{fig:neg}
 \end{figure}
 
-\subsection{Results: regularisation, leakage and controls}
+\subsection{Results: controls, calibration and scale}
 
 Choosing $C$ by inner cross-validation raises or matches the $C=1$ default,
 selecting $C=0.01$--$0.1$ for every protease except the faecal group. Random and
@@ -206,7 +205,6 @@ share of the learned PSSM log-odds that lies inside the VHSE subspace.
   \label{fig:tune}
 \end{figure}
 
-\subsection{Results: calibration and scale}
 
 Reliability curves of the logistic-regression score lie below the diagonal:
 with balanced class weights the score is a posterior under a $50{:}50$ prior,
