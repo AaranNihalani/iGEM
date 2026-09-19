@@ -88,6 +88,13 @@ svg text{font-family:"IBM Plex Sans",sans-serif}
 .sticky{position:sticky;top:14px}
 @media(max-width:1060px){.sticky{position:static}}
 canvas{display:block;width:100%}
+.sh{font-size:13px;font-weight:600;color:var(--text);margin:2px 0 8px}
+.sh span{font-weight:500}
+.cap{margin-top:12px;color:#b4c2d3;font-size:13px;line-height:1.6}
+.cap p{margin:8px 0 0;color:#b4c2d3}
+.cap b{color:var(--text)}
+.cap .key{display:inline-flex;align-items:center;gap:7px;margin-right:18px;color:#c9d5e3}
+.cap .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
 details{margin-top:10px} summary{cursor:pointer;color:var(--dim);font-size:13px}
 details p,details li{color:var(--dim);font-size:12.5px}
 .mc{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
@@ -145,10 +152,16 @@ footer{margin-top:24px;padding-top:14px;border-top:1px solid var(--line2);font-s
   <div class="card">
     <h2><span>5 · What drives the score</span>
       <span class="row"><label class="f" for="explain" style="margin:0">Explain</label><select id="explain"></select></span></h2>
+    <div class="sh">Position contributions <span id="expname"></span></div>
     <div id="contrib"></div>
-    <div class="legend"><span><i style="background:var(--pos)"></i>supports cleavage</span><span><i style="background:var(--neg)"></i>argues against</span><span>Top: logistic-regression contribution to the logit. Bottom: PSSM log-odds per position (bits).</span></div>
-    <div style="margin-top:14px"><canvas id="logo" height="170"></canvas></div>
-    <div class="legend"><span>Learned specificity of the selected protease. Your residues are underlined and shaded.</span></div>
+    <div class="cap">
+      <div class="key"><span class="sw" style="background:var(--pos)"></span>Bar up: this residue supports cleavage</div>
+      <div class="key"><span class="sw" style="background:var(--neg)"></span>Bar down: this residue argues against it</div>
+      <p><b>Logit</b> (upper chart) is that position's share of the logistic-regression score. <b>PSSM</b> (lower chart) is the log-odds, in bits, of that residue at that position.</p>
+    </div>
+    <div class="sh" style="margin-top:20px">Learned specificity <span id="logoname"></span></div>
+    <canvas id="logo" height="190"></canvas>
+    <div class="cap"><p>Letter height shows how strongly the protease prefers each residue at each position. Your residues are shaded and underlined.</p></div>
   </div>
 
   <div class="card">
@@ -499,6 +512,7 @@ function renderExplain(){
   if (!scores) return;
   const m = MODELS[state.explain], win = state.parsed.window;
   const kap = E.contributions(m, win), ps = E.pssmPositions(m, win);
+  $("expname").innerHTML = '<span style="color:' + COL[state.explain] + '">· ' + NAME[state.explain] + '</span>'; $("logoname").innerHTML = $("expname").innerHTML;
   const W = 620, H = 250, L = 50, colW = (W - L - 10) / 8;
   const mk = Math.max(0.6, ...kap.map(Math.abs)), mp = Math.max(1, ...ps.map(Math.abs));
   let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Per-position contributions">';
@@ -525,9 +539,9 @@ function renderExplain(){
   drawLogo(m, win);
 }
 function drawLogo(model, win){
-  const cv = $("logo"), dpr = window.devicePixelRatio || 1, cssW = cv.clientWidth || 620, cssH = 170;
+  const cv = $("logo"), dpr = window.devicePixelRatio || 1, cssW = cv.clientWidth || 620, cssH = 190;
   cv.width = cssW * dpr; cv.height = cssH * dpr; const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, cssW, cssH);
-  const L = 42, colW = (cssW - L - 8) / 8, top = 8, bot = cssH - 26, H = bot - top;
+  const L = 42, colW = (cssW - L - 8) / 8, top = 8, bot = cssH - 44, H = bot - top;
   const bg = E.AA.split("").map(a => TABLES.background[a]);
   const info = [], probs = [];
   for (let p = 0; p < 8; p++){ const pr = model.pssm[p].map((lo, j) => bg[j] * Math.pow(2, lo)); const s = pr.reduce((a, b) => a + b, 0); const pp = pr.map(v => v / s); probs.push(pp); info.push(pp.reduce((a, v, j) => a + v * Math.log2(v / bg[j]), 0)); }
@@ -545,9 +559,9 @@ function drawLogo(model, win){
       c.translate(L + p * colW + colW * 0.08, y - desc * sy); c.scale(sx, sy); c.fillStyle = colr(a); c.textBaseline = "alphabetic"; c.fillText(a, 0, 0); c.restore();
       y -= h;
     }
-    if (win[p] !== "-"){ c.fillStyle = "rgba(62,207,178,.09)"; c.fillRect(L + p * colW + 1, top, colW - 2, H); c.fillStyle = "#3ecfb2"; c.fillRect(L + p * colW + 4, bot + 2, colW - 8, 2.5); }
-    c.fillStyle = win[p] === "-" ? "#5b6d82" : "#e6edf5"; c.font = "600 12px IBM Plex Mono, monospace"; c.textAlign = "center"; c.fillText(win[p] === "-" ? "–" : win[p], L + p * colW + colW / 2, cssH - 8);
-    c.fillStyle = "#5b6d82"; c.font = "9.5px IBM Plex Sans, sans-serif"; c.fillText(E.POSITIONS[p].replace("'", "′"), L + p * colW + colW / 2, cssH - 19);
+    if (win[p] !== "-"){ c.fillStyle = "rgba(62,207,178,.09)"; c.fillRect(L + p * colW + 1, top, colW - 2, H); c.fillStyle = "#3ecfb2"; c.fillRect(L + p * colW + 4, bot + 3, colW - 8, 2.5); }
+    c.fillStyle = win[p] === "-" ? "#5b6d82" : "#e6edf5"; c.font = "600 12px IBM Plex Mono, monospace"; c.textAlign = "center"; c.fillText(win[p] === "-" ? "–" : win[p], L + p * colW + colW / 2, bot + 36);
+    c.fillStyle = "#5b6d82"; c.font = "9.5px IBM Plex Sans, sans-serif"; c.fillText(E.POSITIONS[p].replace("'", "′"), L + p * colW + colW / 2, bot + 19);
   }
   c.strokeStyle = "#ef6b7f88"; c.setLineDash([4, 3]); c.beginPath(); c.moveTo(L + 4 * colW, top); c.lineTo(L + 4 * colW, bot); c.stroke(); c.setLineDash([]);
 }
