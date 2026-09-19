@@ -73,3 +73,27 @@ def spearman_with_permutation(x, y, n_perm=200_000, seed=0):
         if len(set(ry[i])) > 1 and len(set(rx[i])) > 1:
             boots.append(np.corrcoef(rankdata(np.asarray(x)[i]), rankdata(np.asarray(y)[i]))[0, 1])
     return float(rho), float(p), float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))
+
+
+def masked_prob(model: ProteaseModel, seqs, missing) -> np.ndarray:
+    """LR score with the given positions treated as unknown (feature at its training mean)."""
+    from .features import encode
+    z = (encode(seqs) - model.mean) / model.scale
+    for p in missing:
+        z[:, p * 8:(p + 1) * 8] = 0.0
+    return sigmoid(model.intercept + z @ model.coef)
+
+
+def masked_pssm(model: ProteaseModel, seqs, missing) -> np.ndarray:
+    """PSSM score with unknown positions contributing their background-expected log-odds."""
+    from .features import index_matrix
+    lo = model.log_odds
+    s = lo[np.arange(WINDOW), index_matrix(seqs)].copy()
+    for p in missing:
+        s[:, p] = float((BACKGROUND * lo[p]).sum())
+    return s.sum(axis=1)
+
+
+def fill_gaps(gapped: str) -> tuple[str, tuple]:
+    """('-PRSLSGL') -> ('APRSLSGL', (0,)): placeholder residue plus the tuple of missing positions."""
+    return gapped.replace("-", "A").replace("X", "A"), tuple(i for i, c in enumerate(gapped) if c in "-X")

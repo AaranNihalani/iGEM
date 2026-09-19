@@ -14,6 +14,7 @@ import pandas as pd
 
 from .constants import PROTEASES
 from .model import ProteaseModel, load_all
+from .validation import fill_gaps, masked_prob, masked_pssm
 
 PRESETS = {
     "wound": ("MMP2", "MMP8", "MMP9", "NE", "LASB"),
@@ -39,6 +40,32 @@ class Panel:
             cols[f"pct_lr_{m}"] = mod.lr_percentile(seqs)
             cols[f"pct_pssm_{m}"] = mod.pssm_percentile(seqs)
             cols[f"u_{m}"] = mod.consensus(seqs)
+        return pd.DataFrame(cols)
+
+    def score_gapped(self, windows, n_null: int = 20000, seed: int = 20260919) -> pd.DataFrame:
+        """Score P4-P4' windows in which some positions are unknown ('-' or 'X').
+
+        Each protease's percentiles come from a null computed with the same unknown positions, so a gapped
+        window is compared with random windows that are equally uninformed at those positions.
+        """
+        from .candidates import random_pool
+        windows = list(windows)
+        filled = [fill_gaps(w) for w in windows]
+        null = random_pool(n_null, seed)
+        cols = {"sequence": windows}
+        for m, mod in self.models.items():
+            n = len(windows)
+            P, S_, A, B = np.zeros(n), np.zeros(n), np.zeros(n), np.zeros(n)
+            for miss in sorted({f[1] for f in filled}):
+                idx = [i for i, f in enumerate(filled) if f[1] == miss]
+                seqs = [filled[i][0] for i in idx]
+                p_ = masked_prob(mod, seqs, miss); s_ = masked_pssm(mod, seqs, miss)
+                np_, ns_ = np.sort(masked_prob(mod, null, miss)), np.sort(masked_pssm(mod, null, miss))
+                P[idx], S_[idx] = p_, s_
+                A[idx] = np.searchsorted(np_, p_, side="right") / len(np_)
+                B[idx] = np.searchsorted(ns_, s_, side="right") / len(ns_)
+            cols[f"P_{m}"], cols[f"pct_lr_{m}"], cols[f"pct_pssm_{m}"] = P, A, B
+            cols[f"u_{m}"] = 2 * A * B / (A + B + 1e-12)
         return pd.DataFrame(cols)
 
     def margin(self, scores: pd.DataFrame, target: str) -> np.ndarray:

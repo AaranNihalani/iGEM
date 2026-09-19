@@ -45,3 +45,17 @@ def fasta_windows(path):
     if name:
         out += [(name, p, w) for p, w in windows("".join(buf))]
     return out
+
+
+_MASS = {"A": 71.08, "R": 156.19, "N": 114.10, "D": 115.09, "C": 103.14, "Q": 128.13, "E": 129.12, "G": 57.05, "H": 137.14,
+         "I": 113.16, "L": 113.16, "K": 128.17, "M": 131.20, "F": 147.18, "P": 97.12, "S": 87.08, "T": 101.10, "W": 186.21,
+         "Y": 163.18, "V": 99.13}
+
+
+def sensor_ok(seq: str) -> bool:
+    """Electrochemical-sensor constraints from the Task 8 design filter (team device rules, not model output):
+    no Cys (reserved for the Au-thiol anchor), no Trp (electroactive near the methylene-blue window), net charge
+    in [-1, +2], no Pro-Pro, core mass 600-1100 Da."""
+    charge = seq.count("R") + seq.count("K") - seq.count("D") - seq.count("E")
+    mass = sum(_MASS[a] for a in seq) + 18.02
+    return "C" not in seq and "W" not in seq and "PP" not in seq and -1 <= charge <= 2 and 600 <= mass <= 1100

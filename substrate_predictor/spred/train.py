@@ -13,6 +13,7 @@ RESULTS = Path(__file__).resolve().parents[1] / "results"
 
 def train_all(seed: int = RANDOM_SEED, n_boot: int = 500, verbose: bool = True):
     RESULTS.mkdir(exist_ok=True)
+    (RESULTS / 'oof').mkdir(exist_ok=True)
     pos = data.trainable_positives()
     rows, comp_rows, calib_rows = [], [], []
     for pid, seqs in pos.items():
@@ -36,6 +37,9 @@ def train_all(seed: int = RANDOM_SEED, n_boot: int = 500, verbose: bool = True):
         rows.append(row)
         comp_rows += [{"target": pid, "competitor": c, "auroc": a} for c, a in comp.items()]
         calib_rows += [{"protease": pid, "mean_p": a, "frac_pos": b, "n": n} for a, b, n in cal]
+        import numpy as np
+        np.savez_compressed(RESULTS / 'oof' / f'{pid}.npz', y=y, p=p, s=s, u=cv['u'], groups=g, fold=cv['fold'],
+                            source=frame['source'].values.astype(str), sequence=frame['sequence'].values.astype(str))
         meta = {"n_pos": len(seqs), "n_neg": int((y == 0).sum()), "data_fingerprint": data.fingerprint(seqs),
                 "cv": {k: row[k] for k in row if k.startswith(("lr_", "pssm_", "consensus_"))}, "seed": seed}
         fit_model(pid, frame, seqs, meta, groups=g).save()

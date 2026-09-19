@@ -28,10 +28,11 @@ TRIPLEX_PROTEASES = ['MMP-2', 'MMP-9', 'NE']
 SPRED_ID = {'MMP-2': 'MMP2', 'MMP-9': 'MMP9', 'NE': 'NE'}
 
 # Stage 1 candidate sequences, one per target protease
+# P4-P4' windows with the scissile bond after residue 4; '-' = position outside the candidate core (see score_candidates.py)
 STAGE1_SEQS = {
-    'MMP-2': 'PLGLAGQS',   # Candidate 2 (MMP-2 target)
-    'MMP-9': 'PRSLSGLK',   # Candidate 1 (MMP-9 target)
-    'NE':    'AAPVSGIG',   # Candidate 4 (NE target)
+    'MMP-2': '-PLGLAGQ',   # Candidate 2 (PLG|LAGQS)
+    'MMP-9': '-PRSLSGL',   # Candidate 1 (PRS|LSGLK)
+    'NE':    'AAPVSGIG',   # Candidate 4 (AAPV|SGIG)
 }
 
 
@@ -42,8 +43,9 @@ def load_triplex_pssms(_unused=None) -> dict[str, np.ndarray]:
 
 
 def score_motif(motif: str, pssm: np.ndarray) -> float:
-    """PSSM log-odds sum for an 8-mer."""
-    return sum(pssm[pos, AA_INDEX[aa]] for pos, aa in enumerate(motif.upper()))
+    """PSSM log-odds sum for a P4-P4' window; '-' positions contribute their background-expected log-odds."""
+    bg = spred_pssm.BACKGROUND
+    return sum(float((bg * pssm[pos]).sum()) if aa == '-' else pssm[pos, AA_INDEX[aa]] for pos, aa in enumerate(motif.upper()))
 
 
 def build_specificity_matrix(pssms: dict[str, np.ndarray],
