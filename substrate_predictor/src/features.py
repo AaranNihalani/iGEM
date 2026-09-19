@@ -4,15 +4,16 @@ Feature extraction for substrate peptide classification.
 Primary: VHSE8 physicochemical encoding (64-dim, always available).
 Optional: ESM2 mean-pooled embeddings (320-dim, requires transformers + torch).
 
-VHSE8 source: Mei et al. 2005, J. Chem. Inf. Model. 45(3):856-862.
-8 principal components of 188 physicochemical properties.
-  VHSE1: hydrophobicity
-  VHSE2: steric bulk
-  VHSE3-5: electronic (3 components)
-  VHSE6: H-bond donor capacity
-  VHSE7: H-bond acceptor capacity
-  VHSE8: net charge at physiological pH
-Gly is the zero-reference point (all descriptors = 0).
+VHSE (principal components score Vectors of Hydrophobic, Steric and Electronic
+properties): Mei H, Liao ZH, Zhou Y, Li SZ (2005) Biopolymers 80(6):775-786,
+doi:10.1002/bip.20296. Eight PCA score vectors derived from independent
+families of 18 hydrophobic, 17 steric and 15 electronic properties.
+  VHSE1-2: hydrophobic properties
+  VHSE3-4: steric properties
+  VHSE5-8: electronic properties
+Glycine is NOT a zero vector. The numerical table is archived, with provenance,
+in references/vhse8_table_peptides_0.5.0.json and is checked against that file
+by tests/test_features.py.
 """
 
 import logging
@@ -23,29 +24,28 @@ from src.utils import STANDARD_AAS, AA_INDEX, WINDOW_LEN
 
 log = logging.getLogger(__name__)
 
-# VHSE8 descriptor table (Mei et al. 2005, Table 2)
-# Shape: 20 amino acids x 8 descriptors
+# VHSE8 descriptor table: 20 amino acids x 8 descriptors (see module docstring)
 VHSE8: dict[str, list[float]] = {
     'A': [ 0.15, -1.11, -1.35, -0.92,  0.02, -0.91,  0.36, -0.48],
-    'R': [-1.47,  1.45,  1.24,  1.27,  1.05,  1.15,  2.16,  0.85],
+    'R': [-1.47,  1.45,  1.24,  1.27,  1.55,  1.47,  1.30,  0.83],
     'N': [-0.99,  0.00, -0.37,  0.69, -0.55,  0.85,  0.73, -0.80],
     'D': [-1.15,  0.67, -0.41, -0.01, -2.68,  1.31,  0.03,  0.56],
     'C': [ 0.18, -1.67, -0.46, -0.21,  0.00,  1.20, -1.61, -0.19],
     'Q': [-0.96,  0.12,  0.18,  0.16,  0.09,  0.42, -0.20, -0.41],
     'E': [-1.18,  0.40,  0.10,  0.36, -2.16, -0.17,  0.91,  0.02],
-    'G': [ 0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00,  0.00],
-    'H': [-0.43, -0.25, -0.37,  0.19,  0.51,  1.28,  0.93,  0.65],
+    'G': [-0.20, -1.53, -2.63,  2.28, -0.53, -1.18,  2.01, -1.34],
+    'H': [-0.43, -0.25,  0.37,  0.19,  0.51,  1.28,  0.93,  0.65],
     'I': [ 1.27, -0.14,  0.30, -1.80,  0.30, -1.61, -0.16, -0.13],
-    'L': [ 1.36,  0.07,  0.26, -0.80,  0.22, -1.37,  0.08, -0.62],
+    'L': [ 1.36,  0.07,  0.36, -0.80,  0.22, -1.37,  0.08, -0.62],
     'K': [-1.17,  0.70,  0.70,  0.80,  1.64,  0.67,  1.63,  0.13],
-    'M': [ 1.01, -0.53,  0.43,  0.00,  0.23, -0.68,  0.11, -1.86],
-    'F': [ 1.52,  0.61,  0.96, -0.16,  0.25, -1.36,  0.28, -0.60],
+    'M': [ 1.01, -0.53,  0.43,  0.00,  0.23,  0.10, -0.86, -0.68],
+    'F': [ 1.52,  0.61,  0.96, -0.16,  0.25,  0.28, -1.33, -0.20],
     'P': [ 0.22, -0.17, -0.50,  0.05, -0.01, -1.34, -0.19,  3.56],
-    'S': [-0.67, -0.86, -1.07, -0.41,  0.39,  0.21, -0.43, -0.25],
-    'T': [-0.34, -0.51, -0.55, -1.06,  0.01, -0.01, -0.44, -0.40],
-    'W': [ 1.50,  2.06,  1.79,  0.75,  0.75, -0.13, -1.06, -0.60],
-    'Y': [ 0.61,  1.60,  1.17,  0.47,  0.45,  0.45, -0.45, -0.41],
-    'V': [ 0.76, -0.92,  0.17, -1.91,  0.22, -1.40, -0.24, -0.03],
+    'S': [-0.67, -0.86, -1.07, -0.41, -0.32,  0.27, -0.64,  0.11],
+    'T': [-0.34, -0.51, -0.55, -1.06, -0.06, -0.01, -0.79,  0.39],
+    'W': [ 1.50,  2.06,  1.79,  0.75,  0.75, -0.13, -1.01, -0.85],
+    'Y': [ 0.61,  1.60,  1.17,  0.73,  0.53,  0.25, -0.96, -0.52],
+    'V': [ 0.76, -0.92, -0.17, -1.91,  0.22, -1.40, -0.24, -0.03],
 }
 
 # Pre-build lookup matrix: shape (20, 8), rows indexed by AA_INDEX

@@ -30,13 +30,8 @@ STANDARD_AAS = list('ACDEFGHIKLMNPQRSTVWY')
 AA_IDX = {aa: i for i, aa in enumerate(STANDARD_AAS)}
 WINDOW_LEN = 8
 
-# Swiss-Prot background frequencies (UniProtKB/Swiss-Prot 2023)
-SWISSPROT_BG = {
-    'A': 0.0825, 'R': 0.0553, 'N': 0.0406, 'D': 0.0546, 'C': 0.0138,
-    'Q': 0.0393, 'E': 0.0674, 'G': 0.0708, 'H': 0.0227, 'I': 0.0590,
-    'L': 0.0965, 'K': 0.0581, 'M': 0.0241, 'F': 0.0385, 'P': 0.0476,
-    'S': 0.0658, 'T': 0.0534, 'W': 0.0109, 'Y': 0.0292, 'V': 0.0686,
-}
+# Swiss-Prot background frequencies: single source of truth in src/utils.py
+from src.utils import SWISSPROT_BG
 BG = np.array([SWISSPROT_BG[aa] for aa in STANDARD_AAS], dtype=float)
 
 # BLOSUM62 matrix — rows/cols ordered by STANDARD_AAS

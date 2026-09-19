@@ -5,11 +5,13 @@ AA_INDEX = {aa: i for i, aa in enumerate(STANDARD_AAS)}
 
 WINDOW_LEN = 8  # P4..P4'
 
+# UniProtKB/Swiss-Prot release 2026_03 amino-acid composition (Expasy relstat, section 6.1),
+# normalised to sum to 1. Archived in references/swissprot_composition_2026_03.json.
 SWISSPROT_BG = {
-    'A': 0.0777, 'R': 0.0526, 'N': 0.0427, 'D': 0.0530, 'C': 0.0157,
-    'Q': 0.0391, 'E': 0.0629, 'G': 0.0691, 'H': 0.0228, 'I': 0.0591,
-    'L': 0.0960, 'K': 0.0573, 'M': 0.0237, 'F': 0.0405, 'P': 0.0492,
-    'S': 0.0694, 'T': 0.0550, 'W': 0.0130, 'Y': 0.0322, 'V': 0.0667,
+    'A': 0.082591, 'R': 0.055261, 'N': 0.040645, 'D': 0.054660, 'C': 0.013815,
+    'Q': 0.039343, 'E': 0.067174, 'G': 0.070778, 'H': 0.022725, 'I': 0.059065,
+    'L': 0.096506, 'K': 0.057964, 'M': 0.024127, 'F': 0.038643, 'P': 0.047552,
+    'S': 0.066673, 'T': 0.053659, 'W': 0.011012, 'Y': 0.029232, 'V': 0.068575,
 }
 
 # MEROPS Substrate_search.txt identifiers (column 1, family.member format)
