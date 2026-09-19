@@ -65,16 +65,6 @@ are used for both models (paired cluster bootstrap, $400$ replicates).
 
 \subsection{Derivation}
 
-\textbf{AUROC as a Mann--Whitney probability.} Let $S^{+}$ and $S^{-}$ be
-independent scores of a random positive and a random negative, with survival
-functions $\bar F_1$ and $\bar F_0$ and density $f_0$. The ROC curve traces
-$(\bar F_0(\tau),\bar F_1(\tau))$ as $\tau$ decreases, so
-\begin{equation}
-\mathrm{AUROC}=\int \mathrm{TPR}\;d\mathrm{FPR}=\int_{-\infty}^{\infty}\bar F_1(\tau)\,f_0(\tau)\,d\tau=\Prob(S^{+}>S^{-}),
-\end{equation}
-with a further $\tfrac12\Prob(S^{+}=S^{-})$ in the presence of ties. The empirical
-estimator is the Mann--Whitney statistic $U/(n_+n_-)$.
-
 \textbf{Label contamination.} Suppose a negative is, with probability $\pi$, a
 hidden positive drawn from the labelled-positive distribution and otherwise a
 true negative. For a fixed continuous scorer,

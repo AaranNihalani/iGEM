@@ -53,7 +53,7 @@ minimises the class-weighted, L2-regularised loss
 \label{eq:lr}
 \end{equation}
 with balanced class weights $\omega_c=n/(2n_c)$, that is $\omega_1=2$ and
-$\omega_0=2/3$ at the $1{:}3$ ratio. Because the logit is linear in $\bm z$, it
+$\omega_0=2/3$ at the $1{:}3$ ratio. The objective is strictly convex, so L-BFGS reaches its unique minimum. Because the logit is linear in $\bm z$, it
 decomposes exactly into one term per position:
 \begin{equation}
 \mathrm{logit}(w)=b+\sum_{i=1}^{8}\kappa_i(w),\qquad \kappa_i(w)=\sum_{d=1}^{8}\beta_{id}\,z_{id}(w).
@@ -72,17 +72,6 @@ $\mathrm{IC}_i=\sum_a p_i(a)\log_2\bigl(p_i(a)/g(a)\bigr)$ bits, which sets the 
 heights in Figure~\ref{fig:logos}.
 
 \subsection{Derivation}
-
-\textbf{Convexity.} With $m_i=\bm\beta^{\top}\bm z_i+b$, $p_i=\sigma(m_i)$ and
-$\tilde{\bm z}_i=[\bm z_i;1]$, the gradient of Eq.~\eqref{eq:lr} is
-$\nabla_{\bm\beta}\mathcal{L}=\bm\beta-C\sum_i\omega_{y_i}\tilde y_i\,\sigma(-\tilde y_im_i)\,\bm z_i$, and the Hessian with respect to
-$(\bm\beta,b)$ is
-$\mathrm{diag}(\bm I,0)+C\sum_i\omega_{y_i}p_i(1-p_i)\tilde{\bm z}_i\tilde{\bm z}_i^{\top}$.
-For a direction $\bm v=(\bm v_\beta,v_b)$,
-$\bm v^{\top}H\bm v=\|\bm v_\beta\|^2+C\sum_i\omega_{y_i}p_i(1-p_i)(\bm z_i^{\top}\bm v_\beta+v_b)^2\ge0$,
-which vanishes only if $\bm v_\beta=\bm 0$ and then $v_b=0$. The Hessian is
-positive definite, the objective is strictly convex, and the minimiser found
-by L-BFGS is unique.
 
 \textbf{Meaning of the balanced weights.} Equal total weight on the two
 classes is equivalent to fitting the posterior under a $50{:}50$ prior. If
