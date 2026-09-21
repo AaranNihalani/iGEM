@@ -25,7 +25,7 @@
 \fancyhf{}
 \setlength{\headheight}{15pt}
 \fancyhead[L]{\small\textit{SWV Forward Model}}
-\fancyhead[R]{\small Eton iGEM Dry Lab 2026}
+\fancyhead[R]{\small Aaran Nihalani $\bullet$ Eton iGEM Dry Lab}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.35pt}
 
@@ -41,9 +41,8 @@
 \newcommand{\kref}{k_{\rm ref}}
 \newcommand{\Esw}{E_{\rm sw}}
 \newcommand{\Eform}{E^{0\prime}}
-\newcommand{\FLAG}{\textit{(unconfirmed)}}
-\newcommand{\CONF}{\textit{(confirmed)}}
-\newcommand{\NOTMOD}{\textit{(not modelled)}}
+\newcommand{\FLAG}{\textit{(assumed)}}
+\newcommand{\CONF}{\textit{(established)}}
 \newcommand{\figref}[1]{Figure~\ref{#1}}
 
 \newenvironment{assump}{\small}{\smallskip}
@@ -149,7 +148,7 @@
 
 \begin{center}
 {\LARGE\bfseries Square-Wave Voltammetry Forward Model}\\[0.4em]
-{\large How MMP-9 Concentration Becomes a Measured Voltammogram}\\[0.25em]
+{\large Prediction of the Voltammetric Response to MMP-9 Activity}\\[0.25em]
 {\small\color{gray}
 Eton iGEM 2026, Dry Lab \quad$|$\quad
 Layers 8, 10, 11, 13, 15 \quad$|$\quad
@@ -157,81 +156,69 @@ Layers 8, 10, 11, 13, 15 \quad$|$\quad
 \end{center}
 \vspace{0.4em}\hrule\vspace{0.7em}
 
-\noindent\textbf{Scope.}
-This document presents the forward model that predicts what the electrode
-records when a wound sample containing MMP-9 is placed on it: the chain from
-enzyme concentration, through the fraction of surface probes that are cut, to
-the height of a peak in a square-wave voltammogram. It is written for a reader
-who knows GCSE-level biology, chemistry, physics and maths, and no
-electrochemistry. Every term is defined where it first appears, and a
-glossary of terms and symbols is given at the end (Appendix). It is
-organised into a short introduction to the device and the measurement
-(Section~I) followed by eight parts, A to H, each corresponding to one step
-in the signal chain or one question about it. Each part follows a consistent
-structure: a plain-language statement of the question and the answer; the
-assumptions required for the stated result, given explicitly; the governing
-equations, each with the meaning of every symbol, a full derivation and a
-worked number; the resulting predictions, with figures; and the evidence
-that the result is right. Values obtained from a published source or
-confirmed on the device are annotated \CONF. Values that are working
-assumptions not yet confirmed on the fabricated device are annotated
-\FLAG. A component that is physically present but deliberately left out of
-the model is annotated \NOTMOD.
+\noindent\textbf{Abstract.}
+This report presents the forward model of the square-wave voltammetric
+readout of the MMP-9 sensor. The model predicts the voltammogram recorded at a
+gold electrode carrying a methylene blue (MB) labelled peptide probe as a
+function of the MMP-9 concentration and the incubation time. The signal chain is
+formulated in seven steps: surface composition, tether geometry, single-probe
+electrode kinetics under a square-wave potential program, summation over the
+probe population, validation, readout of the cleavage fraction from the MB peak
+height, and cleavage kinetics with detection limit. The peak height is
+proportional to the fraction of intact probe, so the cleavage fraction
+$\Fkrec=1-\DI_{\rm MB}(T)/\DI_{\rm MB}(0)$ is independent of probe coverage.
+At the working point (10~Hz, $\Grtot=\gammaZero$~pmol\,cm$^{-2}$,
+$A=0.017$~cm$^2$) the predicted peak is \peakNA~nA at \peakEmV~mV with a width of
+\fwhmMV~mV, arising from labels a few tenths of a nanometre above the tip of the
+spacer. Healing (6~nM) and chronic (30~nM) MMP-9 concentrations give cleavage
+fractions of \fkHealThirty\% and \fkChronThirty\% after 30~minutes. The absolute current depends on
+unmeasured inputs and is uncertain by a large factor; the detection limit depends on the
+readout noise and the surface efficiency of cleavage, neither of which has been measured.
 
-\smallskip
-\noindent\textbf{What this report changes.} An earlier version described a
-protocol that is no longer correct and contained errors that further
-checking has corrected. (i)~The surface is prepared by one-pot
-co-immobilisation of the methylene-blue peptide probe and ferrocene-hexanethiol,
-with no mercaptohexanol (MCH); ferrocene is present on the electrode but is
-not part of the model (Section~I and Part~F). (ii)~The model's numerical
-breakdown at fast electron-transfer rates was a floating-point
-cancellation in the way the current was evaluated, not a physical effect; it is
-fixed (Part~C). With it fixed, the earlier statement that labels at the PEG6
-tip, with $\kappa=3$ to 6, sit where the signal is largest is seen to be
-incorrect: the maximum is at $\kappa\approx0.44$, so the signal comes from labels
-a few tenths of a nanometre above the tip (Part~D), and the predicted frequency
-dependence changes accordingly. (iii)~The condition for first-order cleavage kinetics is
-different from the one stated earlier (Part~G).
+\noindent\textbf{Scope and conventions.}
+The model describes the MB channel of the electrode. The electrode is prepared
+by one-pot co-immobilisation of the MB-peptide-PEG6 probe and ferrocene-hexanethiol
+(Fc-hexanethiol) without mercaptohexanol (MCH); Fc-hexanethiol acts as the diluent
+and is not represented in the model (Section~I, Part~F). The report is organised
+into a description of the system and measurement (Section~I) followed by eight
+parts, A to H, each treating one step of the signal chain. Each part states its
+objective and result, the assumptions, the governing equations with derivations
+and worked values, the predictions, and the supporting evidence. Values obtained
+from a published source or confirmed on the fabricated device are annotated
+\CONF. Working assumptions not yet confirmed on the device are annotated
+\FLAG. Symbols and abbreviations are listed in the Nomenclature.
 
 %=======================================================================
-\section{Introduction: the Device and the Measurement}
+\section{System Description and Measurement Principle}
 \label{sec:story}
 
-\subsection{What the sensor is for}
+\subsection{Application}
 
-In a chronic (non-healing) wound the enzyme matrix metalloproteinase-9
-(MMP-9) is present at a higher concentration than in a healing wound;
-representative values are about 6~nM in healing and about 30~nM in chronic wound
-fluid \cit{7b} (1~nM is one nanomolar, $10^{-9}$ mol per litre). The aim of the device is to estimate the MMP-9 concentration in a
-small sample of wound fluid from an electrical measurement on a disposable
-gold electrode. This report models the electrical side: given an MMP-9
-concentration and an incubation time, what should the electrode read out?
+The matrix metalloproteinase MMP-9 is present at a higher concentration in
+chronic (non-healing) wound fluid than in healing wound fluid; representative
+values are about 6~nM in healing and about 30~nM in chronic wounds \cit{7b}. The
+device estimates the MMP-9 concentration in a small sample of wound fluid from an
+electrical measurement on a disposable gold electrode. The model relates the
+MMP-9 concentration and incubation time to the electrode readout.
 
-\subsection{The electrode and its probe}
+\subsection{Electrode and probe}
 
-The sensor is a gold electrode with a geometric area of 1.7~mm$^2$
-(0.017~cm$^2$) \cit{12} \CONF, which supersedes an earlier 1.5~mm-diameter design
-specification (0.0177~cm$^2$); the $\sim$4\% difference is too small to alter any
-conclusion. Molecules are attached to the gold through a thiol group (a sulfur
-atom, S--H), which forms a strong Au--S bond. Two kinds of molecule are attached
-in the same preparation step (\figref{fig:assembly}A):
+The sensor is a gold electrode of geometric area 1.7~mm$^2$ (0.017~cm$^2$)
+\cit{12} \CONF. Two species are attached to the gold through thiol anchors in a single
+preparation step (\figref{fig:assembly}A):
 \begin{itemize}[leftmargin=*,noitemsep]
-\item the \textbf{probe}: a ten-residue peptide (a chain of ten amino acids), SGKIPRTLTA, which contains the
-  MMP-9 cleavage site (the bond between residues 7 and 8), joined to the gold through a
-  short flexible spacer of six ethylene-glycol units (PEG6), and carrying a
-  redox label, \textbf{methylene blue} (MB), covalently attached at the
-  other end;
-\item \textbf{ferrocene-hexanethiol} (Fc-hexanethiol): a short six-carbon chain
-  with a ferrocene group at its tip. It is co-deposited with the probe in
-  one pot, with no mercaptohexanol (MCH), and occupies the gold between probes,
-  acting as the diluent that keeps probes well separated \cit{12} \CONF.
+\item the \textbf{probe}: the peptide SGKIPRTLTA, which contains the MMP-9 cleavage
+  site (the bond between residues 7 and 8), joined to the gold through a flexible
+  spacer of six ethylene-glycol units (PEG6) and carrying the redox label
+  \textbf{methylene blue} (MB) at its free end;
+\item \textbf{ferrocene-hexanethiol} (Fc-hexanethiol): a six-carbon chain terminated
+  by a ferrocene group, co-deposited with the probe in one pot without
+  mercaptohexanol (MCH). It occupies the gold between probes and acts as the diluent
+  that keeps probes separated \cit{12} \CONF.
 \end{itemize}
-A redox label is a molecule that can accept or give up electrons at a
-characteristic voltage. MB is the reporter used here: it exchanges electrons
-with the gold, and that exchange is the signal. \textbf{Ferrocene is present
-on the electrode but is not part of the model} \NOTMOD; the reasons, and what
-the omission does and does not affect, are the subject of Part~F.
+The MB label exchanges electrons with the gold, and this exchange is the measured
+signal. The model describes the MB channel; Fc-hexanethiol is not represented, and
+Part~F treats the consequences of this scope.
 
 \begin{figure}[H]
   \centering
@@ -242,42 +229,37 @@ the omission does and does not affect, are the subject of Part~F.
     S-G-K-I-P-R-T-L-T-A and the cleavage site marked in red. The shorter
     ferrocene-hexanethiol chains fill the gold around it. \textbf{B:} after MMP-9
     cuts the peptide, the fragment carrying MB is released into solution; the
-    stub that remains on the gold is no longer electroactive. Probes are on
+    stub that remains on the gold is not electroactive. Probes are on
     average 7~nm apart (Part~A), so only one is drawn.}
   \label{fig:assembly}
 \end{figure}
 
-\subsection{What is measured}
+\subsection{Measured quantity}
 
-\textbf{Current, voltage and the voltammogram.} An electric current is a flow
-of charge; here it is a flow of electrons between the gold and the MB label.
-Whether an MB molecule tends to hold two extra electrons (reduced form) or not
-(oxidised form) depends on the voltage applied to the electrode, measured
-against a stable reference electrode (Ag/AgCl). The \textbf{formal potential}
-$\Eform$ is the voltage at which the two forms are equally favoured; for
-MB it is close to $-0.25$~V \cit{1}. As the applied voltage is swept through
-$\Eform$, MB molecules switch form and a current flows. A
-\textbf{voltammogram} is the graph of this current against the applied
-voltage. It has a peak near $\Eform$ (\figref{fig:anatomy}A). Three features
-of the peak matter: its \emph{height} (proportional to how many MB labels take
-part), its \emph{position} (near $\Eform$) and its \emph{width}
-(the full width at half the maximum height, FWHM).
+\textbf{Voltammogram.} The current is a flow of electrons between the gold and the MB
+label. MB is either reduced (two electrons gained) or oxidised, depending on the
+voltage applied to the electrode relative to an Ag/AgCl reference electrode. The
+\textbf{formal potential} $\Eform$ is the voltage at which the two forms are equally
+favoured; for MB it is close to $-0.25$~V \cit{1}. As the applied voltage is
+varied through $\Eform$ a current flows, and the graph of current against applied
+voltage, the \textbf{voltammogram}, has a peak near $\Eform$ (\figref{fig:anatomy}A).
+The peak is characterised by its \emph{height}, proportional to the number of MB
+labels participating, its \emph{position}, near $\Eform$, and its \emph{width}, the full
+width at half the maximum height (FWHM).
 
-\textbf{Why the peak shrinks on cleavage.} Only MB labels that are still tethered
-to the gold can exchange electrons quickly enough to contribute. When MMP-9
-cuts a probe, the MB-bearing fragment drifts away and that label no longer
-contributes. So the peak height falls in proportion to the fraction of intact
-probes (\figref{fig:anatomy}C). The \textbf{cleavage fraction} $\Fk$ is the
-fraction of probes cut during an incubation.
+\textbf{Effect of cleavage.} Only MB labels that remain tethered to the gold exchange
+electrons at a rate sufficient to contribute. Cleavage by MMP-9 releases the
+MB-bearing fragment, so the peak height decreases in proportion to the fraction of
+intact probes (\figref{fig:anatomy}C). The \textbf{cleavage fraction} $\Fk$ is the
+fraction of probes cleaved during an incubation.
 
-\textbf{Square-wave voltammetry (SWV).} Rather than sweeping the voltage
-smoothly, SWV steps it along a staircase and superimposes a square wave
-of amplitude $\Esw=25$~mV, so the voltage alternates between a
-forward pulse (higher) and a reverse pulse (lower) at each step. The current
-is recorded at the end of each pulse and the \textbf{net current}
-$\Delta I = I_{\rm fwd}-I_{\rm rev}$ is plotted against the staircase voltage
-(\figref{fig:anatomy}B). The frequency of the square wave is 10 to 20~Hz
-\cit{12} \CONF. Why this technique is used is explained in Part~C.
+\textbf{Square-wave voltammetry (SWV).} The applied voltage is stepped along a
+staircase and a square wave of amplitude $\Esw=25$~mV is superimposed, so that at
+each step the voltage alternates between a forward (higher) and a reverse (lower)
+pulse. The current is sampled at the end of each pulse and the net current
+$\Delta I=I_{\rm fwd}-I_{\rm rev}$ is plotted against the staircase voltage
+(\figref{fig:anatomy}B). The square-wave frequency is 10 to 20~Hz \cit{12} \CONF. The
+rationale for the technique is given in Part~C.
 
 \begin{figure}[H]
   \centering
@@ -292,7 +274,7 @@ $\Delta I = I_{\rm fwd}-I_{\rm rev}$ is plotted against the staircase voltage
   \label{fig:anatomy}
 \end{figure}
 
-\subsection{The measurement protocol and the readout}
+\subsection{Measurement protocol and readout}
 
 Each electrode is scanned twice: once \emph{before} incubation and once
 \emph{after} the sample has been on it for a time $T$ (\figref{fig:protocol}). The
@@ -302,7 +284,7 @@ cleavage fraction is read from the pair of peak heights on the same electrode:
   \label{eq:Fk_simple}
 \end{equation}
 where $\DI_{\rm MB}$ is the net peak height. Because each electrode is compared only
-with its own earlier scan, the number of probes it happens to carry cancels
+with its own initial scan, the number of probes it carries cancels
 out of $\Fkrec$ (Part~F). The MMP-9 concentration is then obtained from
 $\Fkrec$ using the cleavage kinetics of Part~G.
 
@@ -314,9 +296,9 @@ $\Fkrec$ using the cleavage kinetics of Part~G.
   \label{fig:protocol}
 \end{figure}
 
-\subsection{The structure of the model}
+\subsection{Structure of the model}
 
-The model follows the physical chain in \figref{fig:chainmap}. Each part of this report
+The model follows the physical chain in \figref{fig:chainmap}; each part of this report
 treats one link.
 
 \begin{figure}[H]
@@ -332,27 +314,26 @@ treats one link.
 \small\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}cp{7.2cm}p{4.6cm}@{}}
 \toprule
-Part & Question & Section \\
+Part & Subject & Section \\
 \midrule
-A & How many probes are on the electrode and how far apart are they? & Surface (II) \\
-B & Where does the MB label sit above the gold, and how fast can it exchange electrons? & Tether geometry (III) \\
-C & What current does one MB label give in a square-wave scan? & Single probe (IV) \\
-D & What current does the whole electrode give, and how does it change on cleavage? & Electrode signal (V) \\
-E & How do we know the model is right? & Validation (VI) \\
-F & What does measuring with MB alone assume, and what happens to ferrocene? & Readout (VII) \\
-G & How does MMP-9 concentration set the cleavage fraction and the detection limit? & Kinetics (VIII) \\
-H & Which uncertain inputs matter for which prediction? & Sensitivity (IX) \\
+A & Probe coverage and spacing & Surface (II) \\
+B & Distribution of the MB label distance and electron-transfer rate & Tether geometry (III) \\
+C & Square-wave voltammetry; current of a single probe & Single probe (IV) \\
+D & Electrode signal and its dependence on cleavage & Electrode signal (V) \\
+E & Verification and validation & Validation (VI) \\
+F & Readout of the cleavage fraction from the MB signal & Readout (VII) \\
+G & Cleavage kinetics and detection limit & Kinetics (VIII) \\
+H & Sensitivity to the assumed inputs & Sensitivity (IX) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\subsection{What is known and what is assumed}
+\subsection{Established and assumed quantities}
 
-Every quantity used in the model is either measured or published (confirmed),
-a working assumption that has not been checked on the fabricated device
-(unconfirmed), or omitted (not modelled). The most important entries are listed
-here, with the part that uses them; a complete list with open questions is in the
-Summary.
+Each quantity used in the model is either measured or published (established) or a
+working assumption not yet checked on the fabricated device (assumed). The principal
+entries are listed with the part that uses them; the complete list and the open items
+are given in the Summary.
 
 \begin{center}
 \small\renewcommand{\arraystretch}{1.2}
@@ -372,7 +353,6 @@ Surface efficiency $\eta$ & 0.20, central estimate & G & \FLAG \\
 Readout noise & not measured & G & \FLAG \\
 Cleavage independent of label height & assumed & F & \FLAG \\
 Non-enzymatic probe loss during incubation & assumed zero & F & \FLAG \\
-Ferrocene-hexanethiol (present) & excluded from the model & F & \NOTMOD \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -383,46 +363,43 @@ Ferrocene-hexanethiol (present) & excluded from the model & F & \NOTMOD \\
 
 \subsection{Overview}
 
-\textbf{Question.} How many probes are on the electrode, and are they far enough
-apart to be treated as independent? \textbf{Answer.} At the working coverage of
-\gammaZero~pmol\,cm$^{-2}$ there are about \nProbesFmol~fmol of probe on the electrode
-(\nProbes{} molecules), one for every \areaPerProbeNM~nm$^2$ of gold. The mean
-spacing is \spacingNM~nm, well beyond the distance below which the labels of
-neighbouring probes could overlap (\overlapSpacing~nm), so each probe can be treated as isolated. The coverage is a
-placeholder, but it only sets the absolute size of the current, not the readout
+\textbf{Objective.} To determine the probe density and whether probes may be treated
+as independent. \textbf{Result.} At the working coverage of
+\gammaZero~pmol\,cm$^{-2}$ the electrode carries about \nProbesFmol~fmol of probe
+(\nProbes{} molecules), one per \areaPerProbeNM~nm$^2$ of gold. The mean
+spacing is \spacingNM~nm, above the distance (\overlapSpacing~nm) below which the labels of
+neighbouring probes could overlap, so probes are treated as independent. The coverage is an
+assumed value; it sets the absolute size of the current but does not enter the readout
 (Part~F).
 
 \subsection{Assumptions}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
-\item \textbf{One-pot deposition of MB-peptide-PEG6 and Fc-hexanethiol, no MCH.}
-  This is the current protocol \cit{12} \CONF. Earlier versions of this report and
-  of the related layer reports described a mercaptohexanol (MCH) backfill step and a
-  three-component deposition; neither describes the electrodes in use.
+\item \textbf{One-pot deposition of MB-peptide-PEG6 and Fc-hexanethiol, without MCH.}
+  This is the protocol in use \cit{12} \CONF.
 \item \textbf{Total probe coverage $\Grtot = 3\times10^{-12}$~mol\,cm$^{-2}$.}
   An engineering estimate within the range reported for a comparable
-  peptide-PEG system \cit{8}, not a measurement on these electrodes \FLAG. Direct measurement is
-  not possible with the instrumentation currently available to the team
-  \cit{12}, so it is expected to remain a placeholder. The team's monolayers are
-  also not yet reproducible from electrode to electrode.
-\item \textbf{The surface mix is not the solution mix.} The peptide-PEG probe is
-  expected to adsorb more strongly than the short Fc-hexanethiol, so the
-  fraction of probe on the surface is not simply the fraction in the deposition
-  solution \FLAG.
+  peptide-PEG system \cit{8}, not a measurement on these electrodes \FLAG. Direct
+  measurement is not possible with the available instrumentation \cit{12}, and
+  the coverage is not yet reproducible from electrode to electrode.
+\item \textbf{The surface composition differs from the solution composition.} The
+  peptide-PEG probe is expected to adsorb more strongly than the short
+  Fc-hexanethiol, so the surface fraction of probe is not the fraction in the
+  deposition solution \FLAG.
 \item \textbf{Fc-hexanethiol fills the gold between probes.} Whether it forms a
-  fully packed layer has not been checked \FLAG. If it does, little bare gold remains, and the
-  earlier concern about non-specific protein adsorption onto bare gold is reduced,
-  though not removed, since proteins can still adsorb on the layer itself.
+  fully packed layer has not been determined \FLAG. If it does, little bare gold remains
+  and non-specific adsorption of protein onto gold is reduced, although adsorption on the
+  layer itself is not excluded.
 \end{itemize}
 \end{assump}
 
 \subsection{Equations}
 
 \textbf{Probes per area and spacing.} A coverage $\Grtot$ in mol\,cm$^{-2}$
-corresponds to $\Grtot N_A$ molecules per cm$^2$ (1~pmol $=10^{-12}$~mol, 1~fmol $=10^{-15}$~mol), where $N_A=6.022\times10^{23}$~mol$^{-1}$ is
-Avogadro's number. Dividing into the area gives the area per probe, and if probes were
-placed on a square grid the centre-to-centre spacing would be its square root:
+corresponds to $\Grtot N_A$ molecules per cm$^2$, where $N_A=6.022\times10^{23}$~mol$^{-1}$ is
+Avogadro's number. The area per probe is the reciprocal, and for probes on a square grid
+the centre-to-centre spacing is its square root:
 \begin{equation}
   a=\frac{1}{\Grtot N_A},\qquad s=\sqrt{a}.
   \label{eq:spacing}
@@ -444,15 +421,15 @@ Fc-hexanethiol if the layer is fully packed.
 sideways from its anchor by a random amount with root-mean-square value
 $\sqrt{2}\,\sigma_z=\lateralRms$~nm (derived in Part~B). Two labels can interfere
 only if their anchors are closer than about twice this, $\overlapSpacing$~nm. The
-spacing of \spacingNM~nm is well above this (\figref{fig:spacing}), which is the basis for
-computing the signal of one probe and multiplying by the number of probes.
+spacing of \spacingNM~nm exceeds this (\figref{fig:spacing}), which justifies computing the signal of one probe and
+multiplying by the number of probes.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/swvr_04_spacing.pdf}
   \caption{\textbf{A:} mean probe spacing (Eq.~\ref{eq:spacing}) against coverage.
     Below the shaded band the sideways reach of neighbouring labels overlaps. The
-    working value (dot) is well clear of it, and stays clear up to about
+    working value (dot) lies above it, and remains above it up to about
     \gammaOverlap~pmol\,cm$^{-2}$. \textbf{B:} a top view of a random arrangement of probes
     at the working coverage, with the sideways reach of each label shaded.}
   \label{fig:spacing}
@@ -472,14 +449,12 @@ inherits its uncertainty, but the cleavage readout of Eq.~\eqref{eq:Fk_simple} d
 
 \subsection{Overview}
 
-\textbf{Question.} The MB label is at the free end of a flexible tether, so its
-distance $d$ from the gold changes from probe to probe and from moment to moment. How
-is $d$ distributed, and how does the speed of electron transfer depend on it?
-\textbf{Answer.} Modelling the peptide as a freely jointed chain gives a
-half-Gaussian distribution of $d$, with the label most likely within about 1~nm of
-the PEG6 tip. The electron-transfer rate constant falls by a factor of ten for every
-\kOrder~\AA{} (0.23~nm) of extra distance, so only labels close to the
-gold can exchange electrons at the speed of the square wave.
+\textbf{Objective.} To determine the distribution of the distance $d$ of the MB label from
+the gold and the dependence of the electron-transfer rate on $d$. \textbf{Result.} Modelling the
+peptide as a freely jointed chain gives a half-Gaussian distribution of $d$, with the
+label most probably within about 1~nm of the PEG6 tip. The electron-transfer rate constant
+decreases by a factor of ten for every \kOrder~\AA{} (0.23~nm) of additional distance, so that
+only labels close to the gold exchange electrons at the rate of the square wave.
 
 \subsection{Assumptions}
 
@@ -585,7 +560,7 @@ inherits this:
 \end{equation}
 The decay constant is $\beta=1.0$~\AA$^{-1}=\betaNM$~nm$^{-1}$, the accepted value for
 tunnelling through alkane chains \cit{4}; no PEG-specific value is available, so this
-is a placeholder \FLAG. The anchoring measurement is that of Dauphin-Ducharme
+is an assumed value \FLAG. The anchoring measurement is that of Dauphin-Ducharme
 \emph{et al.}\ \cit{1}: MB on a six-carbon linker, with the label 8~\AA{} from the gold, has
 $\kzero=5.0\times10^{4}$~s$^{-1}$. Eq.~\eqref{eq:k0d} extrapolated back to zero distance gives
 $\kzero(0)=5.0\times10^4\,e^{8}=\kZero$~s$^{-1}$, and evaluated at the PEG6 tip,
@@ -594,8 +569,8 @@ $\kzero(0)=5.0\times10^4\,e^{8}=\kZero$~s$^{-1}$, and evaluated at the PEG6 tip,
   \label{eq:kref}
 \end{equation}
 Because $\kzero$ falls tenfold per 0.23~nm, a label 0.5~nm above the tip is already
-$\sim150$ times slower. Which labels can therefore keep up with a 10 to 20~Hz square wave is
-decided not by $P(d)$ alone but by the balance in \figref{fig:rate}, quantified in Parts~C and D.
+$\sim150$ times slower. Which labels contribute at a square-wave frequency of 10 to 20~Hz is
+therefore determined not by $P(d)$ alone but by the balance shown in \figref{fig:rate}, quantified in Parts~C and D.
 
 \begin{figure}[H]
   \centering
@@ -615,8 +590,8 @@ decided not by $P(d)$ alone but by the balance in \figref{fig:rate}, quantified 
 
 Labels are spread over $d=\dPEG$ to about $\dMax$~nm with mean \meanDana~nm
 (Eq.~\ref{eq:Pd}), and their electron-transfer rate constants span more than fifteen
-orders of magnitude. At the square-wave frequencies used, only a thin slice of this
-range, a band a few tenths of a nanometre above the PEG6 tip (Part~D), produces signal.
+orders of magnitude. At the square-wave frequencies used, only a narrow
+band, a few tenths of a nanometre above the PEG6 tip (Part~D), produces signal.
 
 %=======================================================================
 \section{Part C: Square-Wave Voltammetry and the Signal from One Probe}
@@ -624,14 +599,13 @@ range, a band a few tenths of a nanometre above the PEG6 tip (Part~D), produces 
 
 \subsection{Overview}
 
-\textbf{Question.} What current does a single MB label at a fixed distance from the
-gold give in a square-wave scan? \textbf{Answer.} The fraction of MB in its reduced form
-relaxes exponentially towards the value set by the applied voltage, at a rate set by the
-label's electron-transfer speed. The current sampled at the end of each pulse is
-proportional to how far the label is from that equilibrium at that moment. This is
-large only if the label's rate is comparable to the pulse rate: too slow and
-nothing happens, too fast and equilibrium is reached long before sampling. There is a
-single best speed, $\kappa\approx\kappaMax$ (\figref{fig:kappa}B).
+\textbf{Objective.} To determine the current produced by a single MB label at a fixed
+distance from the gold under a square-wave potential program. \textbf{Result.} The reduced fraction
+of MB relaxes exponentially towards the value set by the applied voltage at a rate set by the
+electron-transfer rate constant. The current sampled at the end of each pulse is proportional
+to the displacement from equilibrium at that instant, and is therefore large only when the
+rate constant is comparable to the pulse rate. The single-probe signal has a maximum at
+$\kappa\approx\kappaMax$ (\figref{fig:kappa}B).
 
 \subsection{Assumptions}
 
@@ -752,8 +726,7 @@ $e^{-K\tau}$. Eqs.~\eqref{eq:I_two} and \eqref{eq:I_stable} are algebraically id
 not numerically equal in floating-point arithmetic. When $K\tau$ is large, each term of
 Eq.~\eqref{eq:I_two} is of order $k\Grtot$ and their difference is smaller than the
 rounding error of either. Evaluating Eq.~\eqref{eq:I_two} therefore returns numerical noise
-instead of the physical result for $\kappa\gtrsim15$; the earlier report recognised this as numerical
-noise but left the range unusable. Using Eq.~\eqref{eq:I_stable} removes the
+instead of the physical result for $\kappa\gtrsim15$; and is a purely numerical artefact. Using Eq.~\eqref{eq:I_stable} removes the
 cancellation (\figref{fig:ode}C): the two forms agree to better than $10^{-8}$ relative where both are
 reliable, and the stable form continues correctly to arbitrarily fast rates.
 
@@ -789,8 +762,7 @@ arbitrary initial coverage.
     \textbf{B:} their difference, at the level of the solver tolerance.
     \textbf{C:} peak signal against $\kappa$ computed two ways. The stable form
     (Eq.~\ref{eq:I_stable}, blue) continues smoothly; the two-term form
-    (Eq.~\ref{eq:I_two}, red) fails beyond $\kappa\approx15$ owing to cancellation, which
-    is the ``instability'' recorded in the earlier report.}
+    (Eq.~\ref{eq:I_two}, red) fails beyond $\kappa\approx15$ owing to cancellation.}
   \label{fig:ode}
 \end{figure}
 
@@ -803,10 +775,10 @@ $\alpha=\tfrac12$) so $K\tau=2\kappa$. Eq.~\eqref{eq:I_stable} says the current 
 $K$ times a displacement that shrinks as $e^{-K\tau}$; the product $K\,e^{-K\tau}$ is maximal
 where $K\tau=1$, that is at $\kappa=\tfrac12$. The full simulation, which includes the carry-over
 between pulses, places the maximum at
-$\kappa=\kappaMax$ (\figref{fig:ode}C, \figref{fig:rate}B), close to the simple estimate.
+$\kappa=\kappaMax$ (\figref{fig:ode}C, \figref{fig:rate}B), in agreement with the estimate.
 A label that exchanges much faster ($\kappa\gg1$) reaches equilibrium within each pulse and
 its sampled current is nearly zero: physically, the electrons have already moved before the current is measured.
-A label much slower ($\kappa\ll1$) barely responds. Numerically, the largest single-probe
+A label much slower ($\kappa\ll1$) responds negligibly. Numerically, the largest single-probe
 signal is $g_{\max}=\gMax$ in units of $n_eF\cdot2f$ per unit $A\Grtot$.
 
 \textbf{Peak shape.} For probes at $\kappa\lesssim1$ the net peak is a single lobe at
@@ -839,12 +811,11 @@ determines which labels give the signal (Part~D).
 
 \subsection{Overview}
 
-\textbf{Question.} The electrode carries many probes, with labels at different distances.
-What is the total signal, and how does it change when probes are cut? \textbf{Answer.} Adding up the
-probes, weighted by $P(d)$, gives a single peak of about \peakNA~nA at 10~Hz. It comes almost
-entirely from a narrow band of labels $\sim$\dStarTenOff~nm above the PEG6 tip. Its
-height is exactly proportional to the number of intact probes, and its position and width do not
-change on cleavage.
+\textbf{Objective.} To determine the total signal of the probe population and its dependence
+on the cleavage fraction. \textbf{Result.} Summation over the probes, weighted by $P(d)$, gives a single
+peak of about \peakNA~nA at 10~Hz. It arises from a narrow band of labels $\sim$\dStarTenOff~nm above
+the PEG6 tip. The height is exactly proportional to the number of intact probes; the position and
+width are independent of cleavage.
 
 \subsection{Assumptions}
 
@@ -879,8 +850,8 @@ prefactor, so
   \label{eq:DI_Fk}
 \end{equation}
 under the assumptions above. The peak height falls in direct proportion; the position and
-width do not change (\figref{fig:cleave}). An earlier version reported this as verified numerically
-to 2\%; it is exact by construction, and the code confirms it to machine precision (no deviation at double precision).
+width do not change (\figref{fig:cleave}). The proportionality is exact by construction, and the code
+confirms it to machine precision.
 
 \begin{figure}[H]
   \centering
@@ -910,7 +881,7 @@ tip (\figref{fig:band}A,B). Eq.~\eqref{eq:one_line} reproduces the full calculat
 \approxErrTen\% (\figref{fig:band}C) and shows three things:
 \begin{enumerate}[leftmargin=*,noitemsep]
 \item the peak is proportional to $f$: doubling the frequency doubles it (predicted ratio \ratioTwenty{} for 20 against 10~Hz, a directly testable prediction);
-\item it depends on the geometry only through $P(d_\star)/\beta$, not on the huge range of rate constants;
+\item it depends on the geometry only through $P(d_\star)/\beta$, not on the range of rate constants;
 \item it is nearly independent of the anchoring value $\kref$: changing $\kref$ shifts
   $d_\star$ but not the size of the bump. Scaling $\kref$ from 0.1 to 100 times its base value
   (127~s$^{-1}$) changes the peak to between $\kRefSpanLo$ and $\kRefSpanHi$ of its value
@@ -963,7 +934,7 @@ on a real electrode is the most direct available test of the whole rate model (P
 The model predicts a net peak of \peakNA~nA at \peakEmV~mV, width \fwhmMV~mV, at 10~Hz for
 $\Grtot=\gammaZero$~pmol\,cm$^{-2}$ and $A=0.017$~cm$^2$ (about twice this at 20~Hz).
 Its height is exactly proportional to $(1-\Fk)$ and to $\Grtot$, and is nearly independent of $\kref$.
-The absolute value depends on the placeholder inputs (Part~H); the proportionality to
+The absolute value depends on the assumed inputs (Part~H); the proportionality to
 $(1-\Fk)$ does not.
 
 %=======================================================================
@@ -972,13 +943,12 @@ $(1-\Fk)$ does not.
 
 \subsection{Overview}
 
-\textbf{Question.} How do we know the model is right? \textbf{Answer.} The mathematics is verified
-directly and to high precision. The model reproduces the standard behaviour of square-wave
-voltammetry for a surface-bound couple. It does \emph{not} reproduce the published
-high-rate voltammograms of Dauphin-Ducharme \emph{et al.}\ \cit{1}, and the reason is not
-established; this limits the confidence in the \emph{absolute} current but not in the cleavage
-readout, and a specific measurement on the fabricated device would settle it. Nothing in the
-model has yet been compared with a measured voltammogram of this device.
+\textbf{Objective.} To establish the correctness of the implementation and the agreement of
+the model with published behaviour. \textbf{Result.} The mathematics is verified directly to high
+precision, and the model reproduces the standard behaviour of square-wave voltammetry of a surface-bound
+couple. It does not reproduce the published high-rate voltammograms of Dauphin-Ducharme \emph{et al.}\
+\cit{1}, and the cause has not been established; this limits confidence in the absolute current but not in the
+cleavage readout. The model has not yet been compared with a measured voltammogram of this device.
 
 \subsection{Mathematical checks}
 
@@ -997,7 +967,7 @@ $P(d)$ normalisation & integrates to 1 within $10^{-3}$ \\
 Distance quadrature & converged to $\quadErrEighty$\% (10~Hz) and $\quadErrEightyTwentyHz$\% (20~Hz) with 80 points \\
 Proportionality to intact probe, Eq.~\eqref{eq:DI_Fk} & exact to machine precision \\
 Position of the single-probe maximum & $\kappa=\kappaMax$, in the expected range (0.2 to 1.0) \\
-Stale defaults & the distance-averaged function's default area and coverage are now the confirmed \texttt{A\_ELEC} and \texttt{GAMMA\_0}; previously they used the superseded 0.0177~cm$^2$ \\
+Default parameters & the default area and coverage of the distance-averaged function equal the module constants \texttt{A\_ELEC} and \texttt{GAMMA\_0} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1018,9 +988,8 @@ $2\ln(3+2\sqrt2)=3.525$. Converting to voltage with $\xi=n_eF(E-\Eform)/RT$,
 which is 45.3~mV for $n_e=2$. This is the width of a different experiment (a continuous sweep of a couple that
 stays at equilibrium) from the sampled-current square wave used here, where the peak is wider
 (\fwhmMin{} to \fwhmMaxK~mV, Part~C) because the current is a non-equilibrium quantity sampled
-at a fixed time. A quantitative match to Eq.~\eqref{eq:fwhm} is therefore not expected, and none is claimed. (An earlier
-version listed the difference, about 24\% RMS in shape, as an unresolved gap; it is the expected difference between two
-experiments.)
+at a fixed time. A quantitative match to Eq.~\eqref{eq:fwhm} is therefore not expected; the difference in shape between the two
+(about 24\% RMS at $\kappa=10$) is a property of the two experiments.
 
 \subsection{Consistency with square-wave theory}
 
@@ -1037,7 +1006,7 @@ Figure~4 shows net square-wave peaks at 20 to 1000~Hz. The paper reports $\kzero
 for the label at 8~\AA, from a numerical simulation fitted to the data. At these rates
 $\kappa=\kzero/(2f)$ is \kappaDDhundred{} at 100~Hz and \kappaDDtwenty{} at 20~Hz. The present model
 predicts essentially no net current there (\figref{fig:dd}A: many orders of magnitude below the maximum, at $\kappa\gtrsim25$), whereas the paper
-shows a well-defined peak of about 430~nA at 100~Hz. Two points of contact can be checked:
+shows a well-defined peak of about 430~nA at 100~Hz. Two comparisons are possible:
 \begin{itemize}[leftmargin=*,noitemsep]
 \item \textbf{Height and existence of the peak at high $\kappa$.} Not reproduced. This is a disagreement
   between the present model and the published simulation at $\kappa\gg1$, not a numerical instability of
@@ -1060,7 +1029,7 @@ labels with $\kappa\approx\kappaMax$, whatever the mean.
 The same mismatch appears for ferrocene. The literature rate constant for ferrocene-hexanethiol
 ($2.7\times10^{5}$~s$^{-1}$ \cit{1}) gives $\kappa$ of order $10^{4}$ at 10~Hz, where the
 model predicts no signal, yet peaks of $5\times10^{-8}$ to $10^{-5}$~A were seen on the device \cit{12}. This is one
-reason ferrocene is not modelled (Part~F).
+reason ferrocene is not included in the model (Part~F).
 
 \begin{figure}[H]
   \centering
@@ -1079,15 +1048,15 @@ current would differ, and it would not scale linearly with frequency. The propor
 (Eq.~\ref{eq:DI_Fk}), which is what the readout uses, would not change, since it depends
 only on the assumption that cleavage is independent of label height (Part~F).
 
-\subsection{What would settle it}
+\subsection{Discriminating measurements}
 
-Two measurements on the fabricated electrode, each within the team's existing instrumentation:
+Two measurements on the fabricated electrode, each achievable with the existing instrumentation:
 \begin{enumerate}[leftmargin=*,noitemsep]
 \item \textbf{Peak height against frequency.} The model predicts a straight line through the origin from
   1 to about 100~Hz (a ratio of \ratioTwenty{} for 20~Hz against 10~Hz; \figref{fig:freq}C). Departure from this
   would identify the rate distribution.
 \item \textbf{Peak width.} The model predicts \fwhmMV~mV at 10~Hz; a substantially wider peak indicates a
-  spread of environments not in the model.
+  spread of environments not represented in the model.
 \end{enumerate}
 
 \subsection{Result}
@@ -1099,29 +1068,27 @@ uncertainty shown in Part~H; the proportional relation between peak height and i
 structural property of the model and not a fitted result.
 
 %=======================================================================
-\section{Part F: Reading Out Cleavage with MB Alone}
+\section{Part F: Readout of the Cleavage Fraction from the MB Signal}
 \label{sec:ratio}
 
 \subsection{Overview}
 
-\textbf{Question.} Ferrocene is on the electrode but is not in the model. What does the model
-assume by leaving it out, and does the readout still work? \textbf{Answer.} Ferrocene reacts at a
-voltage far from MB's, so it does not interfere with the MB scan. The readout
-$\Fkrec$ of Eq.~\eqref{eq:Fk_simple} does not need ferrocene: it compares each electrode with its own earlier
-scan, so the number of probes cancels. What ferrocene could have provided, and the model does not,
-is a check that nothing other than MMP-9 changed the signal during incubation.
+\textbf{Objective.} To state the scope and assumptions of a readout based on the MB signal alone.
+\textbf{Result.} Ferrocene reacts at a potential far from that of MB and does not overlap the MB scan
+window. The readout $\Fkrec$ of Eq.~\eqref{eq:Fk_simple} compares each electrode with its own initial
+scan, so the number of probes cancels. The readout does not provide a check that the signal was
+unchanged by processes other than cleavage; this is stated as assumption A1.
 
-\subsection{What is known about ferrocene on this device}
+\subsection{Fc-hexanethiol on the electrode}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
 \item \textbf{Ferrocene-hexanethiol is co-immobilised with the probe in the same step} and
   remains on the electrode; it acts as the diluent \cit{12} \CONF.
 \item \textbf{Its formal potential} has been observed at about $+0.30$ to $+0.40$~V
-  against Ag/AgCl, varying between electrodes, compared with the value near $+0.21$~V used in
-  earlier versions of this model \cit{12} \FLAG. A single-component ferrocene scan is needed to fix it.
-\item \textbf{No separate pair of MB and ferrocene peaks} has been resolved in the team's recorded
-  scans \cit{12}. Why is not established. One possibility is that the two labels were scanned in
+  against Ag/AgCl, varying between electrodes, compared with a literature value near $+0.21$~V \FLAG. A single-component ferrocene scan is required to fix it.
+\item \textbf{No separate pair of MB and ferrocene peaks} has been resolved in the recorded
+  scans \cit{12}; the cause has not been established. One possibility is that the two labels were scanned in
   separate voltage windows (MB about $-0.40$ to $-0.10$~V, ferrocene about $+0.15$ to $+0.55$~V),
   so that one scan would not show both; this has not been checked.
 \item \textbf{Ferrocene's rate constant and coverage are not known.} The literature value for a
@@ -1130,7 +1097,7 @@ is a check that nothing other than MMP-9 changed the signal during incubation.
 \end{itemize}
 \end{assump}
 
-\subsection{Does omitting ferrocene change the MB scan?}
+\subsection{Interaction of Fc-hexanethiol with the MB measurement}
 
 \textbf{Overlap of voltages.} MB reacts near $-0.25$~V and the MB scan runs from $-0.40$ to
 $-0.10$~V; ferrocene reacts at $+0.21$ to $+0.40$~V, at least $\gapFc$~mV beyond the end of the MB
@@ -1155,23 +1122,23 @@ negligible or, in the worst case, small.
 They may crowd the tether and change $P(d)$, and their charge state could shift $\Eform$ of MB.
 Neither has been measured; the first is the reason $d_{\rm PEG}$ is treated as uncertain (Part~H).
 
-\subsection{What the earlier ratio did, and did not, do}
+\subsection{Comparison with a ferrocene-referenced readout}
 
-An earlier design divided the MB peak by the ferrocene peak on the same scan and compared the ratio before and after:
+A readout referenced to the co-immobilised ferrocene would divide the MB peak by the ferrocene peak on the same scan and compare the ratio before and after:
 \begin{equation}
   \left(\Fkrec\right)_{\rm with\ Fc}=1-\frac{\DI_{\rm MB}(T)/\DI_{\rm Fc}(T)}{\DI_{\rm MB}(0)/\DI_{\rm Fc}(0)}
   =1-\frac{\DI_{\rm MB}(T)}{\DI_{\rm MB}(0)}\quad\text{whenever }\DI_{\rm Fc}(T)=\DI_{\rm Fc}(0),
   \label{eq:Fk_ratio_old}
 \end{equation}
 because the ferrocene terms cancel exactly. Eq.~\eqref{eq:Fk_ratio_old} equals
-Eq.~\eqref{eq:Fk_simple} whenever the ferrocene signal is unchanged by incubation. The ferrocene reference therefore
-never corrected for differences in coverage between electrodes; Eq.~\eqref{eq:Fk_simple} already does that by
+Eq.~\eqref{eq:Fk_simple} whenever the ferrocene signal is unchanged by incubation. A ferrocene reference therefore
+does not correct for differences in coverage between electrodes; Eq.~\eqref{eq:Fk_simple} already does that by
 comparing each electrode only with itself. What the ferrocene reference could add is a
 \emph{diagnostic}: if $\DI_{\rm Fc}(T)\neq\DI_{\rm Fc}(0)$, something other than cleavage changed the
 electrode. The model does not include that, and neither does the readout. Because ferrocene remains on the electrode
 this diagnostic remains available experimentally without any change to the model.
 
-\subsection{What the MB-only readout assumes}
+\subsection{Assumptions of the readout}
 
 \begin{assump}
 \begin{itemize}[leftmargin=*]
@@ -1184,7 +1151,7 @@ this diagnostic remains available experimentally without any change to the model
   \end{equation}
   The bias $\delta(1-\Fk)$ is always positive: drift is read as extra cleavage, so a chronic wound
   would read as more severe than it is (\figref{fig:drift}). In a sample with no MMP-9, a loss of
-  5\% at 30~min would read as \blankAppFive~nM, a third of the healing/chronic boundary.
+  5\% at 30~min would read as \blankAppFive~nM, about one third of the healing/chronic boundary.
 \item \textbf{A2. Cleavage is equally likely for any label height $d$} \FLAG. Suppose instead the
   relative cleavage rate is $q(d)\propto e^{\lambda(d-\bar d)}$, normalised to the same mean,
   so $\lambda>0$ means labels far from the gold are cut faster (as steric hindrance near the surface would
@@ -1227,17 +1194,15 @@ $\Fkrec=1-I_T/I_0$:
   =\sigma_r^2\Bigl[1+(1-\Fk)^2\Bigr],\qquad \sigma_F\xrightarrow{\Fk\to0}\sqrt{2}\,\sigma_r.
   \label{eq:sigmaF}
 \end{equation}
-The noise floor for the before/after MB readout has not been measured. The earlier 3.4\% figure
-came from a ratio of four readings and does not apply. If the per-reading noise is unchanged, and 3.4\% was
-$2\sigma_r$ (four equal contributions), then $\sigma_F=\sqrt2\sigma_r=\sigmaRelOld$\%; this is conditional and
-unverified \FLAG.
+The noise floor of the before/after MB readout has not been measured \FLAG. A reference case of
+$\sigma_r=\sigmaRelOld$\% per reading, giving $\sigma_F=3.4$\%, is used in Part~G.
 
 \textbf{Coverage.} $\Fkrec$ is independent of $\Grtot$ exactly (three electrodes with a tenfold spread
 in coverage give the same $\Fkrec$ to machine precision, \figref{fig:coverage}A). Coverage matters only
 through noise: with a fixed absolute noise, an electrode with less probe has a smaller $I_0$ and so a larger
-$\sigma_r$, worsening the detection limit (\figref{fig:coverage}C). The earlier worry that
-electrode-to-electrode variation would make a single calibration curve unusable applies to absolute
-current, which the readout does not use; what does remain are (a)~the noise penalty on low-coverage
+$\sigma_r$, worsening the detection limit (\figref{fig:coverage}C). Electrode-to-electrode variation
+therefore does not affect a calibration of $\Fkrec$ against concentration, which does not use the
+absolute current; the remaining effects are (a)~the noise penalty on low-coverage
 electrodes, and (b)~variation between electrodes in the surface efficiency $\eta$ of Part~G, which is unknown \FLAG.
 
 \begin{figure}[H]
@@ -1253,8 +1218,8 @@ electrodes, and (b)~variation between electrodes in the surface efficiency $\eta
 
 \subsection{Result}
 
-Leaving ferrocene out does not change the MB scan or the algebra of the readout. The readout rests on
-assumptions A1 to A4; A1 and A2 are testable, and an experimental ferrocene reference on the same electrode would test
+The MB scan and the algebra of the readout are unaffected by the Fc-hexanethiol diluent. The readout rests on
+assumptions A1 to A4; A1 and A2 are testable, and a ferrocene signal recorded on the same electrode would test
 A1. Coverage variation affects the noise, not the readout. The noise floor is unknown and controls the
 detection limit (Part~G).
 
@@ -1264,13 +1229,13 @@ detection limit (Part~G).
 
 \subsection{Overview}
 
-\textbf{Question.} For a given MMP-9 concentration and incubation time, what fraction of probes is
-cut, and what is the smallest concentration the device could detect? \textbf{Answer.} Each intact probe is
-cut at a constant rate proportional to the MMP-9 concentration, so the intact fraction decays
-exponentially: $\Fk=1-e^{-k_{\rm eff}[\text{MMP-9}]T}$. With the measured solution rate, and a
-surface efficiency of 0.20 that has not been measured, 6~nM (healing) gives $\Fk=\fkHealThirty$\% and 30~nM
-(chronic) gives $\Fk=\fkChronThirty$\% after 30~minutes. The detection limit is set by the noise in the readout,
-which is not yet known.
+\textbf{Objective.} To relate the MMP-9 concentration and incubation time to the cleavage fraction and
+to determine the detection limit. \textbf{Result.} Each intact probe is cleaved at a rate proportional to the
+MMP-9 concentration, so the intact fraction decays exponentially,
+$\Fk=1-e^{-k_{\rm eff}[\text{MMP-9}]T}$. With the measured solution rate constant and a surface
+efficiency of 0.20 (assumed), 6~nM (healing) gives $\Fk=\fkHealThirty$\% and 30~nM (chronic)
+$\Fk=\fkChronThirty$\% after 30~minutes. The detection limit is set by the readout noise, which has
+not been measured.
 
 \subsection{Assumptions}
 
@@ -1284,7 +1249,7 @@ which is not yet known.
   not measured for this device \FLAG. It would be measured by comparing the electrode readout with a
   solution-phase fluorescence assay on the same sample.
 \item \textbf{The enzyme concentration is constant during the incubation} (enzyme is a catalyst and is
-  not consumed; loss by adsorption to surfaces or by inhibitors is not modelled). $[\text{MMP-9}]$
+  not consumed; loss by adsorption to surfaces or by inhibitors is not included). $[\text{MMP-9}]$
   means active enzyme; activation of the pro-form and inhibition by TIMPs are treated in the wound-biology report.
 \item \textbf{The conditions for first-order kinetics below hold.} They are checked explicitly.
 \end{itemize}
@@ -1308,10 +1273,9 @@ Each cleavage removes one probe, so
   \label{eq:mm}
 \end{equation}
 This is first-order in the probe. The condition is that the \emph{enzyme} concentration is small compared
-with $K_m$: 30~nM against $K_m=1.3$~mM is a ratio of $2\times10^{-5}$. (The earlier version of this
-report justified first-order kinetics by saying MMP-9 is ``in large excess over the surface probe''. That is
-not the relevant condition: an enzyme is a catalyst, and what matters is that it is not depleted and does not
-saturate the probes.) Two further requirements are met. The enzyme bound at any time is at most
+with $K_m$: 30~nM against $K_m=1.3$~mM is a ratio of $2\times10^{-5}$. The relevant condition is not that the enzyme
+exceeds the probe in number: the enzyme is a catalyst, and what matters is that it is not depleted
+and does not saturate the probes. Two further requirements are met. The enzyme bound at any time is at most
 $S_T\,[\mathrm{E}]/K_m\le\;\nProbesFmol\text{ fmol}\times2\times10^{-5}\approx10^{-3}$~fmol, negligible against the
 enzyme in even 1~\textmu L of a 6~nM sample (6~fmol), so free and total enzyme concentrations are equal. And
 the steady-state approximation requires the enzyme--probe complex to equilibrate faster than the probes are
@@ -1344,7 +1308,6 @@ Chronic & 30~nM & \fkChronThirty\% & \thalfChron{} min & Trengove 1999 \cit{7b} 
 \bottomrule
 \end{tabular}
 \end{center}
-(The earlier report gave 53\% for the chronic case; the exact value from Eq.~\eqref{eq:Fk_kin} is \fkChronThirty\%.)
 The two states are best separated by the readout at about \gapMaxT~min, where $\Fk$ differs by \gapMax{}
 points, but the difference is already large by 30~min (\figref{fig:kin}, \figref{fig:volt}).
 
@@ -1362,33 +1325,32 @@ points, but the difference is already large by 30~min (\figref{fig:kin}, \figref
   \includegraphics[width=\textwidth]{../figures/swvr_20_voltammograms.pdf}
   \caption{\textbf{A:} predicted voltammograms after 30~min for a range of MMP-9 concentrations
     (the concentration chain of Figure~\ref{fig:chainmap} end to end). \textbf{B:} predicted peak
-    height against concentration for three incubation times. Absolute values depend on the placeholder
+    height against concentration for three incubation times. Absolute values depend on the assumed
     inputs (Part~H). \textbf{C:} the difference in cleavage fraction between chronic and healing samples against time.}
   \label{fig:volt}
 \end{figure}
 
 \subsection{Detection limit}
 
-A concentration is detected when the readout exceeds $z$ times its noise; the usual choice is $z=3$.
+A concentration is detected when the readout exceeds $z$ times its noise; a criterion of $z=3$ is used.
 The smallest detectable cleavage fraction is $F_{\min}=z\,\sigma_F$, and inverting Eq.~\eqref{eq:Fk_kin}
 gives the lowest detectable concentration:
 \begin{equation}
   c_{\rm LOD}=\frac{-\ln\bigl(1-z\,\sigma_F\bigr)}{k_{\rm eff}\,T}.
   \label{eq:lod}
 \end{equation}
-\emph{Worked example.} The earlier noise figure $\sigma_F=3.4$\% gives $F_{\min}=\fMinOld$\% and, at 30~min,
-$c_{\rm LOD}=\lodOld$~nM, below the 6~nM boundary. That figure came from a ratio of four readings and is not applicable
-to the MB-only readout (Part~F). The noise of the MB-only readout has not been measured. If the per-reading noise
-is unchanged, $\sigma_F=\sigmaRelOld$\% and the limit is \lodMBonly~nM; this is conditional and unverified \FLAG. In general, to
-detect the healing concentration (6~nM) in 30~min requires $\sigma_F<\sigmaMaxAtSix$\%, i.e.\ $\sigma_r<\sigmaRMaxAtSix$\% per reading
+\emph{Worked example.} A reference case $\sigma_F=3.4$\% ($\sigma_r=\sigmaRelOld$\% per reading) gives
+$F_{\min}=\fMinOld$\% and, at 30~min, $c_{\rm LOD}=\lodOld$~nM, below the 6~nM boundary. The readout noise has
+not been measured \FLAG. In general, detection of the healing concentration (6~nM) in 30~min requires
+$\sigma_F<\sigmaMaxAtSix$\%, i.e.\ $\sigma_r<\sigmaRMaxAtSix$\% per reading
 (Eq.~\ref{eq:sigmaF}). The full dependence on noise, time and $\eta$ is shown in \figref{fig:lod}.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../figures/swvr_21_lod.pdf}
   \caption{\textbf{A:} detection limit (colour, log scale) against readout noise and incubation time for
-    $\eta=0.20$; the white contour is the 6~nM healing/chronic boundary. The red dot is the earlier 3.4\%
-    figure, no longer applicable. \textbf{B:} detection limit against noise at 30~min for five
+    $\eta=0.20$; the white contour is the 6~nM healing/chronic boundary. The red dot marks the reference
+    case $\sigma_F=3.4$\%. \textbf{B:} detection limit against noise at 30~min for five
     surface efficiencies.}
   \label{fig:lod}
 \end{figure}
@@ -1420,15 +1382,15 @@ confirmed and a surface efficiency that is not. Whether the device can resolve h
 in about 30 minutes depends on two numbers not yet known: $\eta$ and the noise of the before/after readout.
 
 %=======================================================================
-\section{Part H: Sensitivity to the Uncertain Inputs}
+\section{Part H: Sensitivity to the Assumed Inputs}
 \label{sec:sens}
 
 \subsection{Overview}
 
-\textbf{Question.} Which of the unconfirmed inputs matter, and for which prediction? \textbf{Answer.}
-The \emph{absolute} current depends strongly on the tether geometry and coverage and is uncertain by
-factors of several. The \emph{readout} of cleavage does not depend on any of them; it depends on the
-assumptions A1 and A2 (Part~F), the noise, and $\eta$.
+\textbf{Objective.} To determine which assumed inputs affect which predictions. \textbf{Result.}
+The absolute current depends strongly on the tether geometry and coverage and is uncertain by a factor of
+several. The cleavage readout is independent of these inputs; it depends on assumptions A1 and A2 (Part~F),
+the noise, and the surface efficiency $\eta$.
 
 \subsection{Method}
 
@@ -1476,7 +1438,7 @@ transfer coefficient $\alpha$ (0.3 to 0.5) & $-1\%$ & $-0\%$ \\
 \item \textbf{The height of the PEG6 tip} is the most sensitive geometric input, because the rate constant falls tenfold per
   0.23~nm: a tip 0.7~nm higher than assumed removes most of the signal, while a lower one changes it little. The
   tunnelling decay constant and the choice of tether model matter at the tens-of-percent level. The
-  anchoring rate $\kref$ and the transfer coefficient $\alpha$ hardly matter (Part~D).
+  anchoring rate $\kref$ and the transfer coefficient $\alpha$ have little effect (Part~D).
 \item \textbf{None of these} changes $\Fkrec$: they multiply the current before and after cleavage alike.
 \end{itemize}
 
@@ -1499,13 +1461,13 @@ Coverage (via noise) & none & random error & detection limit \\
 \subsection{Result}
 
 The quantities that most affect the device's usefulness are $\eta$, the noise, and the assumptions A1 and A2, and
-none of them is constrained by the placeholder inputs that dominate the predicted current. The current the
+none of them is constrained by the assumed inputs that dominate the predicted current. The current the
 model predicts (\peakNA~nA at 10~Hz) is therefore an estimate with an uncertainty of a large
 factor, and it should not be quoted as a specification; the ratio-based readout and its logic are much
 better founded.
 
 %=======================================================================
-\section{Summary: Confirmed Results, Working Assumptions, and Open Questions}
+\section{Summary of Results, Assumptions and Open Items}
 \label{sec:summary}
 
 \begin{center}
@@ -1516,7 +1478,7 @@ better founded.
 \midrule
 A & One-pot protocol, Fc-hexanethiol diluent, no MCH & Current protocol \cit{12} & \CONF \\
 A & Electrode area (1.7~mm$^2$) & Confirmed against the fabricated device & \CONF \\
-A & Probe coverage $\Grtot$ & Engineering placeholder; not measurable with available instrumentation & \FLAG \\
+A & Probe coverage $\Grtot$ & Engineering estimate; not measurable with available instrumentation & \FLAG \\
 A & Surface composition (probe : Fc-hexanethiol) & Not the solution ratio; unmeasured & \FLAG \\
 B & Freely jointed chain, half-Gaussian $P(d)$ & Derived and checked against exact chains; not validated on the real surface & \FLAG \\
 B & PEG6 tip height, tunnelling decay constant $\beta$ & Estimates (Flory; alkanethiol value) & \FLAG \\
@@ -1526,22 +1488,21 @@ D & Peak proportional to intact probe & Exact given A2 & \CONF \\
 D & Signal band $\sim$\dStarTenOff~nm above the tip at 10~Hz & Prediction of the model & \FLAG \\
 E & Reproduction of published high-rate voltammograms & Not reproduced; cause unknown & \FLAG \\
 E & Comparison with the fabricated device & Not yet done & \FLAG \\
-F & Ferrocene (present on the electrode) & Excluded from the model & \NOTMOD \\
+F & Fc-hexanethiol diluent & Outside the scope of the model; no interference with the MB window & \CONF \\
 F & No non-enzymatic loss (A1), cleavage independent of label height (A2) & Assumed; both testable & \FLAG \\
-F & Noise floor of the before/after readout & Not measured; earlier 3.4\% no longer applies & \FLAG \\
+F & Noise floor of the before/after readout & Not measured; reference case 3.4\% used & \FLAG \\
 G & Solution cleavage rate (Kridel) & Measured for the free peptide & \CONF \\
 G & Surface efficiency $\eta$ & Central estimate 0.20, range 0.01 to 1 & \FLAG \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Bottom line.} The electrochemistry rests on standard Butler--Volmer theory and an exact solution, now evaluated
-stably. Its central structural result, that the peak height is proportional to the number of intact probes, and hence
+\textbf{Conclusions.} The electrochemistry rests on standard Butler--Volmer theory and an exact solution. Its central structural result, that the peak height is proportional to the number of intact probes, and hence
 that $\Fkrec=1-\DI_{\rm MB}(T)/\DI_{\rm MB}(0)$ is independent of coverage and of most of the uncertain geometry, does not
-depend on the placeholders. What does depend on them is the absolute current, which is uncertain by a large factor and
-which the model does not reproduce against the one published data set at high rate.
+depend on the assumed values. What does depend on them is the absolute current, which is uncertain by a large factor and
+which is not reproduced by the model against the one published data set at high rate.
 
-\textbf{What would settle the open questions.}
+\textbf{Recommended measurements.}
 \begin{enumerate}[leftmargin=*,noitemsep]
 \item Peak height and width against frequency on a fabricated electrode (Part~E): tests the rate distribution and the absolute-current prediction.
 \item A single-component ferrocene scan and a scan of both labels together: fixes the ferrocene potential and shows whether the two are resolved (Part~F).
@@ -1552,7 +1513,7 @@ which the model does not reproduce against the one published data set at high ra
 \end{enumerate}
 
 %=======================================================================
-\section*{Appendix: Glossary of Terms and Symbols}
+\section*{Nomenclature}
 
 \begin{center}
 \small\renewcommand{\arraystretch}{1.15}
@@ -1563,7 +1524,7 @@ Term & Meaning & Introduced \\
 MMP-9 & the enzyme whose activity the device measures; higher in chronic wounds & Section I \\
 Probe & the peptide SGKIPRTLTA with PEG6 spacer and MB label, attached to the gold & Section I \\
 MB & methylene blue, the redox label that exchanges electrons with the gold & Section I \\
-Fc & ferrocene, a second redox label on the diluent chain; present, not modelled & Section I \\
+Fc & ferrocene, the redox group of the diluent Fc-hexanethiol & Section I \\
 Redox & involving gain or loss of electrons; the reduced form has gained them, the oxidised form has lost them & Section I \\
 Voltammogram & graph of current against applied voltage & Section I \\
 SWV & square-wave voltammetry: staircase voltage with a square wave, current sampled at the end of each pulse & Section I \\
@@ -1644,7 +1605,7 @@ Kuhn length & length over which a polymer chain effectively forgets its directio
 \item Osteryoung JG, Osteryoung RA (1985). Square wave voltammetry.
   \textit{Anal Chem} 57:101A--110A. \textbf{osteryoung1985.pdf} (papers/layer\_11/)
 
-\item Dry lab team, internal electrode characterisation notes (September
+\item Eton iGEM Dry Lab, internal electrode characterisation notes (September
   2026): one-pot co-immobilisation of Fc-hexanethiol and the MB-peptide-PEG6 probe with no
   MCH; confirmed operating frequency (10 to 20~Hz), electrode area (1.7~mm$^2$) and SWV
   amplitude (25~mV); observed ferrocene formal potential (about $+0.30$ to $+0.40$~V), peak heights

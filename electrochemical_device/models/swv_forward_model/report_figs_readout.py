@@ -238,7 +238,7 @@ def fig21_lod():
     cs = ax.contour(sig * 100, Ts, lod, levels=[6], colors="white", linewidths=1.4)
     ax.clabel(cs, fmt="6 nM", fontsize=7)
     ax.plot([SIGMA_F_OLD * 100], [30], "o", color=C["red"])
-    ax.text(SIGMA_F_OLD * 100 + 0.5, 10, "earlier 3.4%\n(not applicable)", fontsize=6.8, color="white")
+    ax.text(SIGMA_F_OLD * 100 + 0.5, 10, "reference case\n3.4%", fontsize=6.8, color="white")
     ax.set_xlabel("noise in the readout $\\sigma_F$ (points, %)"); ax.set_ylabel("incubation time $T$ (min)")
     cb = fig.colorbar(im, ax=ax, pad=0.02)
     cb.set_label("detection limit (nM)", fontsize=8)

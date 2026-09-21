@@ -105,7 +105,7 @@ def fig01_assembly():
         if not cleaved:
             ax.text(2.3, 6.25, "MB-peptide-PEG6 probe (intact)", ha="center", fontsize=8,
                     fontweight="bold", color=C["navy"])
-            ax.annotate("Fc-hexanethiol\n(present, not modelled)", xy=(fc_x[1], 1.3),
+            ax.annotate("Fc-hexanethiol\n(diluent)", xy=(fc_x[1], 1.3),
                         xytext=(-0.15, 2.5), fontsize=7, color="#8A4B0F",
                         arrowprops=dict(arrowstyle="-", color="#8A4B0F", lw=0.8))
             ax.annotate("PEG6 spacer\n(tip 1.4 nm above gold)", xy=(2.3, 0.7), xytext=(3.05, 1.6),
@@ -123,7 +123,7 @@ def fig01_assembly():
         else:
             ax.text(2.3, 6.25, "After MMP-9 has cut the peptide", ha="center", fontsize=8,
                     fontweight="bold", color=C["navy"])
-            ax.text(3.3, 5.5, "MB-bearing fragment released\ninto solution (no longer\nelectroactive)",
+            ax.text(3.3, 5.5, "MB-bearing fragment released\ninto solution (not\nelectroactive)",
                     fontsize=7, color=C["navy"], ha="center")
             ax.text(0.7, 3.2, "truncated probe\nstays on the gold", fontsize=7, color=C["purple"], ha="center")
     fig.tight_layout(w_pad=0.5)

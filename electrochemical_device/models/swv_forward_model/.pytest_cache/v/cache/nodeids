@@ -1,0 +1,12 @@
+[
+  "test_swv_model.py::test_cleavage_kinetics",
+  "test_swv_model.py::test_closed_form_matches_ode_solver",
+  "test_swv_model.py::test_current_identity",
+  "test_swv_model.py::test_defaults_use_confirmed_area",
+  "test_swv_model.py::test_distance_average_matches_model_function",
+  "test_swv_model.py::test_pd_normalised",
+  "test_swv_model.py::test_peak_proportional_to_intact_probe",
+  "test_swv_model.py::test_quasi_reversible_maximum",
+  "test_swv_model.py::test_stable_at_large_kappa_and_finite",
+  "test_swv_model.py::test_vectorised_simulator_matches_model"
+]
