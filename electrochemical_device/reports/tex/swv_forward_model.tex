@@ -283,7 +283,8 @@ cleavage fraction is read from the pair of peak heights on the same electrode:
   \Fkrec = 1-\frac{\DI_{\rm MB}(T)}{\DI_{\rm MB}(0)},
   \label{eq:Fk_simple}
 \end{equation}
-where $\DI_{\rm MB}$ is the net peak height. Because each electrode is compared only
+where $\DI_{\rm MB}$ is the net peak height. Eq.~\eqref{eq:Fk_simple} follows because the peak height is proportional to the amount of
+intact probe (Part~D): $\DI_{\rm MB}(T)/\DI_{\rm MB}(0)=1-\Fk$. Because each electrode is compared only
 with its own initial scan, the number of probes it carries cancels
 out of $\Fkrec$ (Part~F). The MMP-9 concentration is then obtained from
 $\Fkrec$ using the cleavage kinetics of Part~G.
@@ -415,7 +416,7 @@ disc is empty, times the probability that a probe lies in the ring of area $2\pi
   \langle r\rangle=\int_0^\infty r\,p(r)\,{\rm d}r=2\pi\rho\int_0^\infty r^2e^{-\pi\rho r^2}{\rm d}r
   =2\pi\rho\cdot\frac{\sqrt\pi}{4(\pi\rho)^{3/2}}=\frac{1}{2\sqrt\rho}=\nnRandom~\text{nm},
 \]
-using $\int_0^\infty r^2e^{-ar^2}{\rm d}r=\sqrt\pi/(4a^{3/2})$. The total number of probes
+using $\int_0^\infty r^2e^{-ar^2}{\rm d}r=\sqrt\pi/(4a^{3/2})$ (Eq.~\ref{eq:int_r2}, Appendix~A). The total number of probes
 is $\Grtot N_A A=\nProbes$, that is $\nProbesFmol$~fmol on the
 $A=0.017$~cm$^2$ electrode.
 
@@ -499,7 +500,10 @@ with density $\tfrac12$. Therefore
   \langle X\rangle=b\int_{-1}^{1}u\,\tfrac12\,{\rm d}u=0,\qquad
   \langle X^2\rangle=b^2\int_{-1}^{1}u^2\,\tfrac12\,{\rm d}u=b^2\cdot\tfrac12\cdot\tfrac{2}{3}=\frac{b^2}{3}.
 \]
-The end height is $S_N=X_1+\dots+X_N$, the sum of $N=N_K$ independent, identically distributed terms. The
+The end height is $S_N=X_1+\dots+X_N$, the sum of $N=N_K$ independent, identically distributed terms, with mean
+$\langle S_N\rangle=N\langle X\rangle=0$ and, expanding the square,
+$\langle S_N^2\rangle=\sum_i\langle X_i^2\rangle+\sum_{i\ne j}\langle X_i\rangle\langle X_j\rangle=Nb^2/3+0$ (the cross terms factorise
+because the segments are independent, and vanish because $\langle X\rangle=0$). The
 \emph{central limit theorem} states that if the $X_i$ have mean $\mu$ and variance $s^2$, then
 \begin{equation}
   \lim_{N\to\infty}\;\Pr\!\left[\frac{S_N-N\mu}{s\sqrt N}\le x\right]=\frac{1}{\sqrt{2\pi}}\int_{-\infty}^{x}e^{-y^2/2}\,{\rm d}y ,
@@ -512,8 +516,9 @@ $S_N$ is approximately normal with mean zero and variance
   \langle R^2\rangle=N_Kb^2=5\times0.76^2=\Rsq~\text{nm}^2,\qquad \sigma_z=\sqrt{\Rsq/3}=\sigmaZ~\text{nm}.
   \label{eq:sigmaz}
 \end{equation}
-Here $\langle R^2\rangle=N_Kb^2$ is the mean square end-to-end distance: each segment has $|\mathbf{b}|^2=b^2$, and the
-cross terms between different segments average to zero because their directions are independent. The factor 3
+Here $\langle R^2\rangle$ is the mean square end-to-end distance. With the end-to-end vector $\mathbf R=\sum_i\mathbf b_i$,
+$\langle R^2\rangle=\sum_i|\mathbf b_i|^2+\sum_{i\ne j}\langle\mathbf b_i\cdot\mathbf b_j\rangle=N_Kb^2+0$: each segment has $|\mathbf b_i|^2=b^2$, and
+the cross terms vanish because $\langle\mathbf b_i\cdot\mathbf b_j\rangle=\langle\mathbf b_i\rangle\cdot\langle\mathbf b_j\rangle=0$ for independent isotropic segments. The factor 3
 arises because, by isotropy, $\langle x^2\rangle=\langle y^2\rangle=\langle z^2\rangle$ and these sum to
 $\langle R^2\rangle$. The same argument gives the sideways displacement: with $x$ and $y$ each of variance $\sigma_z^2$, the
 root-mean-square distance of the label from the vertical through its anchor is
@@ -526,9 +531,10 @@ differs from the Gaussian by a maximum of \ksGauss{} in cumulative probability
 length $l_{\rm EO}=0.35$~nm, or $n_{K,{\rm PEG}}=6\times0.35/0.76=2.76$ Kuhn segments. For a
 chain in a good solvent, Flory's argument balances two contributions to the free energy in units of $k_BT$: the
 elastic cost of stretching the chain to an end-to-end distance $R$, $R^2/(n_Kb^2)$, and the repulsion between segments,
-which for $n_K$ segments in a volume $\sim R^3$ is $\sim b^3n_K^2/R^3$. Minimising the sum,
-$\frac{d}{dR}\bigl[R^2/(n_Kb^2)+b^3n_K^2/R^3\bigr]=0$ gives $2R/(n_Kb^2)=3b^3n_K^2/R^4$, i.e.\ $R^5\propto n_K^3b^5$, so that
-to scaling accuracy
+which for $n_K$ segments in a volume $\sim R^3$ is $\sim b^3n_K^2/R^3$. Minimising the sum with respect to $R$: $\frac{d}{dR}\bigl[R^2/(n_Kb^2)\bigr]=2R/(n_Kb^2)$ and
+$\frac{d}{dR}\bigl[b^3n_K^2R^{-3}\bigr]=-3b^3n_K^2R^{-4}$, so the condition $\frac{d}{dR}(\cdot)=0$ gives
+$2R/(n_Kb^2)=3b^3n_K^2/R^4$. Multiplying both sides by $n_Kb^2R^4/2$ gives $R^5=\tfrac32\,b^5n_K^3$, hence
+$R=(3/2)^{1/5}\,n_K^{3/5}\,b\approx1.08\,n_K^{3/5}b$; to scaling accuracy the numerical factor is dropped and
 \begin{equation}
   d_{\rm PEG}=R_F=n_{K,{\rm PEG}}^{3/5}\,b=2.76^{0.6}\times0.76=\dPEG~\text{nm}.
   \label{eq:flory}
@@ -553,13 +559,13 @@ $f$ is even. Hence the density of $u$ is $2f(u)$:
   \exp\!\left[-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right],\qquad d\ge d_{\rm PEG},
   \label{eq:Pd}
 \end{equation}
-using $2/\sqrt{2\pi}=\sqrt{2/\pi}$. It is normalised because $\int_{d_{\rm PEG}}^{\infty}P\,{\rm d}d=2\int_0^\infty f\,{\rm d}u=1$
-($f$ is even, so half of the total area lies on each side of zero). The mean distance follows from
-$\int_0^\infty u\,e^{-u^2/2\sigma_z^2}{\rm d}u=\sigma_z^2$:
+using $2/\sqrt{2\pi}=\sqrt{2/\pi}$. It is normalised because $\int_{d_{\rm PEG}}^{\infty}P\,{\rm d}d=2\int_0^\infty f\,{\rm d}u=\int_{-\infty}^{\infty}f\,{\rm d}z=1$
+($f$ is even, so half of the total area lies on each side of zero; the last integral is evaluated in Appendix~A, Eq.~\ref{eq:int_norm}). The mean distance follows from
+$\int_0^\infty u\,e^{-u^2/2\sigma_z^2}{\rm d}u=\sigma_z^2$ (Eq.~\ref{eq:int_u}, Appendix~A):
 $\langle d\rangle=d_{\rm PEG}+\frac{2}{\sigma_z\sqrt{2\pi}}\sigma_z^2=d_{\rm PEG}+\sigma_z\sqrt{2/\pi}=\meanDana$~nm.
 The chain cannot extend beyond its contour length, so the distribution is cut off at
 $d_{\rm max}=d_{\rm PEG}+N_{\rm res}l_0=\dMax$~nm; the probability of exceeding it,
-$1-\mathrm{erf}\bigl[(d_{\rm max}-d_{\rm PEG})/(\sqrt2\sigma_z)\bigr]$, is \tailMass, which is negligible.
+$1-\mathrm{erf}\bigl[(d_{\rm max}-d_{\rm PEG})/(\sqrt2\sigma_z)\bigr]$ (Eq.~\ref{eq:int_tail}, Appendix~A), is \tailMass, which is negligible.
 
 \textbf{Checking the folding.} Folding a Gaussian is not the same as a chain that is
 prevented from entering the region below its root. Two exact alternatives were simulated
@@ -605,7 +611,7 @@ is an assumed value \FLAG. The anchoring measurement is that of Dauphin-Ducharme
 $\kzero=5.0\times10^{4}$~s$^{-1}$. Eq.~\eqref{eq:k0d} extrapolated back to zero distance gives
 $\kzero(0)=5.0\times10^4\,e^{8}=\kZero$~s$^{-1}$, and evaluated at the PEG6 tip,
 \begin{equation}
-  \kref=\kzero(d_{\rm PEG})=\kZero\times e^{-\betaNM\times\dPEG}=\kRef~\text{s}^{-1}.
+  \kref=\kzero(d_{\rm PEG})=\kZero\times e^{-\betaNM\times\dPEG}=\kZero\times e^{-13.98}=\kZero\times8.5\times10^{-7}=\kRef~\text{s}^{-1}.
   \label{eq:kref}
 \end{equation}
 Because $\kzero$ falls tenfold per 0.23~nm, a label 0.5~nm above the tip is already
@@ -678,9 +684,13 @@ the reduced fraction is given by the Nernst equation, $\theta_{\rm red}=1/(1+u)$
 Eq.~\eqref{eq:bv_rates}. In cyclic voltammetry (CV) the voltage is swept at a rate $v$, so
 $E=E_0+vt$ and the current is
 \[
-  i=n_eFA\Grtot\,\frac{d\theta_{\rm red}}{dt}=n_eFA\Grtot\,v\,\frac{d\theta_{\rm red}}{dE},\qquad
-  \left|\frac{d\theta_{\rm red}}{dE}\right|=\frac{n_eF}{RT}\,\frac{u}{(1+u)^2}.
+  i=n_eFA\Grtot\,\frac{d\theta_{\rm red}}{dt}=n_eFA\Grtot\,v\,\frac{d\theta_{\rm red}}{dE}.
 \]
+Differentiating $\theta_{\rm red}=(1+u)^{-1}$ with $du/dE=u\,d\xi/dE=u\,n_eF/(RT)$:
+\[
+  \frac{d\theta_{\rm red}}{dE}=-\frac{1}{(1+u)^2}\frac{du}{dE}=-\frac{n_eF}{RT}\,\frac{u}{(1+u)^2},
+\]
+so $|i|=\dfrac{n_e^2F^2vA\Grtot}{RT}\,\dfrac{u}{(1+u)^2}$.
 The function $u/(1+u)^2$ has derivative $(1-u)/(1+u)^3$, so it is maximal at $u=1$ (that is, at $E=\Eform$), where it equals $\tfrac14$, and the peak current is
 $i_p=n_e^2F^2vA\Grtot/(4RT)$. The charging current of a capacitor $C_{\rm dl}A$ swept at rate $v$ is
 $i_c=C_{\rm dl}Av$ (from $q=CE$). Their ratio is independent of $v$:
@@ -695,7 +705,8 @@ and any drift in the plateau is a drift in the apparent peak.
 
 In SWV the voltage is held constant during each pulse and the current is recorded only at
 its end. After a voltage jump of size $\Delta E$ the charge $q$ on the capacitor obeys
-$\Delta E=R_u\,dq/dt+q/C$, with solution $q=C\Delta E(1-e^{-t/(R_uC)})$, so the charging current is
+$\Delta E=R_u\,dq/dt+q/C$. Let $y=q-C\Delta E$; then $dy/dt=dq/dt=(\Delta E-q/C)/R_u=-y/(R_uC)$, whose solution is
+$y=y_0e^{-t/(R_uC)}$ with $y_0=q(0)-C\Delta E=-C\Delta E$. Hence $q=C\Delta E(1-e^{-t/(R_uC)})$ and the charging current is
 $i=dq/dt=(\Delta E/R_u)\,e^{-t/(R_uC)}$, where
 $R_u$ is the resistance of the solution between the electrode and reference (taken as
 $\RuOhm~\Omega$, an assumed value). With $R_uC=\RCms$~ms, by the end of a 10~Hz half-pulse
@@ -751,15 +762,24 @@ and lost at rate $k_b\Grred$:
   \label{eq:ode}
 \end{equation}
 
-\textbf{Solution.} Within a pulse $E$, hence $k_f$ and $k_b$, is constant, so
-Eq.~\eqref{eq:ode} is a first-order linear equation with constant coefficients.
-Multiply by the integrating factor $e^{Kt}$:
-$\frac{d}{dt}(\Grred e^{Kt})=k_f\Grtot\,e^{Kt}$. Integrate from 0 to $\tau$ and divide by $e^{K\tau}$:
+\textbf{Solution.} Within a pulse $E$, hence $k_f$ and $k_b$, is constant, so Eq.~\eqref{eq:ode} is a first-order linear
+equation with constant coefficients, $\dot\Gamma_{\rm red}+K\Grred=k_f\Grtot$. Multiply both sides by $e^{Kt}$. By the product rule,
+$\frac{d}{dt}\bigl(\Grred e^{Kt}\bigr)=\dot\Gamma_{\rm red}e^{Kt}+K\Grred e^{Kt}$, which is exactly the left-hand side, so
+\[
+  \frac{d}{dt}\bigl(\Grred\,e^{Kt}\bigr)=k_f\Grtot\,e^{Kt}.
+\]
+Integrate from $t=0$ to $t=\tau$. The left side integrates to $\Grred(\tau)e^{K\tau}-\Grred(0)$ and the right side to
+$k_f\Grtot\,(e^{K\tau}-1)/K$:
+\[
+  \Grred(\tau)\,e^{K\tau}-\Grred(0)=\frac{k_f\Grtot}{K}\bigl(e^{K\tau}-1\bigr).
+\]
+Add $\Grred(0)$ and divide by $e^{K\tau}$:
 \[
   \Grred(\tau)=\Grred(0)\,e^{-K\tau}+\frac{k_f\Grtot}{K}\bigl(1-e^{-K\tau}\bigr).
 \]
-The quantity $\Greq\equiv k_f\Grtot/K$ is the value at which $d\Grred/dt=0$, the equilibrium
-coverage at this voltage. In terms of it,
+The quantity $\Greq\equiv k_f\Grtot/K$ is the value at which $d\Grred/dt=0$ in Eq.~\eqref{eq:ode}, the equilibrium
+coverage at this voltage. Substituting it and collecting the terms in $e^{-K\tau}$,
+$\Grred(\tau)=\Grred(0)e^{-K\tau}+\Greq-\Greq e^{-K\tau}$, that is
 \begin{equation}
   \Grred(\tau)=\Greq+\bigl[\Grred(0)-\Greq\bigr]\,e^{-K\tau}.
   \label{eq:soln}
@@ -774,8 +794,11 @@ conversion per unit area is $k_b\Grred-k_f\Grox$ (mol\,cm$^{-2}$s$^{-1}$), and t
   I=n_eFA\,\bigl(k_b\Grred-k_f\Grox\bigr).
   \label{eq:I_two}
 \end{equation}
-Substituting $\Grox=\Grtot-\Grred$ gives $I=n_eFA[(k_b+k_f)\Grred-k_f\Grtot]
-=n_eFA\,K\,(\Grred-\Greq)$, so
+Substitute $\Grox=\Grtot-\Grred$ and collect the terms in $\Grred$:
+\[
+  k_b\Grred-k_f(\Grtot-\Grred)=(k_b+k_f)\Grred-k_f\Grtot=K\Bigl(\Grred-\frac{k_f\Grtot}{K}\Bigr)=K\bigl(\Grred-\Greq\bigr).
+\]
+Now insert the solution, Eq.~\eqref{eq:soln}, which gives $\Grred(\tau)-\Greq=[\Grred(0)-\Greq]e^{-K\tau}$:
 \begin{equation}
   I=n_eFA\,K\,\bigl[\Grred(0)-\Greq\bigr]\,e^{-K\tau}.
   \label{eq:I_stable}
@@ -785,7 +808,7 @@ $e^{-K\tau}$. Eqs.~\eqref{eq:I_two} and \eqref{eq:I_stable} are algebraically id
 not numerically equal in floating-point arithmetic. When $K\tau$ is large, each term of
 Eq.~\eqref{eq:I_two} is of order $k\Grtot$ and their difference is smaller than the
 rounding error of either. Evaluating Eq.~\eqref{eq:I_two} therefore returns numerical noise
-instead of the physical result for $\kappa\gtrsim15$; and is a purely numerical artefact. Using Eq.~\eqref{eq:I_stable} removes the
+instead of the physical result for $\kappa\gtrsim15$, which is a purely numerical artefact. Using Eq.~\eqref{eq:I_stable} removes the
 cancellation (\figref{fig:ode}C): the two forms agree to better than $10^{-8}$ relative where both are
 reliable, and the stable form continues correctly to arbitrarily fast rates.
 
@@ -899,7 +922,9 @@ electrode carries $(1-\Fk)\Grtot A$ of intact probe, distributed over $d$ accord
   \DI_{\rm norm}\bigl(E;\kzero(d)\bigr)\,{\rm d}d.
   \label{eq:dist_avg}
 \end{equation}
-The integral has no closed form and is evaluated by quadrature; at 10 and 20~Hz the result is converged to
+The integral has no closed form and is evaluated by quadrature: with $n=80$ equally spaced distances
+$d_j=d_{\rm PEG}+j\,\Delta d$, $j=0,\dots,n-1$, $\Delta d=(d_{\max}-d_{\rm PEG})/(n-1)$, the integral is replaced by the sum
+$\sum_jP(d_j)\,\DI_{\rm norm}\bigl(E;\kzero(d_j)\bigr)\,\Delta d$; at 10 and 20~Hz the result is converged to
 $\quadErrEighty$\% and $\quadErrEightyTwentyHz$\% with the 80 points used (\figref{fig:quad}A).
 
 \textbf{Proportionality to intact probe.} Eq.~\eqref{eq:dist_avg} depends on $\Fk$ only through the
@@ -947,7 +972,12 @@ $d_\star=d_{\rm PEG}+\beta^{-1}\ln(\kappa_{\rm tip}/\kappa_{\max})$, and taken o
 With $\kref=\kRef$~s$^{-1}$, $\kappa_{\rm tip}=\kref/(2f)=\kappaTenHz$ at 10~Hz and $\kappaTwentyHz$ at 20~Hz, and
 $d_\star-d_{\rm PEG}=\beta^{-1}\ln(\kappa_{\rm tip}/\kappa_{\max})=\frac{1}{10}\ln(\kappaTenHz/\kappaMax)=\dStarTenOff$~nm at 10~Hz. Thus
 at 10~Hz $d_\star=\dStarTen$~nm and at 20~Hz $\dStarTwenty$~nm, only $\dStarTenOff$ and $\dStarTwentyOff$~nm above the
-tip (\figref{fig:band}A,B). Eq.~\eqref{eq:one_line} reproduces the full calculation to within
+tip (\figref{fig:band}A,B). Eq.~\eqref{eq:one_line} evaluates as follows at 10~Hz. The density at the band centre is
+$P(d_\star)=\sqrt{2/\pi}\,\sigma_z^{-1}e^{-(d_\star-d_{\rm PEG})^2/(2\sigma_z^2)}=0.7979/0.981\times e^{-0.0368}=0.784$~nm$^{-1}$,
+so $P(d_\star)/\beta=0.784/10=0.0784$ (dimensionless). The prefactor is
+$n_eF\cdot2f\,A\Grtot=2\times96485\times20\times0.017\times3\times10^{-12}=1.97\times10^{-7}$~A, and
+$\DI_{\rm pk}\approx1.97\times10^{-7}\times0.0784\times1.069=1.65\times10^{-8}$~A$=16.5$~nA. The full quadrature gives \peakNA~nA.
+Eq.~\eqref{eq:one_line} therefore reproduces the full calculation to within
 \approxErrTen\% (\figref{fig:band}C) and shows three things:
 \begin{enumerate}[leftmargin=*,noitemsep]
 \item the peak is proportional to $f$: doubling the frequency doubles it (predicted ratio \ratioTwenty{} for 20 against 10~Hz, a directly testable prediction);
@@ -1069,7 +1099,7 @@ at a fixed time. A quantitative match to Eq.~\eqref{eq:fwhm} is therefore not ex
 
 \subsection{Consistency with square-wave theory}
 
-The position of the single-probe maximum, $\kappa=\kappaMax$, means $\kzero/f=2\kappa=0.89$. The
+The position of the single-probe maximum, $\kappa=\kappaMax$, means $\kzero/f=2\kappa=2\times\kappaMax=0.89$. The
 standard peak-current analysis of square-wave voltammetry for a surface-bound couple places the
 quasi-reversible maximum where the rate constant and the frequency are of the same order \cit{1,5}, which agrees. It
 also gives the same picture qualitatively: the signal vanishes for very slow and for very fast
@@ -1208,7 +1238,7 @@ A readout referenced to the co-immobilised ferrocene would divide the MB peak by
   =1-\frac{\DI_{\rm MB}(T)}{\DI_{\rm MB}(0)}\quad\text{whenever }\DI_{\rm Fc}(T)=\DI_{\rm Fc}(0),
   \label{eq:Fk_ratio_old}
 \end{equation}
-because the ferrocene terms cancel exactly. Eq.~\eqref{eq:Fk_ratio_old} equals
+because $\dfrac{\DI_{\rm MB}(T)/\DI_{\rm Fc}(T)}{\DI_{\rm MB}(0)/\DI_{\rm Fc}(0)}=\dfrac{\DI_{\rm MB}(T)}{\DI_{\rm MB}(0)}\cdot\dfrac{\DI_{\rm Fc}(0)}{\DI_{\rm Fc}(T)}$, and the last factor equals 1 when the ferrocene signal is unchanged, so the ferrocene terms cancel exactly. Eq.~\eqref{eq:Fk_ratio_old} equals
 Eq.~\eqref{eq:Fk_simple} whenever the ferrocene signal is unchanged by incubation. A ferrocene reference therefore
 does not correct for differences in coverage between electrodes; Eq.~\eqref{eq:Fk_simple} already does that by
 comparing each electrode only with itself. What the ferrocene reference could add is a
@@ -1279,7 +1309,8 @@ derivative:
   \label{eq:sigmaF}
 \end{equation}
 The noise floor of the before/after MB readout has not been measured \FLAG. A reference case of
-$\sigma_r=\sigmaRelOld$\% per reading, giving $\sigma_F=3.4$\%, is used in Part~G.
+$\sigma_r=\sigmaRelOld$\% per reading is used in Part~G; by Eq.~\eqref{eq:sigmaF} at $\Fk\to0$ it gives
+$\sigma_F=\sqrt2\times\sigmaRelOld=3.4$\%.
 
 \textbf{Coverage.} By Eq.~\eqref{eq:DI_Fk}, $\DI(E;\Fk)=(1-\Fk)\,\Grtot\,C(E)$ with $C(E)$ independent of $\Grtot$, so
 $\Fkrec=1-(1-\Fk)\Grtot C/(\Grtot C)=\Fk$. Hence $\Fkrec$ is independent of $\Grtot$ exactly (three electrodes with a tenfold spread
@@ -1360,10 +1391,10 @@ Each cleavage removes one probe, so
   \label{eq:mm}
 \end{equation}
 This is first-order in the probe. The condition is that the \emph{enzyme} concentration is small compared
-with $K_m$: 30~nM against $K_m=1.3$~mM is a ratio of $2\times10^{-5}$. The relevant condition is not that the enzyme
+with $K_m$: 30~nM against $K_m=1.3$~mM is a ratio $[\mathrm{E}]/K_m=30\times10^{-9}/1.3\times10^{-3}=2.3\times10^{-5}$. The relevant condition is not that the enzyme
 exceeds the probe in number: the enzyme is a catalyst, and what matters is that it is not depleted
 and does not saturate the probes. Two further requirements are met. The enzyme bound at any time is at most
-$S_T\,[\mathrm{E}]/K_m\le\;\nProbesFmol\text{ fmol}\times2\times10^{-5}\approx10^{-3}$~fmol, negligible against the
+$S_T\,[\mathrm{E}]/K_m\le\;\nProbesFmol\text{ fmol}\times2.3\times10^{-5}=1.2\times10^{-3}$~fmol, negligible against the
 enzyme in even 1~\textmu L of a 6~nM sample (6~fmol), so free and total enzyme concentrations are equal. And
 the steady-state approximation requires the enzyme--probe complex to equilibrate faster than the probes are
 depleted: equilibration takes about $1/(k_{-1}+k_{\rm cat})\le1/k_{\rm cat}\approx12$~ms, against depletion times of
@@ -1379,8 +1410,9 @@ $\Fk\equiv1-S_T(T)/S_T(0)$,
   \label{eq:Fk_kin}
 \end{equation}
 \emph{Worked example.} At 30~nM and 30~min, $k_{\rm eff}[\text{MMP-9}]T=13500\times30\times10^{-9}\times1800=0.729$, so
-$\Fk=1-e^{-0.729}=\fkChronThirty$\%. At 6~nM, $0.146$ and $\fkHealThirty$\%. The half-time of the probe is
-\thalfHeal{} min at 6~nM and \thalfChron{} min at 30~nM.
+$\Fk=1-e^{-0.729}=\fkChronThirty$\%. At 6~nM, $0.146$ and $\fkHealThirty$\%. At 6~nM, $k_{\rm eff}[\text{MMP-9}]=13500\times6\times10^{-9}=8.1\times10^{-5}$~s$^{-1}$, so
+$t_{1/2}=0.693/(8.1\times10^{-5})=8.56\times10^3$~s$=$\thalfHeal{} min; at 30~nM, $4.05\times10^{-4}$~s$^{-1}$ gives
+$t_{1/2}=1.71\times10^3$~s$=$\thalfChron{} min.
 
 \subsection{Results}
 
@@ -1427,7 +1459,8 @@ Eq.~\eqref{eq:Fk_kin} gives $e^{-k_{\rm eff}cT}=1-F_{\min}$, and taking logarith
   \label{eq:lod}
 \end{equation}
 \emph{Worked example.} A reference case $\sigma_F=3.4$\% ($\sigma_r=\sigmaRelOld$\% per reading) gives
-$F_{\min}=\fMinOld$\% and, at 30~min, $c_{\rm LOD}=\lodOld$~nM, below the 6~nM boundary. The readout noise has
+$F_{\min}=3\times0.034=0.102$ and, at 30~min ($T=1800$~s), $c_{\rm LOD}=-\ln(1-0.102)/(13500\times1800)=0.1076/(2.43\times10^{7})=\lodOld\times10^{-9}$~M$=\lodOld$~nM,
+below the 6~nM boundary. The readout noise has
 not been measured \FLAG. In general, detection of the healing concentration (6~nM) in 30~min requires
 $\sigma_F<\sigmaMaxAtSix$\%, i.e.\ $\sigma_r<\sigmaRMaxAtSix$\% per reading
 (Eq.~\ref{eq:sigmaF}). The full dependence on noise, time and $\eta$ is shown in \figref{fig:lod}.
@@ -1598,6 +1631,65 @@ which is not reproduced by the model against the one published data set at high 
 \item Repeat scans of one electrode: gives the readout noise $\sigma_r$ directly and hence the detection limit.
 \item Surface coverage by an independent method, when available: fixes $\Grtot$.
 \end{enumerate}
+
+%=======================================================================
+\section*{Appendix A: Standard Integrals}
+\label{sec:appA}
+
+The integrals used in Parts~A and B are derived here from a single result, the Gaussian integral.
+
+\textbf{Gaussian integral.} For $a>0$ let $I(a)=\int_{-\infty}^{\infty}e^{-ax^2}\,{\rm d}x$. Its square is a double integral over the
+plane,
+\[
+  I^2=\int_{-\infty}^{\infty}\!\!\int_{-\infty}^{\infty}e^{-a(x^2+y^2)}\,{\rm d}x\,{\rm d}y .
+\]
+In polar coordinates $x^2+y^2=\rho^2$ and the area element is $\rho\,{\rm d}\rho\,{\rm d}\phi$, so
+\[
+  I^2=\int_0^{2\pi}\!\!{\rm d}\phi\int_0^\infty e^{-a\rho^2}\rho\,{\rm d}\rho
+  =2\pi\left[-\frac{e^{-a\rho^2}}{2a}\right]_0^\infty=\frac{\pi}{a},
+\]
+so $I=\sqrt{\pi/a}$, that is
+\begin{equation}
+  \int_{-\infty}^{\infty}e^{-ax^2}\,{\rm d}x=\sqrt{\frac{\pi}{a}},\qquad
+  \int_{0}^{\infty}e^{-ax^2}\,{\rm d}x=\frac12\sqrt{\frac{\pi}{a}},
+  \label{eq:int_gauss}
+\end{equation}
+the second form following because the integrand is even.
+
+\textbf{Normalisation of the normal density, Eq.~\eqref{eq:normal}.} With $a=1/(2\sigma_z^2)$,
+$\int_{-\infty}^{\infty}e^{-z^2/2\sigma_z^2}{\rm d}z=\sqrt{2\pi\sigma_z^2}=\sigma_z\sqrt{2\pi}$, so
+\begin{equation}
+  \int_{-\infty}^{\infty}f\,{\rm d}z=\frac{1}{\sigma_z\sqrt{2\pi}}\cdot\sigma_z\sqrt{2\pi}=1 .
+  \label{eq:int_norm}
+\end{equation}
+
+\textbf{Second moment of a Gaussian.} Differentiating $\int_0^\infty e^{-ar^2}{\rm d}r=\tfrac12\sqrt\pi\,a^{-1/2}$ with respect
+to $a$, and noting that $\partial_a e^{-ar^2}=-r^2e^{-ar^2}$,
+\begin{equation}
+  \int_0^\infty r^2e^{-ar^2}\,{\rm d}r=-\frac{d}{da}\left(\frac{\sqrt\pi}{2}a^{-1/2}\right)=\frac{\sqrt\pi}{4}\,a^{-3/2}
+  =\frac{\sqrt\pi}{4a^{3/2}} .
+  \label{eq:int_r2}
+\end{equation}
+For the nearest-neighbour distance of Part~A, with $a=\pi\rho$: $2\pi\rho\cdot\sqrt\pi/(4(\pi\rho)^{3/2})
+=2\pi\rho\sqrt\pi/(4\pi^{3/2}\rho^{3/2})=1/(2\sqrt\rho)$.
+
+\textbf{First moment of a half-Gaussian.} With the substitution $w=u^2/(2\sigma_z^2)$, ${\rm d}w=u\,{\rm d}u/\sigma_z^2$, the limits
+$0$ and $\infty$ are unchanged and
+\begin{equation}
+  \int_0^\infty u\,e^{-u^2/2\sigma_z^2}\,{\rm d}u=\sigma_z^2\int_0^\infty e^{-w}\,{\rm d}w=\sigma_z^2 .
+  \label{eq:int_u}
+\end{equation}
+
+\textbf{Tail probability of the half-Gaussian.} The probability that $u=d-d_{\rm PEG}$ exceeds $U$ is
+$\int_U^\infty 2f(u)\,{\rm d}u=\frac{2}{\sigma_z\sqrt{2\pi}}\int_U^\infty e^{-u^2/2\sigma_z^2}{\rm d}u$. Substituting
+$t=u/(\sqrt2\sigma_z)$, ${\rm d}u=\sqrt2\sigma_z\,{\rm d}t$, gives $\frac{2}{\sqrt\pi}\int_{U/(\sqrt2\sigma_z)}^\infty e^{-t^2}{\rm d}t$. By
+Eq.~\eqref{eq:int_gauss}, $\frac{2}{\sqrt\pi}\int_0^\infty e^{-t^2}{\rm d}t=1$, so with the error function defined as
+$\mathrm{erf}(x)=\frac{2}{\sqrt\pi}\int_0^xe^{-t^2}{\rm d}t$,
+\begin{equation}
+  \Pr(u>U)=1-\mathrm{erf}\!\left(\frac{U}{\sqrt2\,\sigma_z}\right).
+  \label{eq:int_tail}
+\end{equation}
+With $U=d_{\max}-d_{\rm PEG}=3.8$~nm and $\sigma_z=0.98$~nm the argument is $2.74$ and $\Pr=1.1\times10^{-4}$.
 
 %=======================================================================
 \section*{Nomenclature}
