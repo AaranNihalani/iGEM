@@ -924,7 +924,10 @@ electrode carries $(1-\Fk)\Grtot A$ of intact probe, distributed over $d$ accord
 \end{equation}
 The integral has no closed form and is evaluated by quadrature: with $n=80$ equally spaced distances
 $d_j=d_{\rm PEG}+j\,\Delta d$, $j=0,\dots,n-1$, $\Delta d=(d_{\max}-d_{\rm PEG})/(n-1)$, the integral is replaced by the sum
-$\sum_jP(d_j)\,\DI_{\rm norm}\bigl(E;\kzero(d_j)\bigr)\,\Delta d$; at 10 and 20~Hz the result is converged to
+\[
+  \sum_{j=0}^{n-1}P(d_j)\,\DI_{\rm norm}\bigl(E;\kzero(d_j)\bigr)\,\Delta d ;
+\]
+at 10 and 20~Hz the result is converged to
 $\quadErrEighty$\% and $\quadErrEightyTwentyHz$\% with the 80 points used (\figref{fig:quad}A).
 
 \textbf{Proportionality to intact probe.} Eq.~\eqref{eq:dist_avg} depends on $\Fk$ only through the
