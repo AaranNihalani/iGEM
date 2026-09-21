@@ -412,11 +412,39 @@ placed probes the mean distance to the nearest neighbour is smaller. With number
 probability that a disc of radius $r$ contains no other probe is $e^{-\rho\pi r^2}$, so the nearest neighbour lies
 between $r$ and $r+{\rm d}r$ with probability density $p(r)=2\pi\rho r\,e^{-\rho\pi r^2}$ (the probability that the
 disc is empty, times the probability that a probe lies in the ring of area $2\pi r\,{\rm d}r$). The mean is
+\begin{equation}
+  \langle r\rangle=\int_0^\infty r\,p(r)\,{\rm d}r=2\pi\rho\int_0^\infty r^2e^{-\pi\rho r^2}{\rm d}r .
+  \label{eq:nn_int}
+\end{equation}
+This integral is evaluated in two steps, and the same Gaussian integral is used again in Part~B.
+
+\emph{Step 1: the Gaussian integral.} For $a>0$ let $I=\int_{-\infty}^{\infty}e^{-ax^2}\,{\rm d}x$. Its square is a double
+integral over the plane, $I^2=\int\!\!\int e^{-a(x^2+y^2)}\,{\rm d}x\,{\rm d}y$. In polar coordinates $x^2+y^2=\rho'^2$ and the
+area element is $\rho'\,{\rm d}\rho'\,{\rm d}\phi$, so
 \[
-  \langle r\rangle=\int_0^\infty r\,p(r)\,{\rm d}r=2\pi\rho\int_0^\infty r^2e^{-\pi\rho r^2}{\rm d}r
-  =2\pi\rho\cdot\frac{\sqrt\pi}{4(\pi\rho)^{3/2}}=\frac{1}{2\sqrt\rho}=\nnRandom~\text{nm},
+  I^2=\int_0^{2\pi}\!{\rm d}\phi\int_0^\infty e^{-a\rho'^2}\rho'\,{\rm d}\rho'
+  =2\pi\left[-\frac{e^{-a\rho'^2}}{2a}\right]_0^\infty=\frac{\pi}{a}.
 \]
-using $\int_0^\infty r^2e^{-ar^2}{\rm d}r=\sqrt\pi/(4a^{3/2})$ (Eq.~\ref{eq:int_r2}, Appendix~A). The total number of probes
+Hence $I=\sqrt{\pi/a}$, and because the integrand is even the integral over $[0,\infty)$ is half of this:
+\begin{equation}
+  \int_{-\infty}^{\infty}e^{-ax^2}\,{\rm d}x=\sqrt{\frac{\pi}{a}},\qquad
+  \int_{0}^{\infty}e^{-ax^2}\,{\rm d}x=\frac12\sqrt{\frac{\pi}{a}} .
+  \label{eq:int_gauss}
+\end{equation}
+
+\emph{Step 2: the second moment.} Differentiate the second form of Eq.~\eqref{eq:int_gauss} with respect to $a$. On the left,
+$\partial_ae^{-ax^2}=-x^2e^{-ax^2}$; on the right, $\frac{d}{da}\bigl(\tfrac{\sqrt\pi}{2}a^{-1/2}\bigr)=-\tfrac{\sqrt\pi}{4}a^{-3/2}$. Cancelling
+the minus signs,
+\begin{equation}
+  \int_0^\infty x^2e^{-ax^2}\,{\rm d}x=\frac{\sqrt\pi}{4a^{3/2}} .
+  \label{eq:int_r2}
+\end{equation}
+Put $a=\pi\rho$ in Eq.~\eqref{eq:nn_int}:
+\[
+  \langle r\rangle=2\pi\rho\cdot\frac{\sqrt\pi}{4(\pi\rho)^{3/2}}=\frac{2\pi\rho\sqrt\pi}{4\pi^{3/2}\rho^{3/2}}
+  =\frac{1}{2\sqrt\rho}=\nnRandom~\text{nm}.
+\]
+The total number of probes
 is $\Grtot N_A A=\nProbes$, that is $\nProbesFmol$~fmol on the
 $A=0.017$~cm$^2$ electrode.
 
@@ -559,13 +587,40 @@ $f$ is even. Hence the density of $u$ is $2f(u)$:
   \exp\!\left[-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right],\qquad d\ge d_{\rm PEG},
   \label{eq:Pd}
 \end{equation}
-using $2/\sqrt{2\pi}=\sqrt{2/\pi}$. It is normalised because $\int_{d_{\rm PEG}}^{\infty}P\,{\rm d}d=2\int_0^\infty f\,{\rm d}u=\int_{-\infty}^{\infty}f\,{\rm d}z=1$
-($f$ is even, so half of the total area lies on each side of zero; the last integral is evaluated in Appendix~A, Eq.~\ref{eq:int_norm}). The mean distance follows from
-$\int_0^\infty u\,e^{-u^2/2\sigma_z^2}{\rm d}u=\sigma_z^2$ (Eq.~\ref{eq:int_u}, Appendix~A):
-$\langle d\rangle=d_{\rm PEG}+\frac{2}{\sigma_z\sqrt{2\pi}}\sigma_z^2=d_{\rm PEG}+\sigma_z\sqrt{2/\pi}=\meanDana$~nm.
-The chain cannot extend beyond its contour length, so the distribution is cut off at
-$d_{\rm max}=d_{\rm PEG}+N_{\rm res}l_0=\dMax$~nm; the probability of exceeding it,
-$1-\mathrm{erf}\bigl[(d_{\rm max}-d_{\rm PEG})/(\sqrt2\sigma_z)\bigr]$ (Eq.~\ref{eq:int_tail}, Appendix~A), is \tailMass, which is negligible.
+using $2/\sqrt{2\pi}=\sqrt{2/\pi}$. Three properties of this distribution are needed.
+
+\emph{Normalisation.} Since $f$ is even,
+\[
+  \int_{d_{\rm PEG}}^{\infty}P\,{\rm d}d=2\int_0^\infty f\,{\rm d}u=\int_{-\infty}^{\infty}f\,{\rm d}z .
+\]
+With $a=1/(2\sigma_z^2)$ in Eq.~\eqref{eq:int_gauss},
+$\int_{-\infty}^{\infty}e^{-z^2/2\sigma_z^2}{\rm d}z=\sqrt{2\pi\sigma_z^2}=\sigma_z\sqrt{2\pi}$, so
+\begin{equation}
+  \int_{-\infty}^{\infty}f\,{\rm d}z=\frac{1}{\sigma_z\sqrt{2\pi}}\cdot\sigma_z\sqrt{2\pi}=1 ,
+  \label{eq:int_norm}
+\end{equation}
+which confirms that $P(d)$ integrates to 1.
+
+\emph{Mean distance.} $\langle d\rangle-d_{\rm PEG}=\int_0^\infty u\,P\,{\rm d}u=\frac{2}{\sigma_z\sqrt{2\pi}}\int_0^\infty u\,e^{-u^2/2\sigma_z^2}{\rm d}u$.
+Substitute $w=u^2/(2\sigma_z^2)$, so that ${\rm d}w=u\,{\rm d}u/\sigma_z^2$ and the limits $0$ and $\infty$ are unchanged:
+\begin{equation}
+  \int_0^\infty u\,e^{-u^2/2\sigma_z^2}\,{\rm d}u=\sigma_z^2\int_0^\infty e^{-w}\,{\rm d}w=\sigma_z^2 .
+  \label{eq:int_u}
+\end{equation}
+Therefore $\langle d\rangle=d_{\rm PEG}+\frac{2\sigma_z^2}{\sigma_z\sqrt{2\pi}}=d_{\rm PEG}+\sigma_z\sqrt{2/\pi}=\meanDana$~nm.
+
+\emph{Tail beyond the contour length.} The chain cannot extend beyond its contour length, so the distribution is cut off at
+$d_{\rm max}=d_{\rm PEG}+N_{\rm res}l_0=\dMax$~nm. The probability that $u=d-d_{\rm PEG}$ exceeds $U$ is
+$\frac{2}{\sigma_z\sqrt{2\pi}}\int_U^\infty e^{-u^2/2\sigma_z^2}{\rm d}u$. Substituting $t=u/(\sqrt2\sigma_z)$,
+${\rm d}u=\sqrt2\sigma_z\,{\rm d}t$, this becomes $\frac{2}{\sqrt\pi}\int_{U/(\sqrt2\sigma_z)}^\infty e^{-t^2}{\rm d}t$. By
+Eq.~\eqref{eq:int_gauss}, $\frac{2}{\sqrt\pi}\int_0^\infty e^{-t^2}{\rm d}t=1$, so with the error function defined as
+$\mathrm{erf}(x)=\frac{2}{\sqrt\pi}\int_0^xe^{-t^2}{\rm d}t$,
+\begin{equation}
+  \Pr(u>U)=1-\mathrm{erf}\!\left(\frac{U}{\sqrt2\,\sigma_z}\right).
+  \label{eq:int_tail}
+\end{equation}
+With $U=d_{\rm max}-d_{\rm PEG}=3.8$~nm and $\sigma_z=\sigmaZ$~nm the argument is $3.8/(\sqrt2\times\sigmaZ)=2.74$ and the probability is
+\tailMass, which is negligible.
 
 \textbf{Checking the folding.} Folding a Gaussian is not the same as a chain that is
 prevented from entering the region below its root. Two exact alternatives were simulated
@@ -1634,65 +1689,6 @@ which is not reproduced by the model against the one published data set at high 
 \item Repeat scans of one electrode: gives the readout noise $\sigma_r$ directly and hence the detection limit.
 \item Surface coverage by an independent method, when available: fixes $\Grtot$.
 \end{enumerate}
-
-%=======================================================================
-\section*{Appendix A: Standard Integrals}
-\label{sec:appA}
-
-The integrals used in Parts~A and B are derived here from a single result, the Gaussian integral.
-
-\textbf{Gaussian integral.} For $a>0$ let $I(a)=\int_{-\infty}^{\infty}e^{-ax^2}\,{\rm d}x$. Its square is a double integral over the
-plane,
-\[
-  I^2=\int_{-\infty}^{\infty}\!\!\int_{-\infty}^{\infty}e^{-a(x^2+y^2)}\,{\rm d}x\,{\rm d}y .
-\]
-In polar coordinates $x^2+y^2=\rho^2$ and the area element is $\rho\,{\rm d}\rho\,{\rm d}\phi$, so
-\[
-  I^2=\int_0^{2\pi}\!\!{\rm d}\phi\int_0^\infty e^{-a\rho^2}\rho\,{\rm d}\rho
-  =2\pi\left[-\frac{e^{-a\rho^2}}{2a}\right]_0^\infty=\frac{\pi}{a},
-\]
-so $I=\sqrt{\pi/a}$, that is
-\begin{equation}
-  \int_{-\infty}^{\infty}e^{-ax^2}\,{\rm d}x=\sqrt{\frac{\pi}{a}},\qquad
-  \int_{0}^{\infty}e^{-ax^2}\,{\rm d}x=\frac12\sqrt{\frac{\pi}{a}},
-  \label{eq:int_gauss}
-\end{equation}
-the second form following because the integrand is even.
-
-\textbf{Normalisation of the normal density, Eq.~\eqref{eq:normal}.} With $a=1/(2\sigma_z^2)$,
-$\int_{-\infty}^{\infty}e^{-z^2/2\sigma_z^2}{\rm d}z=\sqrt{2\pi\sigma_z^2}=\sigma_z\sqrt{2\pi}$, so
-\begin{equation}
-  \int_{-\infty}^{\infty}f\,{\rm d}z=\frac{1}{\sigma_z\sqrt{2\pi}}\cdot\sigma_z\sqrt{2\pi}=1 .
-  \label{eq:int_norm}
-\end{equation}
-
-\textbf{Second moment of a Gaussian.} Differentiating $\int_0^\infty e^{-ar^2}{\rm d}r=\tfrac12\sqrt\pi\,a^{-1/2}$ with respect
-to $a$, and noting that $\partial_a e^{-ar^2}=-r^2e^{-ar^2}$,
-\begin{equation}
-  \int_0^\infty r^2e^{-ar^2}\,{\rm d}r=-\frac{d}{da}\left(\frac{\sqrt\pi}{2}a^{-1/2}\right)=\frac{\sqrt\pi}{4}\,a^{-3/2}
-  =\frac{\sqrt\pi}{4a^{3/2}} .
-  \label{eq:int_r2}
-\end{equation}
-For the nearest-neighbour distance of Part~A, with $a=\pi\rho$: $2\pi\rho\cdot\sqrt\pi/(4(\pi\rho)^{3/2})
-=2\pi\rho\sqrt\pi/(4\pi^{3/2}\rho^{3/2})=1/(2\sqrt\rho)$.
-
-\textbf{First moment of a half-Gaussian.} With the substitution $w=u^2/(2\sigma_z^2)$, ${\rm d}w=u\,{\rm d}u/\sigma_z^2$, the limits
-$0$ and $\infty$ are unchanged and
-\begin{equation}
-  \int_0^\infty u\,e^{-u^2/2\sigma_z^2}\,{\rm d}u=\sigma_z^2\int_0^\infty e^{-w}\,{\rm d}w=\sigma_z^2 .
-  \label{eq:int_u}
-\end{equation}
-
-\textbf{Tail probability of the half-Gaussian.} The probability that $u=d-d_{\rm PEG}$ exceeds $U$ is
-$\int_U^\infty 2f(u)\,{\rm d}u=\frac{2}{\sigma_z\sqrt{2\pi}}\int_U^\infty e^{-u^2/2\sigma_z^2}{\rm d}u$. Substituting
-$t=u/(\sqrt2\sigma_z)$, ${\rm d}u=\sqrt2\sigma_z\,{\rm d}t$, gives $\frac{2}{\sqrt\pi}\int_{U/(\sqrt2\sigma_z)}^\infty e^{-t^2}{\rm d}t$. By
-Eq.~\eqref{eq:int_gauss}, $\frac{2}{\sqrt\pi}\int_0^\infty e^{-t^2}{\rm d}t=1$, so with the error function defined as
-$\mathrm{erf}(x)=\frac{2}{\sqrt\pi}\int_0^xe^{-t^2}{\rm d}t$,
-\begin{equation}
-  \Pr(u>U)=1-\mathrm{erf}\!\left(\frac{U}{\sqrt2\,\sigma_z}\right).
-  \label{eq:int_tail}
-\end{equation}
-With $U=d_{\max}-d_{\rm PEG}=3.8$~nm and $\sigma_z=0.98$~nm the argument is $2.74$ and $\Pr=1.1\times10^{-4}$.
 
 %=======================================================================
 \section*{Nomenclature}
