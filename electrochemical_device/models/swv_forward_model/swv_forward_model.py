@@ -56,7 +56,7 @@ T_K     = 298.15         # K  (room temperature for validation; 310 K for wound)
 #
 #   Γ_red(τ) = Γ_eq + [Γ_red(0) - Γ_eq] exp(-(k_f+k_b)τ)
 #
-#   Γ_eq = k_b/(k_f+k_b) × Γ_tot
+#   Γ_eq = k_f/(k_f+k_b) × Γ_tot
 #   k_f  = k0 exp(-α n_e F (E - E0) / RT)
 #   k_b  = k0 exp( (1-α) n_e F (E - E0) / RT)
 #
@@ -95,10 +95,14 @@ def _half_cycle_end(Gamma_red_0, Gamma_tot, k0, alpha, ne, E, E0, tau):
     k_f, k_b = _bv_rates(E, E0, k0, alpha, ne)
     K_tot    = k_f + k_b
     Gamma_eq = k_f / K_tot * Gamma_tot          # equilibrium reduced coverage
-    Gamma_red_end = Gamma_eq + (Gamma_red_0 - Gamma_eq) * np.exp(-K_tot * tau)
-    Gamma_ox_end  = Gamma_tot - Gamma_red_end
-    # Anodic current (positive for oxidation): I = ne F (k_b Γ_red - k_f Γ_ox)
-    I_anodic = ne * F_const * (k_b * Gamma_red_end - k_f * Gamma_ox_end)
+    displacement = (Gamma_red_0 - Gamma_eq) * np.exp(-K_tot * tau)
+    Gamma_red_end = Gamma_eq + displacement
+    # Anodic current: I = ne F (k_b Γ_red - k_f Γ_ox).  Substituting
+    # Γ_ox = Γ_tot - Γ_red gives I = ne F (k_f + k_b)(Γ_red - Γ_eq), i.e.
+    # ne F K_tot x displacement from equilibrium.  Evaluating it in this form
+    # avoids the catastrophic cancellation of the two-term form at large
+    # kappa = k0/(2f), where each term is huge and their difference is ~0.
+    I_anodic = ne * F_const * K_tot * displacement
     return Gamma_red_end, I_anodic
 
 
@@ -352,7 +356,7 @@ def k0_of_d(d_nm):
 
 
 def dist_averaged_voltammogram(E_arr, F_k,
-                                Gamma_0=3e-12, A_cm2=0.0177,
+                                Gamma_0=None, A_cm2=None,
                                 E0_MB=-0.250, alpha=0.37, ne=2,
                                 f_swv=10.0, E_sw=0.025,
                                 n_dist=80):
@@ -374,7 +378,12 @@ def dist_averaged_voltammogram(E_arr, F_k,
     Returns
     -------
     DI_total : net SWV current (A)
+
+    Gamma_0 and A_cm2 default to the confirmed module values GAMMA_0 and
+    A_ELEC (defined below), so the defaults cannot drift from them.
     """
+    Gamma_0 = GAMMA_0 if Gamma_0 is None else Gamma_0
+    A_cm2   = A_ELEC if A_cm2 is None else A_cm2
     d_vals   = np.linspace(D_PEG_NM, D_MAX_NM, n_dist)
     dd       = d_vals[1] - d_vals[0]
     weights  = P_d_norm(d_vals)   # nm-1, normalised
@@ -457,7 +466,7 @@ def concentration_to_Fk(conc_nM, T_min, keff_surf_frac=0.20):
 def concentration_to_voltammogram(conc_nM, T_min, keff_surf_frac=0.20,
                                    E0_MB=-0.250, alpha=0.37, ne=2,
                                    f_swv=10.0, E_sw=0.025,
-                                   Gamma_0=3e-12, A_cm2=0.0177,
+                                   Gamma_0=None, A_cm2=None,
                                    n_dist=80):
     """
     Full forward model: MMP-9 concentration → SWV voltammogram.
@@ -526,11 +535,13 @@ GAMMA_0  = 3.0e-12 # mol cm-2 (Lubin 2010, papers/layer_11/)
 A_ELEC   = 0.017   # cm2 (1.7 mm^2 geometric area; confirmed)
 
 # ─── M5: Fc REFERENCE PEAK ───────────────────────────────────────────────────
-# LEGACY / NOT USED IN THE CURRENT DEVICE: Fc has been dropped from the
-# protocol entirely (internal electrode characterisation notes, Sept 2026;
-# see swv_forward_model.tex Part E). This section is retained only as a
-# record of the earlier ratiometric-correction design and its diagnosed
-# problems; nothing below feeds into the current device's predictions.
+# NOT PART OF THE PREDICTIONS: Fc-hexanethiol is co-immobilised with the
+# MB-peptide in the current protocol (one pot, no MCH; it acts as the
+# diluent), but it is deliberately NOT modelled: its formal potential is
+# uncertain and no separate MB/Fc peak pair has been resolved on the real
+# device (see swv_forward_model.tex, Part VI). The constants below are kept
+# only as a record of the earlier ratiometric design; nothing below feeds
+# the predictions of the report.
 # Ferrocene-hexanethiol on C6 SAM.
 # K0_FC below (2.7e5 s-1, Dauphin-Ducharme [1] Fig. 3) is a LITERATURE VALUE
 # FOR A DIFFERENT CONSTRUCT (MB-DNA electrode), not confirmed for this
