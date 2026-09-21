@@ -407,8 +407,15 @@ the centre-to-centre spacing is its square root:
 \emph{Worked example.} $\Grtot N_A = 3\times10^{-12}\times6.022\times10^{23}
 =1.81\times10^{12}$~cm$^{-2}=1.81\times10^{-2}$~nm$^{-2}$ (using
 1~cm$^2=10^{14}$~nm$^2$), so $a=\areaPerProbeNM$~nm$^2$ and $s=\spacingNM$~nm. For randomly
-placed probes the mean distance to the nearest neighbour is smaller,
-$1/(2\sqrt{\rho})=\nnRandom$~nm for a number density $\rho=1/a$. The total number of probes
+placed probes the mean distance to the nearest neighbour is smaller. With number density $\rho=1/a$, the
+probability that a disc of radius $r$ contains no other probe is $e^{-\rho\pi r^2}$, so the nearest neighbour lies
+between $r$ and $r+{\rm d}r$ with probability density $p(r)=2\pi\rho r\,e^{-\rho\pi r^2}$ (the probability that the
+disc is empty, times the probability that a probe lies in the ring of area $2\pi r\,{\rm d}r$). The mean is
+\[
+  \langle r\rangle=\int_0^\infty r\,p(r)\,{\rm d}r=2\pi\rho\int_0^\infty r^2e^{-\pi\rho r^2}{\rm d}r
+  =2\pi\rho\cdot\frac{\sqrt\pi}{4(\pi\rho)^{3/2}}=\frac{1}{2\sqrt\rho}=\nnRandom~\text{nm},
+\]
+using $\int_0^\infty r^2e^{-ar^2}{\rm d}r=\sqrt\pi/(4a^{3/2})$. The total number of probes
 is $\Grtot N_A A=\nProbes$, that is $\nProbesFmol$~fmol on the
 $A=0.017$~cm$^2$ electrode.
 
@@ -484,27 +491,46 @@ its direction. The chain is therefore equivalent to
   \label{eq:NK}
 \end{equation}
 independent rigid segments of length $b$, each pointing in a random direction. Take $z$ as the
-height above the PEG6 tip. A segment with a direction uniformly random over the sphere has a
-height component $b\cos\theta$, where $\cos\theta$ is uniform between $-1$ and $1$, so each
-segment's height has mean 0 and variance $b^2\langle\cos^2\theta\rangle=b^2/3$. The end height
-is the sum of $N_K$ independent such terms; by the central limit theorem it is approximately
-normal with mean zero and variance
+height above the PEG6 tip. A segment whose direction is uniformly random over the sphere has a
+height component $X=b\cos\theta$. The fraction of the sphere's area between polar angles $\theta$ and $\theta+{\rm d}\theta$
+is $\tfrac12\sin\theta\,{\rm d}\theta=\tfrac12|{\rm d}(\cos\theta)|$, so $u=\cos\theta$ is uniformly distributed on $[-1,1]$
+with density $\tfrac12$. Therefore
+\[
+  \langle X\rangle=b\int_{-1}^{1}u\,\tfrac12\,{\rm d}u=0,\qquad
+  \langle X^2\rangle=b^2\int_{-1}^{1}u^2\,\tfrac12\,{\rm d}u=b^2\cdot\tfrac12\cdot\tfrac{2}{3}=\frac{b^2}{3}.
+\]
+The end height is $S_N=X_1+\dots+X_N$, the sum of $N=N_K$ independent, identically distributed terms. The
+\emph{central limit theorem} states that if the $X_i$ have mean $\mu$ and variance $s^2$, then
+\begin{equation}
+  \lim_{N\to\infty}\;\Pr\!\left[\frac{S_N-N\mu}{s\sqrt N}\le x\right]=\frac{1}{\sqrt{2\pi}}\int_{-\infty}^{x}e^{-y^2/2}\,{\rm d}y ,
+  \label{eq:clt}
+\end{equation}
+that is, $S_N$ is approximately normal with mean $N\mu$ and variance $Ns^2$. Here $\mu=0$ and $s^2=b^2/3$, so
+$S_N$ is approximately normal with mean zero and variance
 \begin{equation}
   \sigma_z^2=\frac{N_K\,b^2}{3}=\frac{\langle R^2\rangle}{3},\qquad
-  \langle R^2\rangle=N_Kb^2=\Rsq~\text{nm}^2,\qquad \sigma_z=\sigmaZ~\text{nm}.
+  \langle R^2\rangle=N_Kb^2=5\times0.76^2=\Rsq~\text{nm}^2,\qquad \sigma_z=\sqrt{\Rsq/3}=\sigmaZ~\text{nm}.
   \label{eq:sigmaz}
 \end{equation}
-Here $\langle R^2\rangle$ is the mean square end-to-end distance, and the factor 3
-arises because it is shared equally among the three directions. Five segments is few, so the
+Here $\langle R^2\rangle=N_Kb^2$ is the mean square end-to-end distance: each segment has $|\mathbf{b}|^2=b^2$, and the
+cross terms between different segments average to zero because their directions are independent. The factor 3
+arises because, by isotropy, $\langle x^2\rangle=\langle y^2\rangle=\langle z^2\rangle$ and these sum to
+$\langle R^2\rangle$. The same argument gives the sideways displacement: with $x$ and $y$ each of variance $\sigma_z^2$, the
+root-mean-square distance of the label from the vertical through its anchor is
+$\sqrt{\langle x^2\rangle+\langle y^2\rangle}=\sqrt2\,\sigma_z=\lateralRms$~nm, as used in Part~A. Five segments is few, so the
 approximation is checked directly: the exact distribution of the sum of five such terms
 differs from the Gaussian by a maximum of \ksGauss{} in cumulative probability
 (\figref{fig:chain}B), so the Gaussian is an excellent description.
 
 \textbf{Reference height: the PEG6 spacer.} The spacer is six ethylene-glycol units of
 length $l_{\rm EO}=0.35$~nm, or $n_{K,{\rm PEG}}=6\times0.35/0.76=2.76$ Kuhn segments. For a
-short chain in a good solvent, Flory's scaling law for a self-avoiding chain gives its extent as
+chain in a good solvent, Flory's argument balances two contributions to the free energy in units of $k_BT$: the
+elastic cost of stretching the chain to an end-to-end distance $R$, $R^2/(n_Kb^2)$, and the repulsion between segments,
+which for $n_K$ segments in a volume $\sim R^3$ is $\sim b^3n_K^2/R^3$. Minimising the sum,
+$\frac{d}{dR}\bigl[R^2/(n_Kb^2)+b^3n_K^2/R^3\bigr]=0$ gives $2R/(n_Kb^2)=3b^3n_K^2/R^4$, i.e.\ $R^5\propto n_K^3b^5$, so that
+to scaling accuracy
 \begin{equation}
-  d_{\rm PEG}=n_{K,{\rm PEG}}^{3/5}\,b=2.76^{0.6}\times0.76=\dPEG~\text{nm}.
+  d_{\rm PEG}=R_F=n_{K,{\rm PEG}}^{3/5}\,b=2.76^{0.6}\times0.76=\dPEG~\text{nm}.
   \label{eq:flory}
 \end{equation}
 This is an extrapolation of a long-chain law to a chain of under three segments and is
@@ -512,19 +538,28 @@ therefore uncertain \FLAG. The ideal-chain value $\sqrt{n_{K,{\rm PEG}}}\,b=1.26
 fully stretched value $6\times0.35=2.1$~nm bracket it, and this range is carried into the
 sensitivity analysis (Part~H).
 
-\textbf{Distribution of $d$.} The label sits at $d=d_{\rm PEG}+|z|$, since the gold
-prevents the chain from passing below the tip. Folding the Gaussian of $z$ onto positive values
-and renormalising gives the half-Gaussian
+\textbf{Distribution of $d$.} A normal distribution of mean zero and variance $\sigma_z^2$ has probability density
 \begin{equation}
-  P(d)=\sqrt{\frac{2}{\pi}}\,\frac{1}{\sigma_z}\,
-  \exp\!\left[-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right],\qquad d\ge d_{\rm PEG}.
+  f(z)=\frac{1}{\sigma_z\sqrt{2\pi}}\exp\!\left(-\frac{z^2}{2\sigma_z^2}\right),\qquad \int_{-\infty}^{\infty}f\,{\rm d}z=1.
+  \label{eq:normal}
+\end{equation}
+The label height relative to the tip is $z$, but the gold prevents the chain from lying below the tip, so
+the label is at $d=d_{\rm PEG}+|z|$. Let $u=d-d_{\rm PEG}\ge0$. The event that $|z|$ lies between $u$ and $u+{\rm d}u$
+consists of $z$ lying in $[u,u+{\rm d}u]$ or in $[-u-{\rm d}u,-u]$; these have equal probability, $f(u)\,{\rm d}u$, because
+$f$ is even. Hence the density of $u$ is $2f(u)$:
+\begin{equation}
+  P(d)=2f(d-d_{\rm PEG})=\frac{2}{\sigma_z\sqrt{2\pi}}\,e^{-(d-d_{\rm PEG})^2/2\sigma_z^2}
+  =\sqrt{\frac{2}{\pi}}\,\frac{1}{\sigma_z}\,
+  \exp\!\left[-\frac{(d-d_{\rm PEG})^2}{2\sigma_z^2}\right],\qquad d\ge d_{\rm PEG},
   \label{eq:Pd}
 \end{equation}
-The prefactor restores $\int_{d_{\rm PEG}}^{\infty}P\,{\rm d}d=1$, since a Gaussian has exactly half
-its area on each side of its mean. The mean distance is $d_{\rm PEG}+\sigma_z\sqrt{2/\pi}=\meanDana$~nm.
+using $2/\sqrt{2\pi}=\sqrt{2/\pi}$. It is normalised because $\int_{d_{\rm PEG}}^{\infty}P\,{\rm d}d=2\int_0^\infty f\,{\rm d}u=1$
+($f$ is even, so half of the total area lies on each side of zero). The mean distance follows from
+$\int_0^\infty u\,e^{-u^2/2\sigma_z^2}{\rm d}u=\sigma_z^2$:
+$\langle d\rangle=d_{\rm PEG}+\frac{2}{\sigma_z\sqrt{2\pi}}\sigma_z^2=d_{\rm PEG}+\sigma_z\sqrt{2/\pi}=\meanDana$~nm.
 The chain cannot extend beyond its contour length, so the distribution is cut off at
-$d_{\rm max}=d_{\rm PEG}+N_{\rm res}l_0=\dMax$~nm; the probability of exceeding it is
-\tailMass, which is negligible.
+$d_{\rm max}=d_{\rm PEG}+N_{\rm res}l_0=\dMax$~nm; the probability of exceeding it,
+$1-\mathrm{erf}\bigl[(d_{\rm max}-d_{\rm PEG})/(\sqrt2\sigma_z)\bigr]$, is \tailMass, which is negligible.
 
 \textbf{Checking the folding.} Folding a Gaussian is not the same as a chain that is
 prevented from entering the region below its root. Two exact alternatives were simulated
@@ -550,15 +585,20 @@ lower bound on the geometry.
 \end{figure}
 
 \textbf{Electron-transfer rate against distance.} MB exchanges electrons with the gold by
-quantum-mechanical tunnelling through the tether. The probability of tunnelling decays
-exponentially with the distance travelled, and the rate constant $\kzero$ (the rate at which
+quantum-mechanical tunnelling through the tether. For an electron of energy $E_e$ meeting a barrier of height $\Phi>E_e$ and width $d$, the
+Schr\"odinger equation inside the barrier, $-\frac{\hbar^2}{2m_e}\psi''+\Phi\psi=E_e\psi$, becomes
+$\psi''=\gamma^2\psi$ with $\gamma=\sqrt{2m_e(\Phi-E_e)}/\hbar$, whose decaying solution is $\psi\propto e^{-\gamma x}$. The
+transmission probability is the ratio of $|\psi|^2$ at the far and near faces, $e^{-2\gamma d}$ (writing $\Phi$ for the barrier height
+measured from $E_e$). The electron-transfer rate is proportional to it, and the rate constant $\kzero$ (the rate at which
 an MB molecule exchanges electrons when it is at its formal potential, in s$^{-1}$)
 inherits this:
 \begin{equation}
-  \kzero(d)=\kzero(0)\,e^{-\beta d}.
+  \kzero(d)=\kzero(0)\,e^{-\beta d},\qquad \beta=2\gamma=\frac{2\sqrt{2m_e\Phi}}{\hbar}.
   \label{eq:k0d}
 \end{equation}
-The decay constant is $\beta=1.0$~\AA$^{-1}=\betaNM$~nm$^{-1}$, the accepted value for
+Numerically, for $\Phi=1$~eV$=1.602\times10^{-19}$~J, $\sqrt{2m_e\Phi}=\sqrt{2\times9.109\times10^{-31}\times1.602\times10^{-19}}=5.40\times10^{-25}$~kg\,m\,s$^{-1}$, so
+$\beta=2\times5.40\times10^{-25}/(1.055\times10^{-34})=1.02\times10^{10}$~m$^{-1}$, i.e.\ $\beta=1.025\sqrt{\Phi/\text{eV}}$~\AA$^{-1}$. A barrier of about 1~eV gives
+$\beta=1.0$~\AA$^{-1}=\betaNM$~nm$^{-1}$, the accepted value for
 tunnelling through alkane chains \cit{4}; no PEG-specific value is available, so this
 is an assumed value \FLAG. The anchoring measurement is that of Dauphin-Ducharme
 \emph{et al.}\ \cit{1}: MB on a six-carbon linker, with the label 8~\AA{} from the gold, has
@@ -633,9 +673,17 @@ surface, which acts as a capacitor of about $C_{\rm dl}=\CdlUF~\mu$F\,cm$^{-2}$
 (a typical value for gold in aqueous electrolyte, assumed here), so
 $\Cdev~\mu$F on the 0.017~cm$^2$ electrode. This charging current is not the signal, and
 in cyclic voltammetry (CV), where the voltage is swept steadily, it is present all the time.
-The size of the wanted signal relative to it can be estimated. In CV at sweep rate $v$ a
-surface-bound couple gives a peak current $i_p=n_e^2F^2vA\Grtot/(4RT)$ \cit{13}, while
-charging gives $i_c=C_{\rm dl}Av$. Their ratio is independent of $v$:
+The size of the wanted signal relative to it can be estimated. For a surface-bound couple in equilibrium with the electrode
+the reduced fraction is given by the Nernst equation, $\theta_{\rm red}=1/(1+u)$ with $u=e^{\xi}$ and $\xi$ as in
+Eq.~\eqref{eq:bv_rates}. In cyclic voltammetry (CV) the voltage is swept at a rate $v$, so
+$E=E_0+vt$ and the current is
+\[
+  i=n_eFA\Grtot\,\frac{d\theta_{\rm red}}{dt}=n_eFA\Grtot\,v\,\frac{d\theta_{\rm red}}{dE},\qquad
+  \left|\frac{d\theta_{\rm red}}{dE}\right|=\frac{n_eF}{RT}\,\frac{u}{(1+u)^2}.
+\]
+The function $u/(1+u)^2$ has derivative $(1-u)/(1+u)^3$, so it is maximal at $u=1$ (that is, at $E=\Eform$), where it equals $\tfrac14$, and the peak current is
+$i_p=n_e^2F^2vA\Grtot/(4RT)$. The charging current of a capacitor $C_{\rm dl}A$ swept at rate $v$ is
+$i_c=C_{\rm dl}Av$ (from $q=CE$). Their ratio is independent of $v$:
 \begin{equation}
   \frac{i_p}{i_c}=\frac{n_e^2F^2\Grtot}{4RT\,C_{\rm dl}}
   =\frac{4\times(96485)^2\times3\times10^{-12}}{4\times8.3145\times298.15\times20\times10^{-6}}
@@ -646,7 +694,9 @@ so the peak sits on a charging plateau of comparable size (\figref{fig:backgroun
 and any drift in the plateau is a drift in the apparent peak.
 
 In SWV the voltage is held constant during each pulse and the current is recorded only at
-its end. After a voltage jump the charging current decays as $e^{-t/(R_uC)}$, where
+its end. After a voltage jump of size $\Delta E$ the charge $q$ on the capacitor obeys
+$\Delta E=R_u\,dq/dt+q/C$, with solution $q=C\Delta E(1-e^{-t/(R_uC)})$, so the charging current is
+$i=dq/dt=(\Delta E/R_u)\,e^{-t/(R_uC)}$, where
 $R_u$ is the resistance of the solution between the electrode and reference (taken as
 $\RuOhm~\Omega$, an assumed value). With $R_uC=\RCms$~ms, by the end of a 10~Hz half-pulse
 ($\halfPulseMs$~ms) the charging current has fallen by a factor of
@@ -683,8 +733,16 @@ applied voltage $E$, the Butler--Volmer model gives first-order rate constants f
 where $F=96485$~C\,mol$^{-1}$ is the Faraday constant, $R=8.3145$~J\,mol$^{-1}$K$^{-1}$
 the gas constant, $\alpha$ the transfer coefficient (the fraction of the applied voltage
 that helps the reaction go in one direction) and $\xi$ the overpotential in thermal units.
-Positive of $\Eform$, $k_b$ grows and $k_f$ shrinks, favouring the oxidised form, and
-vice versa. At $E=\Eform$ both equal $\kzero$ (for $\alpha=\tfrac12$).
+Eq.~\eqref{eq:bv_rates} follows from transition-state theory, in which a rate is proportional to
+$\exp(-\Delta G^\ddagger/RT)$ with $\Delta G^\ddagger$ the free-energy barrier. Changing the electrode voltage by
+$E-\Eform$ changes the free energy of the transferred electrons by $n_eF(E-\Eform)$. A fraction $\alpha$ of this
+change raises the barrier for reduction and the remaining fraction $1-\alpha$ lowers the barrier for oxidation:
+$\Delta G^\ddagger_f=\Delta G^\ddagger_0+\alpha n_eF(E-\Eform)$ and
+$\Delta G^\ddagger_b=\Delta G^\ddagger_0-(1-\alpha)n_eF(E-\Eform)$. At $E=\Eform$ both barriers equal
+$\Delta G^\ddagger_0$, so both rates equal $\kzero\propto e^{-\Delta G^\ddagger_0/RT}$, and dividing out gives
+Eq.~\eqref{eq:bv_rates}. Positive of $\Eform$, $k_b$ grows and $k_f$ shrinks, favouring the oxidised form, and
+vice versa. At equilibrium the two rates balance, $k_f\Grox=k_b\Grred$, so
+$\Grred/\Grox=k_f/k_b=\exp[-\alpha\xi-(1-\alpha)\xi]=e^{-\xi}$, the Nernst equation, independent of $\alpha$ and $\kzero$.
 
 \textbf{Governing equation.} Reduced MB is formed from oxidised at rate $k_f\Grox$
 and lost at rate $k_b\Grred$:
@@ -709,8 +767,9 @@ coverage at this voltage. In terms of it,
 The coverage relaxes exponentially to equilibrium with time constant $1/K$. This solution is exact,
 and agrees with a numerical ODE solver to $\odeMaxErr$ (\figref{fig:ode}A,B).
 
-\textbf{Current.} The current is the charge transferred per second, $n_eF$ per mole
-converted, times the area:
+\textbf{Current.} The current is the charge transferred per second: each mole converted transfers $n_eF$ coulombs, the net rate of
+conversion per unit area is $k_b\Grred-k_f\Grox$ (mol\,cm$^{-2}$s$^{-1}$), and the area is $A$, so
+(in C\,mol$^{-1}\times$mol\,cm$^{-2}$s$^{-1}\times$cm$^2$ = A)
 \begin{equation}
   I=n_eFA\,\bigl(k_b\Grred-k_f\Grox\bigr).
   \label{eq:I_two}
@@ -770,9 +829,9 @@ arbitrary initial coverage.
 \begin{equation}
   \kappa\equiv\frac{\kzero}{2f}=\kzero\,\tau,
 \end{equation}
-the ratio of the label's rate to the pulse rate. At $E=\Eform$, $K=2\kzero$ (for
-$\alpha=\tfrac12$) so $K\tau=2\kappa$. Eq.~\eqref{eq:I_stable} says the current is
-$K$ times a displacement that shrinks as $e^{-K\tau}$; the product $K\,e^{-K\tau}$ is maximal
+the ratio of the label's rate to the pulse rate. At $E=\Eform$, $\xi=0$ and Eq.~\eqref{eq:bv_rates} gives $k_f=k_b=\kzero$, so $K=2\kzero$ and
+$K\tau=2\kzero\tau=2\kappa$. Eq.~\eqref{eq:I_stable} says the current is
+$K$ times a displacement that shrinks as $e^{-K\tau}$; the product $K\,e^{-K\tau}$ has derivative $e^{-K\tau}(1-K\tau)$ with respect to $K$, so it is maximal
 where $K\tau=1$, that is at $\kappa=\tfrac12$. The full simulation, which includes the carry-over
 between pulses, places the maximum at
 $\kappa=\kappaMax$ (\figref{fig:ode}C, \figref{fig:rate}B), in agreement with the estimate.
@@ -863,20 +922,31 @@ confirms it to machine precision.
   \label{fig:cleave}
 \end{figure}
 
-\textbf{Which labels give the signal.} Change variable in Eq.~\eqref{eq:dist_avg} from $d$ to
-$\kappa$. From Eq.~\eqref{eq:k0d}, $\kappa=\kappa(d)$ falls by a factor $e^{\beta\,{\rm d}d}$
-over ${\rm d}d$, so $|{\rm d}d|=|{\rm d}\kappa|/(\beta\kappa)=\frac{1}{\beta}\,|{\rm d}\ln\kappa|$. Write the single-probe
-response as $\DI_{\rm norm}=n_eF\cdot2f\,g(\kappa)$ (defining $g$ as in Part~C). Because
-$g(\kappa)$ is a narrow bump on a logarithmic axis (\figref{fig:rate}B) and $P(d)$ varies slowly compared with
-it, $P(d)$ can be evaluated at the centre of the bump, $d_\star$, where
-$\kappa(d_\star)=\kappa_{\max}$:
+\textbf{Which labels give the signal.} Write the single-probe response as
+$\DI_{\rm norm}=n_eF\cdot2f\,g(\kappa)$, defining the dimensionless function $g$ as in Part~C, and let
+$\kappa_{\rm tip}=\kref/(2f)$ be the value of $\kappa$ at the PEG6 tip. From Eq.~\eqref{eq:k0d},
+$\kappa(d)=\kappa_{\rm tip}\,e^{-\beta(d-d_{\rm PEG})}$, so
+$\ln\kappa=\ln\kappa_{\rm tip}-\beta(d-d_{\rm PEG})$ and
+\[
+  d=d_{\rm PEG}+\frac{1}{\beta}\bigl(\ln\kappa_{\rm tip}-\ln\kappa\bigr),\qquad
+  {\rm d}d=-\frac{1}{\beta}\,{\rm d}\ln\kappa .
+\]
+Substituting in Eq.~\eqref{eq:dist_avg} at the peak voltage, with the integration limits exchanged to absorb the sign,
+\[
+  \DI_{\rm pk}=n_eF\cdot2f\,A\Grtot\,\frac{1}{\beta}\int P\bigl(d(\kappa)\bigr)\,g(\kappa)\,{\rm d}\ln\kappa .
+\]
+The function $g(\kappa)$ is a narrow bump on the logarithmic axis (\figref{fig:rate}B), whereas $P(d)$ varies
+slowly across it, so $P$ can be evaluated at the centre of the bump, $d_\star$, where $\kappa(d_\star)=\kappa_{\max}$, i.e.\
+$d_\star=d_{\rm PEG}+\beta^{-1}\ln(\kappa_{\rm tip}/\kappa_{\max})$, and taken outside the integral:
 \begin{equation}
   \DI_{\rm pk}\approx n_eF\cdot2f\;A\Grtot\;\frac{P(d_\star)}{\beta}\,G,\qquad
   G=\int g(\kappa)\,{\rm d}\ln\kappa=\Gint,\qquad
   d_\star=d_{\rm PEG}+\frac{1}{\beta}\ln\frac{\kref}{2f\kappa_{\max}}.
   \label{eq:one_line}
 \end{equation}
-At 10~Hz $d_\star=\dStarTen$~nm and at 20~Hz $\dStarTwenty$~nm, only $\dStarTenOff$ and $\dStarTwentyOff$~nm above the
+With $\kref=\kRef$~s$^{-1}$, $\kappa_{\rm tip}=\kref/(2f)=\kappaTenHz$ at 10~Hz and $\kappaTwentyHz$ at 20~Hz, and
+$d_\star-d_{\rm PEG}=\beta^{-1}\ln(\kappa_{\rm tip}/\kappa_{\max})=\frac{1}{10}\ln(\kappaTenHz/\kappaMax)=\dStarTenOff$~nm at 10~Hz. Thus
+at 10~Hz $d_\star=\dStarTen$~nm and at 20~Hz $\dStarTwenty$~nm, only $\dStarTenOff$ and $\dStarTwentyOff$~nm above the
 tip (\figref{fig:band}A,B). Eq.~\eqref{eq:one_line} reproduces the full calculation to within
 \approxErrTen\% (\figref{fig:band}C) and shows three things:
 \begin{enumerate}[leftmargin=*,noitemsep]
@@ -901,7 +971,8 @@ tip (\figref{fig:band}A,B). Eq.~\eqref{eq:one_line} reproduces the full calculat
 \end{figure}
 
 \textbf{Frequency response.} Because $\DI_{\rm pk}\propto f$ while the band lies above the
-tip, the predicted peak rises linearly with frequency from 1~Hz up to about $\kref/(2\kappa_{\max})\approx140$~Hz, where the
+tip, the predicted peak rises linearly with frequency from 1~Hz up to about $\kref/(2\kappa_{\max})\approx140$~Hz (the frequency at which $d_\star=d_{\rm PEG}$, from $\ln(\kref/2f\kappa_{\max})=0$ in
+Eq.~\eqref{eq:one_line}), where the
 band reaches the tip and the wall truncates it; the model's maximum is at about \fOpt~Hz
 (\figref{fig:freq}A). The operating range of 10 to 20~Hz is well below this, so the model predicts a larger
 signal at higher frequency (a fourfold gain from 10 to 40~Hz, \ratioForty{}); whether it is worth
@@ -975,17 +1046,22 @@ Default parameters & the default area and coverage of the distance-averaged func
 \subsection{The Laviron peak width and why it is not the target}
 
 The width of a \emph{reversible} surface wave, swept continuously, is a useful reference, and it is
-the source of the 45.3~mV figure often quoted for a two-electron surface couple \cit{2}. Its shape is
-$|\Psi(\eta)|=\eta/(1+\eta)^2$ with $\eta=e^{\xi}$ and $\xi$ as in Eq.~\eqref{eq:bv_rates}.
-The maximum is where $d|\Psi|/d\eta=0$: $(1+\eta)^2-2\eta(1+\eta)=0$, so $\eta=1$ and $|\Psi|_{\max}=\tfrac14$.
-Half the maximum is where $\eta/(1+\eta)^2=\tfrac18$, i.e.\ $\eta^2-6\eta+1=0$, so $\eta_\pm=3\pm2\sqrt2$. The two
-roots are reciprocal ($9-8=1$), so $\xi_\pm=\pm\ln(3+2\sqrt2)$ and the width in $\xi$ is
-$2\ln(3+2\sqrt2)=3.525$. Converting to voltage with $\xi=n_eF(E-\Eform)/RT$,
+the source of the 45.3~mV figure often quoted for a two-electron surface couple \cit{2}. Its shape
+was obtained in Part~C: the current is proportional to $|d\theta_{\rm red}/dE|\propto\Psi(u)=u/(1+u)^2$ with $u=e^{\xi}$ and
+$\xi$ as in Eq.~\eqref{eq:bv_rates}. Differentiating,
+\[
+  \frac{d\Psi}{du}=\frac{(1+u)^2-2u(1+u)}{(1+u)^4}=\frac{1-u}{(1+u)^3}=0\;\Rightarrow\;u=1,\qquad
+  \Psi_{\max}=\frac{1}{(1+1)^2}\cdot1=\frac14 .
+\]
+Half the maximum is where $u/(1+u)^2=\tfrac18$, that is $8u=(1+u)^2$, i.e.\ $u^2-6u+1=0$. By the quadratic formula
+$u_\pm=\bigl(6\pm\sqrt{36-4}\bigr)/2=3\pm2\sqrt2$. The two roots are reciprocal ($u_+u_-=9-8=1$), so
+$\xi_\pm=\ln u_\pm=\pm\ln(3+2\sqrt2)=\pm1.763$ and the width in $\xi$ is $2\ln(3+2\sqrt2)=3.525$. Since
+$\xi=n_eF(E-\Eform)/RT$, a width $\Delta\xi$ corresponds to a width $\Delta\xi\,RT/(n_eF)$ in voltage:
 \begin{equation}
-  \mathrm{FWHM}=\frac{3.525\,RT}{n_eF}=\frac{90.6}{n_e}~\text{mV at }25^\circ\text{C},
+  \mathrm{FWHM}=\frac{3.525\,RT}{n_eF}=\frac{3.525\times25.69~\text{mV}}{n_e}=\frac{90.6}{n_e}~\text{mV at }25^\circ\text{C},
   \label{eq:fwhm}
 \end{equation}
-which is 45.3~mV for $n_e=2$. This is the width of a different experiment (a continuous sweep of a couple that
+(using $RT/F=8.3145\times298.15/96485=25.69$~mV), which is 45.3~mV for $n_e=2$. This is the width of a different experiment (a continuous sweep of a couple that
 stays at equilibrium) from the sampled-current square wave used here, where the peak is wider
 (\fwhmMin{} to \fwhmMaxK~mV, Part~C) because the current is a non-equilibrium quantity sampled
 at a fixed time. A quantitative match to Eq.~\eqref{eq:fwhm} is therefore not expected; the difference in shape between the two
@@ -1101,8 +1177,10 @@ unchanged by processes other than cleavage; this is stated as assumption A1.
 
 \textbf{Overlap of voltages.} MB reacts near $-0.25$~V and the MB scan runs from $-0.40$ to
 $-0.10$~V; ferrocene reacts at $+0.21$ to $+0.40$~V, at least $\gapFc$~mV beyond the end of the MB
-window (\figref{fig:potentials}A). The tail of a one-electron wave falls as $4e^{-\xi}/(1+e^{-\xi})^2$
-(the shape of Eq.~\ref{eq:fwhm} with $n_e=1$); at $\gapFc$~mV this is $\leakEnv$ of the ferrocene peak
+window (\figref{fig:potentials}A). The shape of a one-electron surface wave, normalised to its peak, is $4u/(1+u)^2$ with $u=e^{\xi}$ (the shape
+of Part~C with $n_e=1$, scaled by 4 so that the peak is 1). Far from the peak, $|\xi|\gg1$: for $\xi\ll-1$, $u\to0$ and $4u/(1+u)^2\to4u=4e^{-|\xi|}$; for $\xi\gg1$,
+$(1+u)^2\to u^2$ and the wave tends to $4/u=4e^{-|\xi|}$. Either way the wave falls as $4e^{-|\xi|}$. At a distance $\Delta E=\gapFc$~mV, $|\xi|=F\Delta E/RT=12.1$ and the wave is
+$\leakEnv$ of the ferrocene peak
 (\figref{fig:potentials}B). The largest ferrocene peaks recorded, $10^{-5}$~A, are \fcMbRatio{} times the predicted MB peak, so in the
 worst case the ferrocene tail would add \leakMB\% to the MB peak. The Butler--Volmer model of Part~C
 predicts a far smaller tail (below $10^{-100}$). Interference by the ferrocene wave is therefore
@@ -1149,13 +1227,17 @@ this diagnostic remains available experimentally without any change to the model
     \Fkrec=1-(1-\Fk)(1-\delta)=\Fk+\delta\,(1-\Fk).
     \label{eq:drift}
   \end{equation}
-  The bias $\delta(1-\Fk)$ is always positive: drift is read as extra cleavage, so a chronic wound
-  would read as more severe than it is (\figref{fig:drift}). In a sample with no MMP-9, a loss of
+  Expanding, $\Fkrec=1-(1-\Fk)+\delta(1-\Fk)=\Fk+\delta(1-\Fk)$. The bias $\delta(1-\Fk)$ is always positive: drift is read as extra cleavage, so a chronic wound
+  would read as more severe than it is (\figref{fig:drift}). In a sample with no MMP-9 ($\Fk=0$) the readout is $\Fkrec=\delta$, and solving Eq.~\eqref{eq:Fk_kin} for the concentration that would give this
+  cleavage fraction, $c=-\ln(1-\delta)/(k_{\rm eff}T)$, a loss of
   5\% at 30~min would read as \blankAppFive~nM, about one third of the healing/chronic boundary.
 \item \textbf{A2. Cleavage is equally likely for any label height $d$} \FLAG. Suppose instead the
   relative cleavage rate is $q(d)\propto e^{\lambda(d-\bar d)}$, normalised to the same mean,
   so $\lambda>0$ means labels far from the gold are cut faster (as steric hindrance near the surface would
-  produce). The surviving population then over-represents near labels, which dominate the signal,
+  produce). Explicitly, $q(d)=e^{\lambda(d-\bar d)}/\!\int P\,e^{\lambda(d-\bar d)}{\rm d}d$, a probe at height $d$ survives an
+  incubation with probability $s(d)=e^{-\bar k\,q(d)}$ (with $\bar k=k_{\rm eff}[\text{MMP-9}]T$ the mean exponent), the true
+  cleavage fraction is $1-\int P\,s\,{\rm d}d$, and the recovered fraction is $1-\DI_{\rm pk}[P\,s]/\DI_{\rm pk}[P]$, evaluated with
+  Eq.~\eqref{eq:dist_avg}. The surviving population then over-represents near labels, which dominate the signal,
   and $\Fkrec$ falls below the true fraction cut. For $\lambda=2$~nm$^{-1}$ and a true fraction of
   \distBiasTrue\% the recovered fraction is \distBiasPts{} points too low (\figref{fig:distbias}). If the sign of $\lambda$ is reversed the error is positive.
 \item \textbf{A3. The two scans are made on the same electrode with the same settings.} Different
@@ -1187,17 +1269,20 @@ this diagnostic remains available experimentally without any change to the model
 \subsection{Noise, coverage and electrode-to-electrode variation}
 
 \textbf{Noise in the readout.} Let each peak height have an independent absolute error $\sigma_I$, and
-$\sigma_r=\sigma_I/\DI_{\rm MB}(0)$. Propagating errors through Eq.~\eqref{eq:Fk_simple}, with
-$\Fkrec=1-I_T/I_0$:
+$\sigma_r=\sigma_I/\DI_{\rm MB}(0)$. For $\Fkrec=1-I_T/I_0$ the partial derivatives are $\partial\Fkrec/\partial I_T=-1/I_0$ and
+$\partial\Fkrec/\partial I_0=I_T/I_0^2$. For independent errors the variances add, each weighted by the square of its
+derivative:
 \begin{equation}
-  \sigma_F^2=\frac{\sigma_I^2}{I_0^2}+\frac{I_T^2\sigma_I^2}{I_0^4}
+  \sigma_F^2=\Bigl(\frac{1}{I_0}\Bigr)^2\sigma_I^2+\Bigl(\frac{I_T}{I_0^2}\Bigr)^2\sigma_I^2
+  =\frac{\sigma_I^2}{I_0^2}\Bigl[1+\Bigl(\frac{I_T}{I_0}\Bigr)^2\Bigr]
   =\sigma_r^2\Bigl[1+(1-\Fk)^2\Bigr],\qquad \sigma_F\xrightarrow{\Fk\to0}\sqrt{2}\,\sigma_r.
   \label{eq:sigmaF}
 \end{equation}
 The noise floor of the before/after MB readout has not been measured \FLAG. A reference case of
 $\sigma_r=\sigmaRelOld$\% per reading, giving $\sigma_F=3.4$\%, is used in Part~G.
 
-\textbf{Coverage.} $\Fkrec$ is independent of $\Grtot$ exactly (three electrodes with a tenfold spread
+\textbf{Coverage.} By Eq.~\eqref{eq:DI_Fk}, $\DI(E;\Fk)=(1-\Fk)\,\Grtot\,C(E)$ with $C(E)$ independent of $\Grtot$, so
+$\Fkrec=1-(1-\Fk)\Grtot C/(\Grtot C)=\Fk$. Hence $\Fkrec$ is independent of $\Grtot$ exactly (three electrodes with a tenfold spread
 in coverage give the same $\Fkrec$ to machine precision, \figref{fig:coverage}A). Coverage matters only
 through noise: with a fixed absolute noise, an electrode with less probe has a smaller $I_0$ and so a larger
 $\sigma_r$, worsening the detection limit (\figref{fig:coverage}C). Electrode-to-electrode variation
@@ -1263,8 +1348,10 @@ not been measured.
   \qquad K_m=\frac{k_{-1}+k_{\rm cat}}{k_1}.
 \]
 Let $S_T$ be the number of intact probes (free plus enzyme-bound). If the enzyme-bound state reaches steady
-state quickly compared with the depletion of probe, $k_1[\mathrm{E}]\,[\mathrm{S}]=(k_{-1}+k_{\rm cat})[\mathrm{ES}]$
-with $[\mathrm{S}]=S_T-[\mathrm{ES}]$, which gives $[\mathrm{ES}]=S_T\,[\mathrm{E}]/(K_m+[\mathrm{E}])$.
+state quickly compared with the depletion of probe, then $d[\mathrm{ES}]/dt\approx0$, i.e.\
+$k_1[\mathrm{E}]\,[\mathrm{S}]=(k_{-1}+k_{\rm cat})[\mathrm{ES}]$ with $[\mathrm{S}]=S_T-[\mathrm{ES}]$. Dividing by $k_1$ and using the definition
+of $K_m$: $[\mathrm{E}](S_T-[\mathrm{ES}])=K_m[\mathrm{ES}]$, so $[\mathrm{E}]S_T=([\mathrm{E}]+K_m)[\mathrm{ES}]$ and
+$[\mathrm{ES}]=S_T\,[\mathrm{E}]/(K_m+[\mathrm{E}])$.
 Each cleavage removes one probe, so
 \begin{equation}
   \frac{dS_T}{dt}=-k_{\rm cat}[\mathrm{ES}]=-\frac{k_{\rm cat}[\mathrm{E}]}{K_m+[\mathrm{E}]}\,S_T
@@ -1284,11 +1371,11 @@ minutes to hours (Eq.~\ref{eq:Fk_kin}).
 
 \textbf{Cleavage fraction.} Including the surface efficiency, $k_{\rm eff}=\eta\,(k_{\rm cat}/K_m)_{\rm sol}$
 ($\keffM$~M$^{-1}$s$^{-1}$ at $\eta=0.20$). Eq.~\eqref{eq:mm} is separable:
-$dS_T/S_T=-k_{\rm eff}[\text{MMP-9}]\,dt$, so $S_T(T)=S_T(0)\,e^{-k_{\rm eff}[\text{MMP-9}]T}$, and with
+$dS_T/S_T=-k_{\rm eff}[\text{MMP-9}]\,dt$; integrating from 0 to $T$ gives $\ln[S_T(T)/S_T(0)]=-k_{\rm eff}[\text{MMP-9}]T$, so $S_T(T)=S_T(0)\,e^{-k_{\rm eff}[\text{MMP-9}]T}$, and with
 $\Fk\equiv1-S_T(T)/S_T(0)$,
 \begin{equation}
   \Fk(T)=1-e^{-k_{\rm eff}\,[\text{MMP-9}]\,T},\qquad
-  t_{1/2}=\frac{\ln2}{k_{\rm eff}[\text{MMP-9}]}.
+  t_{1/2}=\frac{\ln2}{k_{\rm eff}[\text{MMP-9}]}\quad\bigl(\text{from }\Fk=\tfrac12:\;e^{-k_{\rm eff}[\text{MMP-9}]t_{1/2}}=\tfrac12\bigr).
   \label{eq:Fk_kin}
 \end{equation}
 \emph{Worked example.} At 30~nM and 30~min, $k_{\rm eff}[\text{MMP-9}]T=13500\times30\times10^{-9}\times1800=0.729$, so
@@ -1333,8 +1420,8 @@ points, but the difference is already large by 30~min (\figref{fig:kin}, \figref
 \subsection{Detection limit}
 
 A concentration is detected when the readout exceeds $z$ times its noise; a criterion of $z=3$ is used.
-The smallest detectable cleavage fraction is $F_{\min}=z\,\sigma_F$, and inverting Eq.~\eqref{eq:Fk_kin}
-gives the lowest detectable concentration:
+The smallest detectable cleavage fraction is $F_{\min}=z\,\sigma_F$. Setting $F_{\min}=1-e^{-k_{\rm eff}cT}$ in
+Eq.~\eqref{eq:Fk_kin} gives $e^{-k_{\rm eff}cT}=1-F_{\min}$, and taking logarithms, $-k_{\rm eff}cT=\ln(1-F_{\min})$, gives the lowest detectable concentration $c$:
 \begin{equation}
   c_{\rm LOD}=\frac{-\ln\bigl(1-z\,\sigma_F\bigr)}{k_{\rm eff}\,T}.
   \label{eq:lod}
