@@ -20,8 +20,8 @@ from spred.tables import AMINO_ACIDS                          # noqa: E402
 
 ORDER = ["MMP2", "MMP8", "MMP9", "MMP14", "NE", "LASB", "FECAL"]
 LABEL = {"MMP2": "MMP-2", "MMP8": "MMP-8", "MMP9": "MMP-9", "MMP14": "MMP-14", "NE": "Neutrophil elastase",
-         "LASB": "LasB", "FECAL": "Faecal serine proteases"}
-SHORT = {"MMP2": "MMP-2", "MMP8": "MMP-8", "MMP9": "MMP-9", "MMP14": "MMP-14", "NE": "NE", "LASB": "LasB", "FECAL": "Faecal"}
+         "LASB": "LasB", "FECAL": "Digestive serine proteases"}
+SHORT = {"MMP2": "MMP-2", "MMP8": "MMP-8", "MMP9": "MMP-9", "MMP14": "MMP-14", "NE": "NE", "LASB": "LasB", "FECAL": "Digestive serine"}
 COL = {"MMP2": "#6A4C93", "MMP8": "#1982C4", "MMP9": "#2A9D6F", "MMP14": "#E28A00", "NE": "#C8455A", "LASB": "#8A6D3B",
        "FECAL": "#5F6B7A"}
 INK, MUTE, GRID = "#1c2430", "#6b7686", "#e6e9ee"

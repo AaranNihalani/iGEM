@@ -25,7 +25,7 @@ def fig_coefficients():
                     ax.text(j, i, "•", ha="center", va="center", fontsize=9, color="white" if abs(c[j, i] / scale) > 0.55 else INK)
         ax.set_xticks(range(8)); ax.set_xticklabels(POSITIONS, fontsize=7.5)
         ax.set_yticks(range(8)); ax.set_yticklabels([f"{i + 1}" for i in range(8)], fontsize=7.5); ax.grid(False)
-        ax.set_title(f"{LABEL[pid] if pid != 'FECAL' else 'Faecal'}   (max |coef| = {scale:.2f})", color=COL[pid], fontsize=8.6, loc="left")
+        ax.set_title(f"{LABEL[pid] if pid != 'FECAL' else 'Digestive serine'}   (max |coef| = {scale:.2f})", color=COL[pid], fontsize=8.6, loc="left")
         for b in (1.5, 3.5):
             ax.axhline(b, color="white", lw=1.6)
         if pid in ("MMP2", "MMP9", "NE", "FECAL"):

@@ -54,7 +54,7 @@ def draw_structure(ax, pid):
         Z = (zn - ca.mean(axis=0)) @ R.T; ax.scatter(Z[0], Z[1], s=90, color="#d4af37", ec="#7a5c00", lw=1, zorder=7)
     ax.set_aspect("equal"); ax.axis("off"); ax.grid(False)
     ax.set_xlim(pts[:, 0].min() - 3, pts[:, 0].max() + 3); ax.set_ylim(pts[:, 1].min() - 3, pts[:, 1].max() + 3)
-    tag = LABEL[pid] if pid != "FECAL" else "Faecal"
+    tag = LABEL[pid] if pid != "FECAL" else "Digestive serine"
     ax.set_title(f"{tag}   PDB {m['pdb']}", fontsize=9, color=COL[pid], loc="left")
     cat = ", ".join(m["catalytic_metal_ligands"])
     ax.text(0.0, -0.02, f"{m['resolution']} Å · {m['n_residues']} residues\ncatalytic site: {cat}", transform=ax.transAxes, fontsize=6.6, va="top", color=INK)
