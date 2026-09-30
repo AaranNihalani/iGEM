@@ -25,5 +25,3 @@ esm2_cache_*.pkl
 *.aux
 *.log
 *.out
-
-substrate_predictor/report/build/
