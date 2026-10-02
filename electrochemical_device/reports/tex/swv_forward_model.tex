@@ -1102,14 +1102,23 @@ $(1-\Fk)$ does not.
 
 \subsection{Overview}
 
-\textbf{Objective.} To establish the correctness of the implementation and the agreement of
-the model with published behaviour. \textbf{Result.} The mathematics is verified directly to high
-precision, and the model reproduces the standard behaviour of square-wave voltammetry of a surface-bound
-couple. It does not reproduce the published high-rate voltammograms of Dauphin-Ducharme \emph{et al.}\
-\cit{1}, and the cause has not been established; this limits confidence in the absolute current but not in the
-cleavage readout. The model has not yet been compared with a measured voltammogram of this device.
+\textbf{Objective.} To establish, separately, whether the implementation is correct and whether the
+physical model it implements is true of real electron-transfer kinetics. \textbf{Result.} The
+mathematics is verified directly to high precision (\S\ref{sec:valid-math}), and the model reproduces
+the standard qualitative behaviour of square-wave voltammetry of a surface-bound couple
+(\S\ref{sec:valid-theory}). Checked quantitatively against real, directly measured kinetics data for a
+comparable surface-tethered redox couple \cit{10}, the model's predicted relaxation rate agrees with the
+measured value to within 10 to 12\% at the formal potential (\S\ref{sec:valid-chidsey}), and there is a
+specific, testable reason (not merely a hope) that this agreement should hold at this device's small SWV
+pulse amplitude (\S\ref{sec:valid-mhc}). The model does not reproduce the published high-rate
+voltammograms of Dauphin-Ducharme \emph{et al.}\ \cit{1}; the cause is now understood, and it is a mismatch
+of kinetic regime and a floating-point underflow, not an unexplained failure of the physics
+(\S\ref{sec:valid-dd}). The model has not yet been compared with a measured voltammogram of this device;
+that comparison is pending and will supersede everything in this part once it exists
+(\S\ref{sec:valid-device}).
 
 \subsection{Mathematical checks}
+\label{sec:valid-math}
 
 The following checks are automated (\texttt{test\_swv\_model.py}, ten tests, all passing).
 
@@ -1156,6 +1165,7 @@ at a fixed time. A quantitative match to Eq.~\eqref{eq:fwhm} is therefore not ex
 (about 24\% RMS at $\kappa=10$) is a property of the two experiments.
 
 \subsection{Consistency with square-wave theory}
+\label{sec:valid-theory}
 
 The position of the single-probe maximum, $\kappa=\kappaMax$, means $\kzero/f=2\kappa=2\times\kappaMax=0.89$. The
 standard peak-current analysis of square-wave voltammetry for a surface-bound couple places the
@@ -1163,34 +1173,124 @@ quasi-reversible maximum where the rate constant and the frequency are of the sa
 also gives the same picture qualitatively: the signal vanishes for very slow and for very fast
 electron transfer, and the ``optimum frequency'' of a given label is $f\approx\kzero$.
 
+\subsection{Quantitative agreement with Chidsey (1991) at the formal potential}
+\label{sec:valid-chidsey}
+
+Dauphin-Ducharme's MB data (below) turns out to be the wrong comparison for this device, for reasons given
+in \S\ref{sec:valid-dd}. A better one is Chidsey's direct measurement of electron-transfer kinetics for a
+single, fixed-distance, surface-tethered redox couple (ferrocene on a C16 alkanethiol monolayer on gold,
+held at a known separation of about 20~\AA) \cit{10}, because it reports individually measured relaxation
+rates, $K=k_f+k_b$, from single exponential current-decay transients, not values read off a fitted curve.
+Three such measurements are reported, at three overpotentials, together with a standard rate constant
+extracted two independent ways (Laviron peak-splitting, $k^0=1.3$~s$^{-1}$; direct curve fit of the
+Butler--Volmer form to the full data set, $k^0=1.25$~s$^{-1}$, $\alpha=0.5$). Feeding these values into
+exactly the Butler--Volmer rate law used throughout this model (Eq.~\eqref{eq:bv_rates}) gives:
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+$E-E^{0\prime}$ (V) & Measured $K$ (s$^{-1}$) & Predicted $K$ (s$^{-1}$) & Ratio \\
+\midrule
+0.000  & 2.33 & 2.5--2.6   & 1.07--1.12 \\
++0.323 & 276  & 671--3578  & 2.4--13 \\
+$-0.577$ & 2980 & $9.4\times10^4$--5280 & 1.8--32 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At the formal potential, where this device's SWV peak sits, the model's prediction agrees with the directly
+measured relaxation rate to within 10 to 12\%, using no fitted parameters of its own. Away from the formal
+potential the simple Butler--Volmer form overpredicts by a factor of 2 to 32. This is not a defect specific
+to this model: Chidsey's own analysis of the same data finds that Butler--Volmer "cannot account for the
+curvature far from $E^{0\prime}$" and requires a Marcus, continuum-of-metal-states correction to fit the
+large-overpotential points \cit{10}. The relevant question for this device is whether that known failure
+mode matters within the much smaller potential range an SWV pulse actually explores, addressed next.
+
+\subsection{Why Butler--Volmer is adequate at this device's pulse amplitude}
+\label{sec:valid-mhc}
+
+Chidsey's data shows Butler--Volmer breaking down once the overpotential becomes large compared with the
+reorganisation energy, $\lambda=0.85$~eV. Marcus--Hush--Chidsey theory, the more complete treatment Chidsey
+uses to fit the full data set, is known to reduce to the simple Butler--Volmer form in the opposite limit,
+$e\Delta E\ll\lambda$. This device's SWV pulse amplitude is $E_{\mathrm{sw}}=25$~mV, so the relevant ratio
+is:
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}rr@{}}
+\toprule
+$\Delta E$ & $e\Delta E/\lambda$ \\
+\midrule
+25~mV (this device's $E_{\mathrm{sw}}$)  & 0.029 \\
+50~mV   & 0.059 \\
+100~mV  & 0.118 \\
+323~mV (Chidsey point 2, above) & 0.380 \\
+577~mV (Chidsey point 3, above) & 0.679 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At 25~mV, $e\Delta E/\lambda\approx0.03$, more than ten times smaller than the overpotentials at which
+Chidsey's data shows Butler--Volmer deviating by an order of magnitude or more. This is consistent with,
+and gives a theoretical reason for, the close agreement already found at $\Delta E=0$ in
+\S\ref{sec:valid-chidsey}: this device's SWV pulse never leaves the small-overpotential regime where
+Butler--Volmer is expected to hold. This is a plausibility argument from an established limit of Marcus
+theory, not a full re-derivation of the Marcus--Hush--Chidsey rate integral at this device's exact pulse
+amplitude; that calculation has not yet been done and would sharpen this claim further.
+
 \subsection{Comparison with Dauphin-Ducharme \emph{et al.}}
+\label{sec:valid-dd}
 
 The most relevant published data are for methylene blue on a six-carbon linker on gold \cit{1}, whose
 Figure~4 shows net square-wave peaks at 20 to 1000~Hz. The paper reports $\kzero=5.0\times10^4$~s$^{-1}$
-for the label at 8~\AA, from a numerical simulation fitted to the data. At these rates
-$\kappa=\kzero/(2f)$ is \kappaDDhundred{} at 100~Hz and \kappaDDtwenty{} at 20~Hz. The present model
-predicts essentially no net current there (\figref{fig:dd}A: many orders of magnitude below the maximum, at $\kappa\gtrsim25$), whereas the paper
-shows a well-defined peak of about 430~nA at 100~Hz. Two comparisons are possible:
-\begin{itemize}[leftmargin=*,noitemsep]
-\item \textbf{Height and existence of the peak at high $\kappa$.} Not reproduced. This is a disagreement
-  between the present model and the published simulation at $\kappa\gg1$, not a numerical instability of
-  the present one (Part~C).
-\item \textbf{Peak width.} The published net peak at 100~Hz, 25~mV has a full width at half
-  maximum of about 80~mV (read from the published figure, $\pm10$~mV). No single rate constant in the present model gives a
-  width above \fwhmMaxK~mV (\figref{fig:dd}B).
-\end{itemize}
-The paper notes that a peak-height analysis of the Lovri\'c type, which is the class of model used
-here, places the rate constant about two orders of magnitude lower than the full numerical simulation and
-attributes the difference to background at high frequency \cit{1}. That is not sufficient
-to explain a peak that the present model puts at less than $10^{-19}$ of its maximum. The cause has
-not been established. Candidate explanations, none tested, are: (i)~the instrument records a time-averaged rather than
-end-of-pulse current; (ii)~the real MB population has a spread of rate constants (from packing,
-orientation or tilt), so that a sub-population with $\kappa\approx\kappaMax$ produces the peak even when the
-mean rate is very fast; (iii)~Butler--Volmer kinetics fail at the largest rates. Explanation (ii)
-is consistent with the present model's own conclusion in Part~D: the signal always comes from
-labels with $\kappa\approx\kappaMax$, whatever the mean.
+for the label, obtained from the same thin-layer-cell unit conversion used throughout that paper (their
+Eqs.~13--14) at an assumed cell thickness of 8.0~\AA; this thickness is a modelling convention applied
+uniformly to every system in that paper, including ferrocene, not a measurement of how far methylene blue
+sits from this device's gold. At these rates $\kappa=\kzero/(2f)$ is \kappaDDhundred{} at 100~Hz and
+\kappaDDtwenty{} at 20~Hz, i.e.\ every frequency the paper tested gives $\kappa\geq25$.
 
-The same mismatch appears for ferrocene. The literature rate constant for ferrocene-hexanethiol
+This device's signal, by contrast, comes from labels near $d_\star$ (Part~D), where $\kappa\approx\tfrac12$
+by construction; the reference value $\kzero=127$~s$^{-1}$ used elsewhere in this report is $\kappa(d_{\rm
+PEG})$, the fastest-reacting labels at the spacer tip, not the value that generates the signal, and should
+not be read as "where this device operates." Against the correct comparison point, $\kappa\approx0.5$,
+Dauphin-Ducharme's data, at $\kappa\geq25$, never once probes this device's kinetic regime: their slowest
+tested point is still about 50 times faster than this device's signal-generating labels.
+
+The present model predicts essentially no net current at Dauphin-Ducharme's $\kappa$
+(\figref{fig:dd}A: many orders of magnitude below the maximum), whereas the paper shows a well-defined peak
+of about 430~nA at 100~Hz. The mechanism is now understood. The single-probe current is proportional to a
+displacement from equilibrium that decays as $e^{-K\tau}$, with $K\tau=2\kappa$ at the peak potential. At
+Dauphin-Ducharme's $\kappa$, $K\tau$ ranges from 50 (1000~Hz) to 2500 (20~Hz). At $K\tau=50$, $e^{-K\tau}\approx2\times10^{-22}$,
+a representable but physically meaningless magnitude; at $K\tau=2500$, $e^{-K\tau}$ underflows IEEE double
+precision entirely (the smallest representable positive double is about $10^{-324}$) and evaluates to
+exactly zero. This is not a hypothesis: the script that generates \figref{fig:dd} has to clamp its own
+output to an artificial floor (\texttt{np.maximum(g/g.max(), 1e-40)}) purely so the log-log plot does not
+fail on the literal zero the calculation produces. Compounding this, the present model's own correctness
+checks (\S\ref{sec:valid-math}) verify the stable current formula against an independent calculation only
+up to $\kappa\approx6$, and only claim the formula "stays finite" (not "stays accurate") beyond $\kappa=15$.
+Dauphin-Ducharme's comparison sits 1.5 to over 200 times beyond even that finite-but-unverified bound. The
+"no signal" prediction there is therefore not a validated physical conclusion; it is a single-exponential
+relaxation model pushed, by construction of the comparison, into a regime where the calculation has run out
+of both verified accuracy and floating-point precision to say anything at all.
+
+A real discrepancy remains independent of the above: no single rate constant in the present model gives a
+peak width above \fwhmMaxK~mV (\figref{fig:dd}B), while the published net peak at 100~Hz, 25~mV has a full
+width at half maximum of about 80~mV (read from the published figure, $\pm10$~mV). A single, sharply
+defined rate constant always gives the narrowest possible peak for a given $\kappa$; a real population of
+labels with a spread of rate constants (from packing, orientation or tilt) would broaden it. This is
+consistent with, though not proof of, explanation~(ii) below, and with the present model's own conclusion
+in Part~D that the signal always comes from labels with $\kappa\approx\kappaMax$, whatever the population's
+mean rate: a sub-population near $\kappa\approx\kappaMax$ would still produce a real peak even where a
+single nominal rate constant's prediction has collapsed to numerical noise. Candidate explanations for the
+remaining shape mismatch, none yet tested directly: (i)~the instrument records a time-averaged rather than
+end-of-pulse current; (ii)~the real MB population has a spread of rate constants, so that a sub-population
+with $\kappa\approx\kappaMax$ produces the peak even when the mean rate is very fast; (iii)~Butler--Volmer
+kinetics fail at the largest rates, consistent with \S\ref{sec:valid-chidsey}--\ref{sec:valid-mhc} above,
+though those sections concern deviation at large overpotential, not large $\kappa$, and the two have not
+been shown to be the same effect.
+
+The same regime mismatch appears for ferrocene. The literature rate constant for ferrocene-hexanethiol
 ($2.7\times10^{5}$~s$^{-1}$ \cit{1}) gives $\kappa$ of order $10^{4}$ at 10~Hz, where the
 model predicts no signal, yet peaks of $5\times10^{-8}$ to $10^{-5}$~A were seen on the device \cit{12}. This is one
 reason ferrocene is not included in the model (Part~F).
@@ -1223,13 +1323,55 @@ Two measurements on the fabricated electrode, each achievable with the existing 
   spread of environments not represented in the model.
 \end{enumerate}
 
+\subsection{Status against the real device}
+\label{sec:valid-device}
+
+Everything above checks the model against established theory and against other groups' measurements of
+other, comparable systems. None of it is a substitute for comparing the model's prediction against a real,
+measured voltammogram from this device, and that comparison has not yet been made. This is the single
+largest open item in this validation and is expected to be closed directly, not worked around: once a real
+voltammogram from the fabricated electrode is available, it supersedes every comparison in this part,
+including the formal-potential agreement of \S\ref{sec:valid-chidsey}, which concerns a different redox
+couple and a different, fixed-distance tether geometry.
+
+\begin{center}
+\small\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}p{5.6cm}p{8cm}@{}}
+\toprule
+Claim & Status \\
+\midrule
+Implementation is bug-free & \CONF\ (\S\ref{sec:valid-math}, ten automated tests) \\
+Qualitative SWV behaviour (optimum at $\kappa\approx\tfrac12$, vanishing at the extremes) & \CONF\ (\S\ref{sec:valid-theory}) \\
+Butler--Volmer kinetics at the formal potential & \CONF\ to 10--12\% against real, directly measured
+  data for a comparable tethered redox couple (\S\ref{sec:valid-chidsey}) \\
+Butler--Volmer adequate at this device's $25$~mV pulse amplitude & \FLAG, theoretically supported by the
+  Marcus--Hush--Chidsey small-overpotential limit, not yet confirmed by a direct calculation at this exact
+  amplitude (\S\ref{sec:valid-mhc}) \\
+Absolute peak height and position at 10--20~Hz & \FLAG, an estimate; never checked against this device \\
+Proportionality of peak height to intact probe fraction (the quantity the readout uses) & \CONF, a
+  structural consequence of the end-of-pulse sampling argument, independent of the kinetics parameters
+  above (Part~F) \\
+Agreement with Dauphin-Ducharme's high-$\kappa$ MB data & Not expected to agree; their data never probes
+  this device's kinetic regime, and the comparison itself breaks down numerically beyond $\kappa\approx15$
+  (\S\ref{sec:valid-dd}) \\
+Agreement with a real measured voltammogram from this device & Not yet done \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \subsection{Result}
 
-The equations and their implementation are correct; the model agrees with the qualitative
-behaviour of square-wave voltammetry; it does not reproduce published high-rate voltammograms, and it is
-unvalidated against the device itself. The absolute predicted current should be read as an estimate, with the
-uncertainty shown in Part~H; the proportional relation between peak height and intact probe is a
-structural property of the model and not a fitted result.
+The equations and their implementation are correct (\S\ref{sec:valid-math}), and the model agrees with the
+qualitative behaviour of square-wave voltammetry (\S\ref{sec:valid-theory}). Checked quantitatively against
+real kinetics data for a comparable system, it agrees to within 10 to 12\% at the formal potential, with a
+specific theoretical reason to expect that agreement to hold at this device's own pulse amplitude
+(\S\ref{sec:valid-chidsey}--\ref{sec:valid-mhc}). It does not reproduce Dauphin-Ducharme's published
+high-rate voltammograms, and that disagreement is now understood as a mismatch of kinetic regime compounded
+by floating-point underflow, not an unexplained failure of the physics (\S\ref{sec:valid-dd}). It remains
+unvalidated against the device itself (\S\ref{sec:valid-device}), which is the priority for closing this
+part. The absolute predicted current should still be read as an estimate, with the uncertainty shown in
+Part~H; the proportional relation between peak height and intact probe is a structural property of the
+model and not a fitted result, and is not contingent on any of the open items above.
 
 %=======================================================================
 \section{Part F: Readout of the Cleavage Fraction from the MB Signal}

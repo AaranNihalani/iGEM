@@ -75,22 +75,53 @@ def fig_structures():
 
 
 def fig_pipeline():
-    fig, ax = plt.subplots(figsize=(7.6, 3.3)); ax.axis("off"); ax.set_xlim(0, 100); ax.set_ylim(0, 44)
-    def box(x, y, w, h, title, sub, fc):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.35,rounding_size=1.2", fc=fc, ec="#1c2430", lw=0.9))
-        ax.text(x + w / 2, y + h - 2.6, title, ha="center", va="top", fontsize=7.6, fontweight="bold", color=INK)
-        ax.text(x + w / 2, y + h - 6.2, sub, ha="center", va="top", fontsize=6.2, color="#2b3646", linespacing=1.25)
-    def arrow(x1, y1, x2, y2):
-        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=9, lw=1.1, color="#1c2430"))
-    box(1, 28, 20, 14, "Sources", "MEROPS\nEckhard 2016 (PICS)\nYang 2015 (elastin)", "#e8eef7")
-    box(26, 28, 20, 14, "Positives", "P4-P4' windows\nper protease\n(7 trainable)", "#dde9f5")
-    box(26, 6, 20, 16, "Negatives", "half: other proteases'\npositives (equal shares)\nhalf: Swiss-Prot 8-mers", "#f5e6d8")
-    box(51, 17, 21, 20, "Model per protease", "VHSE8 (64 features)\nlogistic regression\nC by inner CV\n+ PSSM (BLOSUM62\npseudocounts)", "#dcefe3")
-    box(77, 28, 21, 14, "Background nulls", "100,000 random 8-mers\n→ score percentiles\n(comparable across models)", "#efe6f5")
-    box(77, 6, 21, 18, "Panel specificity", "consensus = harmonic\nmean of LR and PSSM\npercentiles\nmargin vs strongest\ncompetitor", "#f7ecd0")
-    arrow(21.5, 35, 25.5, 35); arrow(36, 27.5, 36, 22.7); arrow(46.5, 35, 51, 30); arrow(46.5, 14, 51, 22); arrow(72.5, 30, 76.5, 34); arrow(72.5, 22, 76.5, 17); arrow(87.5, 27.5, 87.5, 24.5)
-    ax.text(50, 1.2, "Evaluation: similarity-clustered 5-fold CV · nested regularisation · cluster-bootstrap CIs · external validation on measured kinetics (Kridel 2001)",
-            ha="center", fontsize=6.6, color=INK, style="italic")
+    """Six-stage pipeline schematic, source data to panel selectivity score.
+
+    Design: a genuine editorial diagram rather than a default flowchart-tool render --
+    numbered stages (matching the report's own part-numbering convention), restrained
+    ink-tinted fills instead of saturated pastels, one accent colour reserved for the
+    two terminal outputs, and hand-set arrow routing rather than auto-layout connectors.
+    """
+    ACCENT = COL["MMP9"]
+    TINT = "#eef1f4"
+    fig, ax = plt.subplots(figsize=(7.8, 3.5)); ax.axis("off"); ax.set_xlim(0, 100); ax.set_ylim(0, 46)
+
+    def box(x, y, w, h, n, title, sub, fc=TINT, ec=INK, accent=False):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.6",
+                                     fc=fc, ec=ec, lw=1.1 if accent else 0.8, zorder=2))
+        r = 1.55
+        ax.add_patch(plt.Circle((x + r + 0.6, y + h - r - 0.6), r, fc=ACCENT if accent else INK, ec="none", zorder=3))
+        ax.text(x + r + 0.6, y + h - r - 0.6, str(n), ha="center", va="center", fontsize=7.2,
+                fontweight="bold", color="white", zorder=4)
+        ax.text(x + w / 2 + 1.1, y + h - 2.7, title, ha="center", va="top", fontsize=8.1,
+                fontweight="bold", color=INK, zorder=4)
+        ax.text(x + w / 2, y + h - 6.4, sub, ha="center", va="top", fontsize=6.4, color=MUTE,
+                linespacing=1.45, zorder=4)
+
+    def arrow(x1, y1, x2, y2, accent=False):
+        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=8,
+                                      lw=1.0, color=ACCENT if accent else MUTE,
+                                      connectionstyle="arc3,rad=0.0", zorder=1))
+
+    box(1, 29, 20, 15, 1, "Sources", "MEROPS\nEckhard 2016 (PICS)\nYang 2015 (elastin)")
+    box(27, 29, 20, 15, 2, "Positives", "P4-P4′ windows per\nprotease (7 trainable)")
+    box(27, 6, 20, 17, 3, "Negatives", "half: other proteases’\npositives, equal shares\nhalf: Swiss-Prot 8-mers")
+    box(53, 17.5, 21, 21, 4, "Model per protease", "VHSE8 (64 features)\nlogistic regression,\nC by inner CV\n+ PSSM (BLOSUM62\npseudocounts)")
+    box(79, 29, 20, 15, 5, "Background nulls", "100,000 random 8-mers\n→ score percentiles,\ncomparable across models", fc="#eaf5ef", accent=True)
+    box(79, 6, 20, 19, 6, "Panel specificity", "consensus: harmonic mean\nof LR and PSSM percentiles\nmargin vs strongest\ncompetitor", fc="#eaf5ef", accent=True)
+
+    arrow(21.3, 36.5, 26.7, 36.5)
+    arrow(37, 29, 37, 23)
+    arrow(47.3, 36.5, 52.7, 32)
+    arrow(47.3, 14.5, 52.7, 22)
+    arrow(74.3, 32, 78.7, 36.5, accent=True)
+    arrow(74.3, 22, 78.7, 15.5, accent=True)
+    arrow(89, 29, 89, 25.5, accent=True)
+
+    ax.plot([1, 99], [1.9, 1.9], color=GRID, lw=1.0, zorder=1)
+    ax.text(50, 0.2, "Evaluation: similarity-clustered 5-fold CV · nested regularisation · cluster-bootstrap CIs · "
+                      "external validation on measured kinetics (Kridel 2001)",
+            ha="center", fontsize=6.8, color=MUTE, style="italic")
     save(fig, "F01_pipeline")
 
 

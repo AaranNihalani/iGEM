@@ -87,21 +87,32 @@ def fig_kridel_consensus():
 
 
 def fig_kridel_validation():
+    """External validation scatter. No in-plot stats box (redundant with Table 4 and it
+    previously hid the C15 point); crowded labels (A7/A19/B1 in both panels, A11/A6 in
+    lr_logit) get a small offset plus a thin leader line back to their true point, so a
+    displaced label is never mistaken for sitting next to the wrong marker."""
     df = pd.read_csv(ROOT / "results" / "validation" / "kridel_scores.csv")
-    sp = pd.read_csv(ROOT / "results" / "validation" / "kridel_spearman.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.4))
-    for ax, col, title, key in ((axes[0], "lr_logit", "Logistic regression (partial logit)", "lr_logit"), (axes[1], "pssm", "PSSM (partial score)", "pssm")):
+    # per-panel (dx, dy) label offsets in points; only peptides crowded enough to need
+    # displacement are listed, everything else uses the small default.
+    OFF_LR = {"A7": (-28, 10), "A19": (6, -13), "B1": (6, 12), "A11": (6, 10), "A6": (-26, -12)}
+    OFF_PSSM = {"A7": (-28, 10), "A19": (6, -13), "B1": (6, 12)}
+    LEADER = {"A7", "A19", "B1", "A11", "A6"}
+    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.6))
+    for ax, col, title, offsets in (
+        (axes[0], "lr_logit", "Logistic regression (partial logit)", OFF_LR),
+        (axes[1], "pssm", "PSSM (partial score)", OFF_PSSM),
+    ):
         m = df[df.status == "measured"]; n = df[df.status != "measured"]
         ax.scatter(m[col], np.log10(m.kcat_km), s=42, color=COL["MMP9"], zorder=3)
         for r in m.itertuples():
-            ax.annotate(r.peptide, (getattr(r, col), np.log10(r.kcat_km)), fontsize=6.6, xytext=(4, 3), textcoords="offset points", color=INK)
+            x, y = getattr(r, col), np.log10(r.kcat_km)
+            dx, dy = offsets.get(r.peptide, (4, 3))
+            ax.annotate(r.peptide, (x, y), fontsize=6.6, xytext=(dx, dy), textcoords="offset points", color=INK,
+                        arrowprops=dict(arrowstyle="-", color=MUTE, lw=0.6, shrinkA=1, shrinkB=1) if r.peptide in LEADER else None)
         ax.scatter(n[col], [np.log10(1000)] * len(n), s=42, facecolors="white", edgecolors=COL["MMP9"], zorder=3)
         for r in n.itertuples():
             ax.annotate(f"{r.peptide}\n(not detected)", (getattr(r, col), np.log10(1000)), fontsize=6.3, xytext=(4, -14), textcoords="offset points", color=MUTE)
-        a = sp[(sp.score == key) & (sp.set == "n=11 measured")].iloc[0]; b = sp[(sp.score == key) & (sp.set.str.startswith("n=12"))].iloc[0]
         ax.set_title(title, fontsize=9)
-        ax.text(0.03, 0.96, f"n=11: ρ = {a.spearman:.2f}  (95% CI {a.ci_lo:.2f} to {a.ci_hi:.2f}, p = {a.perm_p:.3f})\nn=12 (C11 lowest): ρ = {b.spearman:.2f}  (p = {b.perm_p:.3f})",
-                transform=ax.transAxes, va="top", fontsize=6.9, bbox=dict(fc="white", ec=GRID, boxstyle="round,pad=0.3"))
         ax.set_xlabel("model score"); ax.set_ylabel(r"measured $\log_{10}$ $k_{cat}/K_m$ (MMP-9)")
     panel_letter(axes[0], "a", -0.16); panel_letter(axes[1], "b", -0.16)
     fig.tight_layout(); save(fig, "F15_kridel_validation")

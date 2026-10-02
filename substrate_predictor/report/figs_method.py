@@ -2,6 +2,7 @@
 from sklearn.metrics import precision_recall_curve, roc_curve, roc_auc_score, average_precision_score
 
 from fig_common import *
+from spred.panel import Panel
 
 MET = ROOT / "results" / "methodology"
 MODEL_ORDER = ["prior", "composition-LR", "one-hot LR", "VHSE LR", "PSSM", "one-hot GBM", "VHSE GBM"]
@@ -152,5 +153,46 @@ def fig_selectivity_matrix():
     save(fig, "F11_selectivity_matrix")
 
 
+def fig_consensus_margin():
+    """Two real windows worked through the percentile -> consensus -> margin pipeline
+    (Eqs. 9-11 of the writeup): a confirmed MMP-9 substrate scored as a full 8-mer, and a
+    gapped 7-residue candidate sensor core, each against the wound panel."""
+    panel = Panel(["MMP2", "MMP8", "MMP9", "NE", "LASB"])
+    target = "MMP9"
+
+    full = panel.score(["RPTDKPLR"])
+    gapped = panel.score_gapped(["-PRSLSGL"])
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.4))
+    cases = [
+        (axes[0], full, "A real MMP-9 substrate\nRPTDKPLR"),
+        (axes[1], gapped, "A candidate sensor core\n-PRSLSGL"),
+    ]
+    for ax, s, title in cases:
+        row = s.iloc[0]
+        competitors = [m for m in panel.members if m != target]
+        strongest = max(competitors, key=lambda m: row[f"u_{m}"])
+        margin = row[f"u_{target}"] - row[f"u_{strongest}"]
+        labels = [r"$u^{\mathrm{LR}}$", r"$u^{\mathrm{PSSM}}$", "consensus\n(target)", f"consensus\n({SHORT[strongest]})"]
+        values = [row[f"pct_lr_{target}"], row[f"pct_pssm_{target}"], row[f"u_{target}"], row[f"u_{strongest}"]]
+        colors = [COL[target], COL[target], COL[target], COL[strongest]]
+        alphas = [0.55, 0.55, 1.0, 1.0]
+        bars = ax.bar(range(4), values, color=colors, edgecolor="none", width=0.64)
+        for b, a in zip(bars, alphas):
+            b.set_alpha(a)
+        for i, v in enumerate(values):
+            ax.text(i, v + 0.025, f"{v:.4f}", ha="center", fontsize=7.6, color=INK)
+        y = max(values[2], values[3]) + 0.14
+        ax.annotate("", xy=(2, y), xytext=(3, y), arrowprops=dict(arrowstyle="<->", color=INK, lw=1.1))
+        ax.text(2.5, y + 0.03, f"margin = {margin:+.4f}", ha="center", fontsize=8, fontweight="bold", color=INK)
+        ax.set_xticks(range(4)); ax.set_xticklabels(labels, fontsize=8)
+        ax.set_ylim(0, 1.32); ax.set_title(title, fontsize=9)
+        if ax is axes[0]:
+            ax.set_ylabel("percentile against random background")
+        ax.spines[["top", "right"]].set_visible(False)
+    fig.suptitle("From two raw scores to a specificity margin", fontsize=10, y=1.02)
+    fig.tight_layout(); save(fig, "figW1_consensus_margin")
+
+
 if __name__ == "__main__":
-    fig_model_comparison(); fig_learning_curves(); fig_negative_design(); fig_nested_and_leakage(); fig_roc_pr(); fig_calibration(); fig_selectivity_matrix()
+    fig_model_comparison(); fig_learning_curves(); fig_negative_design(); fig_nested_and_leakage(); fig_roc_pr(); fig_calibration(); fig_selectivity_matrix(); fig_consensus_margin()
