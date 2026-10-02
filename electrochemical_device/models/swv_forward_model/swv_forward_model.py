@@ -527,7 +527,7 @@ F_SWV    = 10.0    # Hz (confirmed range 10-20 Hz; 10 Hz used as default)
 # difference, small enough not to change any qualitative conclusion).
 # Both CONFIRMED (internal electrode characterisation notes, Sept 2026).
 E_SW     = 0.025   # V  (25 mV amplitude; confirmed, Baker 2006 [6] + field confirmation)
-GAMMA_0  = 3.0e-12 # mol cm-2 (Lubin 2010, papers/layer_11/)
+GAMMA_0  = 3.0e-12 # mol cm-2 (Adjemian 2010, papers/layer_09/ and layer_11/)
 A_ELEC   = 0.017   # cm2 (1.7 mm^2 geometric area; confirmed)
 
 # ─── M5: Fc REFERENCE PEAK ───────────────────────────────────────────────────
