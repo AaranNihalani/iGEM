@@ -77,51 +77,114 @@ def fig_structures():
 def fig_pipeline():
     """Six-stage pipeline schematic, source data to panel selectivity score.
 
-    Design: a genuine editorial diagram rather than a default flowchart-tool render --
-    numbered stages (matching the report's own part-numbering convention), restrained
-    ink-tinted fills instead of saturated pastels, one accent colour reserved for the
-    two terminal outputs, and hand-set arrow routing rather than auto-layout connectors.
+    Two-pass, measured layout, the standard way to avoid overlap in a hand-built
+    diagram: pass 1 renders each box's title and body text to a throwaway, invisible
+    text artist and reads back its *actual* extent from the renderer, so box size is
+    never guessed; pass 2 lays out columns by the measured width of the widest box in
+    each column (not a fixed grid), so boxes can never collide with their neighbours
+    either. Arrows are then drawn edge-to-edge between the real, final box geometries.
     """
     ACCENT = COL["MMP9"]
     TINT = "#eef1f4"
-    fig, ax = plt.subplots(figsize=(7.8, 3.5)); ax.axis("off"); ax.set_xlim(0, 100); ax.set_ylim(0, 46)
+    ACCENT_TINT = "#eaf5ef"
+    TITLE_FS, BODY_FS, PAD, LINE_GAP, TITLE_GAP = 8.6, 6.6, 4.2, 2.0, 2.0
+    COL_GAP, ROW_GAP = 9.0, 7.5
 
-    def box(x, y, w, h, n, title, sub, fc=TINT, ec=INK, accent=False):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=1.6",
-                                     fc=fc, ec=ec, lw=1.1 if accent else 0.8, zorder=2))
-        r = 1.55
-        ax.add_patch(plt.Circle((x + r + 0.6, y + h - r - 0.6), r, fc=ACCENT if accent else INK, ec="none", zorder=3))
-        ax.text(x + r + 0.6, y + h - r - 0.6, str(n), ha="center", va="center", fontsize=7.2,
-                fontweight="bold", color="white", zorder=4)
-        ax.text(x + w / 2 + 1.1, y + h - 2.7, title, ha="center", va="top", fontsize=8.1,
-                fontweight="bold", color=INK, zorder=4)
-        ax.text(x + w / 2, y + h - 6.4, sub, ha="center", va="top", fontsize=6.4, color=MUTE,
-                linespacing=1.45, zorder=4)
+    fig = plt.figure(figsize=(9.2, 4.0))
+    ax = fig.add_axes((0, 0, 1, 1))  # axes fill the figure exactly: 1 data unit == 1 pt, no margin to account for
+    ax.axis("off")
+    fig.canvas.draw()  # realise a renderer so text extents are measurable
+    renderer = fig.canvas.get_renderer()
 
-    def arrow(x1, y1, x2, y2, accent=False):
-        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=8,
-                                      lw=1.0, color=ACCENT if accent else MUTE,
-                                      connectionstyle="arc3,rad=0.0", zorder=1))
+    def text_size(s, fontsize, weight="normal"):
+        """Rendered (width, height) of a string in *points*, independent of axes limits."""
+        t = ax.text(0, 0, s, fontsize=fontsize, fontweight=weight, alpha=0)
+        bbox = t.get_window_extent(renderer=renderer)
+        t.remove()
+        return bbox.width * 72 / fig.dpi, bbox.height * 72 / fig.dpi
 
-    box(1, 29, 20, 15, 1, "Sources", "MEROPS\nEckhard 2016 (PICS)\nYang 2015 (elastin)")
-    box(27, 29, 20, 15, 2, "Positives", "P4-P4′ windows per\nprotease (7 trainable)")
-    box(27, 6, 20, 17, 3, "Negatives", "half: other proteases’\npositives, equal shares\nhalf: Swiss-Prot 8-mers")
-    box(53, 17.5, 21, 21, 4, "Model per protease", "VHSE8 (64 features)\nlogistic regression,\nC by inner CV\n+ PSSM (BLOSUM62\npseudocounts)")
-    box(79, 29, 20, 15, 5, "Background nulls", "100,000 random 8-mers\n→ score percentiles,\ncomparable across models", fc="#eaf5ef", accent=True)
-    box(79, 6, 20, 19, 6, "Panel specificity", "consensus: harmonic mean\nof LR and PSSM percentiles\nmargin vs strongest\ncompetitor", fc="#eaf5ef", accent=True)
+    def measure(n, title, lines, accent=False):
+        """Compute a box's size (in points) from its own content; placement comes later."""
+        tw, th = text_size(title, TITLE_FS, "bold")
+        line_sizes = [text_size(ln, BODY_FS) for ln in lines]
+        body_w = max((w for w, _ in line_sizes), default=0)
+        body_h = sum(h for _, h in line_sizes) + LINE_GAP * max(0, len(lines) - 1)
+        badge_d = th + 1.0
+        w = max(tw + badge_d + 5.0, body_w) + 2 * PAD
+        h = PAD + th + TITLE_GAP + body_h + PAD
+        return dict(n=n, title=title, lines=lines, line_sizes=line_sizes, w=w, h=h, badge_d=badge_d, accent=accent)
 
-    arrow(21.3, 36.5, 26.7, 36.5)
-    arrow(37, 29, 37, 23)
-    arrow(47.3, 36.5, 52.7, 32)
-    arrow(47.3, 14.5, 52.7, 22)
-    arrow(74.3, 32, 78.7, 36.5, accent=True)
-    arrow(74.3, 22, 78.7, 15.5, accent=True)
-    arrow(89, 29, 89, 25.5, accent=True)
+    def draw(node, x, y):
+        """Draw a measured node with its top-left corner at (x, y); return its geometry."""
+        w, h, badge_d = node["w"], node["h"], node["badge_d"]
+        fc = ACCENT_TINT if node["accent"] else TINT
+        ax.add_patch(FancyBboxPatch((x, y - h), w, h, boxstyle="round,pad=0,rounding_size=1.6",
+                                     fc=fc, ec=INK, lw=1.1 if node["accent"] else 0.8, zorder=2))
+        r = badge_d / 2
+        bcx, bcy = x + PAD + r, y - PAD - r
+        ax.add_patch(plt.Circle((bcx, bcy), r, fc=ACCENT if node["accent"] else INK, ec="none", zorder=3))
+        ax.text(bcx, bcy, str(node["n"]), ha="center", va="center", fontsize=7.0, fontweight="bold", color="white", zorder=4)
+        ax.text(x + PAD + badge_d + (w - 2 * PAD - badge_d) / 2, y - PAD, node["title"],
+                ha="center", va="top", fontsize=TITLE_FS, fontweight="bold", color=INK, zorder=4)
+        _, th = text_size(node["title"], TITLE_FS, "bold")
+        ty = y - PAD - th - TITLE_GAP
+        for ln, (_, lh) in zip(node["lines"], node["line_sizes"]):
+            ax.text(x + w / 2, ty, ln, ha="center", va="top", fontsize=BODY_FS, color=MUTE, zorder=4)
+            ty -= lh + LINE_GAP
+        return dict(x=x, y=y - h, w=w, h=h, cx=x + w / 2, cy=y - h / 2)
 
-    ax.plot([1, 99], [1.9, 1.9], color=GRID, lw=1.0, zorder=1)
-    ax.text(50, 0.2, "Evaluation: similarity-clustered 5-fold CV · nested regularisation · cluster-bootstrap CIs · "
-                      "external validation on measured kinetics (Kridel 2001)",
+    def arrow(a, b, accent=False):
+        acx, acy, bcx, bcy = a["cx"], a["cy"], b["cx"], b["cy"]
+        if abs(bcx - acx) > abs(acy - bcy):
+            p1 = (a["x"] + a["w"] if bcx > acx else a["x"], acy)
+            p2 = (b["x"] if bcx > acx else b["x"] + b["w"], bcy)
+        else:
+            p1 = (acx, a["y"] if bcy < acy else a["y"] + a["h"])
+            p2 = (bcx, b["y"] + b["h"] if bcy < acy else b["y"])
+        ax.add_patch(FancyArrowPatch(p1, p2, arrowstyle="-|>", mutation_scale=8, lw=1.0,
+                                      color=ACCENT if accent else MUTE, shrinkA=2, shrinkB=2, zorder=1))
+
+    # pass 1: measure every box from its own content
+    m1 = measure(1, "Sources", ["MEROPS", "Eckhard 2016 (PICS)", "Yang 2015 (elastin)"])
+    m2 = measure(2, "Positives", ["P4-P4′ windows per", "protease (7 trainable)"])
+    m3 = measure(3, "Negatives", ["half: other proteases’", "positives, equal shares", "half: Swiss-Prot 8-mers"])
+    m4 = measure(4, "Model per protease",
+                 ["VHSE8 (64 features)", "logistic regression,", "C by inner CV", "+ PSSM (BLOSUM62", "pseudocounts)"])
+    m5 = measure(5, "Background nulls", ["100,000 random 8-mers", "→ score percentiles,", "comparable across models"], accent=True)
+    m6 = measure(6, "Panel specificity",
+                 ["consensus: harmonic mean", "of LR and PSSM percentiles", "margin vs strongest", "competitor"], accent=True)
+
+    # pass 2: lay out by column, each column's width set by its widest box
+    columns = [[m1], [m2, m3], [m4], [m5, m6]]
+    col_w = [max(b["w"] for b in col) for col in columns]
+    stack_h = [sum(b["h"] for b in col) + ROW_GAP * (len(col) - 1) for col in columns]
+    top = max(stack_h)
+    x = 1.0
+    geo = {}
+    for col, w, sh in zip(columns, col_w, stack_h):
+        y = top - (top - sh) / 2  # vertically centre this column's stack in the tallest column
+        for b in col:
+            cx = x + w / 2
+            geo[b["n"]] = draw(b, cx - b["w"] / 2, y)
+            y -= b["h"] + ROW_GAP
+        x += w + COL_GAP
+
+    arrow(geo[1], geo[2]); arrow(geo[2], geo[3])
+    arrow(geo[2], geo[4]); arrow(geo[3], geo[4])
+    arrow(geo[4], geo[5], accent=True); arrow(geo[4], geo[6], accent=True)
+    arrow(geo[5], geo[6], accent=True)
+
+    total_w = x - COL_GAP + 1.0
+    foot_h = 13.0
+    total_h = top + foot_h
+    ax.set_xlim(0, total_w)
+    ax.set_ylim(-foot_h, top)
+    ax.plot([1, total_w - 1], [-foot_h * 0.45, -foot_h * 0.45], color=GRID, lw=1.0, zorder=1)
+    ax.text(total_w / 2, -foot_h * 0.72, "Evaluation: similarity-clustered 5-fold CV · nested regularisation · "
+                                          "cluster-bootstrap CIs · external validation on measured kinetics (Kridel 2001)",
             ha="center", fontsize=6.8, color=MUTE, style="italic")
+    # 1 data unit == 1 pt: figure size in inches must equal the data extent in points / 72
+    fig.set_size_inches(total_w / 72, total_h / 72)
     save(fig, "F01_pipeline")
 
 
