@@ -65,7 +65,7 @@ The model outputs, for a given peptide, a cleavage score for each protease in th
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{F01_pipeline.pdf}
+\includegraphics[width=\textwidth]{wiki_F01.png}
 \caption{The pipeline from source data to a panel selectivity score: confirmed cleavage windows and constructed negatives train the logistic regression and PSSM for each protease, whose percentile scores combine into the consensus and specificity margin for a candidate peptide.}
 \label{fig:pipeline}
 \end{figure}
@@ -240,7 +240,7 @@ Near $0$, at least one other competitor scores it around as strongly as the targ
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{figW1_consensus_margin.pdf}
+\includegraphics[width=\textwidth]{wiki_figW1.png}
 \caption{Two real windows, worked through Equations~\ref{eq:pct}--\ref{eq:margin}. \textbf{Left:} a confirmed MMP-9 substrate, RPTDKPLR: its two percentiles combine into a consensus of 0.69 for the target, well above its strongest competitor's 0.25, giving a large positive margin. \textbf{Right:} candidate sensor core -PRSLSGL: the target and its strongest competitor (MMP-2) score almost identically, so the margin is close to zero, i.e. not selective.}
 \label{fig:margin_example}
 \end{figure}
@@ -346,7 +346,7 @@ We compute confidence intervals from a cluster bootstrap, resampling clusters wi
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{F09_roc_pr.pdf}
+\includegraphics[width=\textwidth]{wiki_F09.png}
 \caption{Out-of-fold performance of the consensus score, for all seven proteases. \textbf{A:} ROC curves (true positive rate against false positive rate), with each protease's detection AUROC in the legend. \textbf{B:} precision-recall curves, against a 0.25 prior (dotted line). \textbf{C:} the distribution of held-out positives' consensus percentiles against the background null - a model with no detection ability would look uniform on $[0,1]$, matching the null it is compared against.}
 \label{fig:roc_pr}
 \end{figure}
@@ -361,7 +361,7 @@ The second is a composition only control. We check how well a model given only t
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{F05_model_comparison.pdf}
+\includegraphics[width=\textwidth]{wiki_F05.png}
 \caption{\textbf{A:} cluster-aware CV AUROC (95\% cluster-bootstrap interval) for six models on identical folds per protease: composition-only, one-hot LR, VHSE LR, PSSM, one-hot GBM and VHSE GBM. \textbf{B:} paired differences against VHSE LR for the four alternative models, per protease; a filled marker means the 95\% interval excludes 0, i.e. a statistically resolvable difference.}
 \label{fig:model_comparison}
 \end{figure}
@@ -422,7 +422,7 @@ Among the four MMPs, pairwise discrimination is weak, barely better than chance 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{F16_score_distributions.pdf}
+\includegraphics[width=\textwidth]{wiki_F16.png}
 \caption{Out-of-fold consensus percentiles of held-out positives (``target'') compared with each competitor's confirmed windows and with random background windows. \textbf{A:} the MMP-9 model - the target distribution overlaps heavily with MMP-2 and MMP-8. \textbf{B:} the NE model, for comparison - the target distribution is well separated from every competitor.}
 \label{fig:score_dist}
 \end{figure}
@@ -431,7 +431,7 @@ Exact window overlap between proteases is small, with a maximum Jaccard index of
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{F04_protease_similarity.pdf}
+\includegraphics[width=\textwidth]{wiki_F04.png}
 \caption{\textbf{A:} Jaccard index of exact shared positive windows between each pair of proteases - low throughout. \textbf{B:} Pearson correlation of the $8\times20$ PSSM log-odds vectors between each pair - high among the four MMPs, low between NE and the MMPs, showing that the overlap is in learned preference, not in shared training windows.}
 \label{fig:similarity}
 \end{figure}
@@ -465,7 +465,7 @@ PSSM & $n=12$ (C11 ranked lowest) & 0.75 & [0.18, 0.93] & 0.006 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{F15_kridel_validation.pdf}
+\includegraphics[width=\textwidth]{wiki_F15.png}
 \caption{Model score against measured MMP-9 $\log_{10}(\kcat/\Km)$, for the logistic regression (left) and the PSSM (right). Open marker: C11, no activity detected, plotted at the floor of the axis.}
 \label{fig:kridel_val}
 \end{figure}

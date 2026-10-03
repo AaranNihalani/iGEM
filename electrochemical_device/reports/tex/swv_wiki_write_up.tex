@@ -35,10 +35,6 @@
 
 % ---- macros -----------------------------------------------------------
 \newcommand{\cit}[1]{[#1]}
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\bm}[1]{\boldsymbol{#1}}
-\newcommand{\kcat}{k_{\mathrm{cat}}}
-\newcommand{\Km}{K_m}
 \newcommand{\nm}{\,\mathrm{nm}}
 \newcommand{\dpeg}{d_{\mathrm{PEG}}}
 \newcommand{\Gtot}{\Gamma_{\mathrm{tot}}}
@@ -47,10 +43,12 @@
 \newcommand{\Geq}{\Gamma_{\mathrm{eq}}}
 \newcommand{\kref}{k_{\mathrm{ref}}}
 \newcommand{\keff}{k_{\mathrm{eff}}}
+\newcommand{\kcat}{k_{\mathrm{cat}}}
+\newcommand{\Km}{K_m}
 \newcommand{\MMP}{[\text{MMP-9}]}
 \newcommand{\avg}[1]{\left\langle #1\right\rangle}
+\newcommand{\dropdown}{\par\medskip}
 \newenvironment{assump}{\small}{\smallskip}
-
 
 \begin{document}
 
@@ -61,46 +59,40 @@
 \vspace{0.4em}\hrule\vspace{0.7em}
 
 %=======================================================================
-\section{Overview}
-\label{sec:overview}
+\section*{Overview}
 
 Our sensor measures MMP-9, an enzyme found at much higher levels in chronic wounds (around 30 nM) than healing wounds (around 6 nM)~\cit{1}. The sensor is a small gold electrode coated with peptide probes that MMP-9 recognises and cuts. Each probe carries a methylene blue (MB) label, which exchanges electrons with the electrode to produce a current. When MMP-9 cuts a probe, that probe's label can no longer exchange electrons, so the overall current drops. We can measure the remaining current with square-wave voltammetry (SWV), which gives a single peak whose height reflects how many labels are still attached.
 
 Our model predicts this peak for any MMP-9 concentration and incubation time, building it up in six connected steps. It starts by working out how many probes sit on the electrode surface and where each MB label sits relative to the gold. It then calculates the signal produced by a single probe and adds up every probe to give the signal from the whole electrode. Finally, it shows how to use the change in peak height from the SWV to find the fraction of probes cut, and calculates how fast MMP-9 cuts them. This links the MMP-9 level in the wound to the signal we measure.
 
 The model shows that the peak height is exactly proportional to the number of intact probes. Scanning each electrode before and after incubation therefore gives the fraction of probes cut, $F_k$:
-\begin{equation}
+\[
 F_k = 1 - \frac{\Delta I(T)}{\Delta I(0)}
-\label{eq:fk_headline}
-\end{equation}
+\]
 where $\Delta I(0)$ and $\Delta I(T)$ are the peak heights before and after incubation. After 30 minutes, the model predicts that MMP-9 in a healing wound cuts about 14\% of the probes, while in a chronic wound, MMP-9 cuts around 52\%. This is a large enough difference for the sensor to tell the two apart.
 
 %=======================================================================
 \section{The Electrode Surface}
-\label{sec:surface}
 
 We first need to know how many probes are on the gold and how far apart they are from one another. The number of probes per unit area is the \emph{coverage}, $\Gtot = 3\times10^{-12}\,\mathrm{mol\,cm^{-2}}$~\cit{2}.
 
-We cannot yet measure the coverage on our own electrodes, so we use an estimate within the range reported by Adj\'emian et al.\ for redox-labelled peptide layers on gold that are cut by proteases~\cit{2}. This is a very similar system to ours, which is why we chose it. The exact coverage does not affect the fraction of probes we read out in Section~\ref{sec:readout}, because each electrode is compared only with itself; it only changes the absolute size of the current.
+We cannot yet measure the coverage on our own electrodes, so we use an estimate within the range reported by Adjemian et al.\ for redox-labelled peptide layers on gold that are cut by proteases~\cit{2}. This is a very similar system to ours, which is why we chose it. The exact coverage does not affect the fraction of probes we read out in Section~\ref{sec:readout}, because each electrode is compared only with itself; it only changes the absolute size of the current.
 
-\subsection{Probes per electrode}
-Multiplying the coverage by Avogadro's number $N_A$ and the electrode area, $A = 0.017\,\mathrm{cm^2}$ (our device), which is the $1.7\,\mathrm{mm^2}$ gold working electrode on our sensor, gives the number of probes:
-\begin{equation}
+\subsection*{Probes per electrode}
+Multiplying the coverage by Avogadro's number $N_A$ and the electrode area, $A = 0.017\,\mathrm{cm^2}$, which is the $1.7\,\mathrm{mm^2}$ gold working electrode on our sensor, gives the number of probes:
+\[
 N = \Gtot N_A A = (3\times10^{-12})\cdot(6.02\times10^{23})\cdot(0.017) = 3.1\times10^{10}.
-\label{eq:n_probes}
-\end{equation}
+\]
 
-\subsection{Spacing between probes}
+\subsection*{Spacing between probes}
 Each probe has an area $a$ on average, where the area is equal to the reciprocal of the number of probes per unit area:
-\begin{equation}
+\[
 a = \frac{1}{\Gtot N_A} = 55\,\mathrm{nm^2} \quad (\text{using } 1\,\mathrm{cm^2} = 10^{14}\,\mathrm{nm^2}).
-\label{eq:probe_area}
-\end{equation}
+\]
 We model the probes as being on a square grid, therefore the distance separating each probe, $s$, would be the square root of this area:
-\begin{equation}
+\[
 s = \sqrt{a} = 7.4\nm.
-\label{eq:probe_spacing}
-\end{equation}
+\]
 
 \begin{figure}[H]
 \centering
@@ -109,10 +101,10 @@ s = \sqrt{a} = 7.4\nm.
 \label{fig:probe}
 \end{figure}
 
-\subsection{Ensuring the probes are independent}
+\subsection*{Checking the probes are independent}
 In Section~\ref{sec:label}, we find that the MB label can move about $1.4\nm$ sideways from its anchor. Two labels can only hit each other if their anchors are closer than $2\times1.4 = 2.8\nm$. We have just calculated that the probes are $7.4\nm$ apart, so they will not interact with one another. This allows us to work out the signal from one probe and then multiply by the number of probes to get the total signal.
 
-Every single probe on the electrode is around $7.4\nm$ from its neighbours, far enough apart that each one behaves independently.
+\textbf{Summary:} There are around $3.1\times10^{10}$ probes on the electrode, $7.4\nm$ apart, and each one behaves independently.
 
 %=======================================================================
 \section{Where the MB Label Sits}
@@ -120,20 +112,19 @@ Every single probe on the electrode is around $7.4\nm$ from its neighbours, far 
 
 The current depends on how far the MB label is from the gold, because electrons have to cross this distance to reach it. The further away the label is, the slower it exchanges electrons, so a small change in distance can have a large effect on the signal. The probe has two parts: a PEG6 spacer attached to the gold, and the peptide on top of it, with MB at its tip. The peptide is not rigid; it constantly moves and bends, so each MB label sits at a slightly different height. We therefore want to find how tall the spacer is, and the range of distances at which the MB label can sit above it.
 
-\subsection{Modelling the peptide}
+\subsection*{Modelling the peptide}
 The peptide is flexible, so we can model it as a chain of short, stiff segments joined by free hinges, each pointing in a random direction. This is known as a freely jointed chain. Over very short distances the peptide is fairly rigid, so it will keep pointing in the same general direction, but over longer distances its small bends add up until it could be pointing in any direction. The length at which this happens is called the Kuhn length, $b = 0.76\nm$, which is about the length of two amino acids~\cit{3}. This value comes from Kohn et al., who measured the sizes of many unfolded proteins and found that they behave as random chains~\cit{3}. Our peptide is short and has no fixed folded structure, so we expect it to behave in the same way. Our peptide has 10 amino acids, each $0.38\nm$ long (the typical length each amino acid adds to a stretched-out peptide chain), so we can model it as
-\begin{equation}
+\[
 N_K = \frac{10\times0.38}{0.76} = 5 \text{ independent segments.}
-\label{eq:nkuhn}
-\end{equation}
+\]
 
-\subsection{One segment}
+\subsection*{One segment}
 We first need to find how much height a single segment adds to the label on average. A segment of length $b$, tilted at an angle $\theta$ from the vertical, adds height $X = b\cos\theta$. Since the segment points in a random direction, it is equally likely to move the label up or down, so on average it adds no height. However, an average of zero doesn't mean the segment has no effect, only that up and down are equally likely. To measure how far it typically moves the label, we square the heights and take the average, giving us
-\begin{equation}
+\[
 \avg{X^2} = \frac{b^2}{3}.
-\label{eq:x2}
-\end{equation}
+\]
 
+\dropdown
 \begin{itemize}
   \item A segment of length $b$ tilted at an angle $\theta$ from vertical adds height $X = b\cos\theta$. This is positive if the segment points upwards and negative if it points downwards.
   \item Because the segment points in a random direction, $u = \cos\theta$ is equally likely to take any value from $-1$ to $1$.
@@ -150,14 +141,14 @@ We first need to find how much height a single segment adds to the label on aver
   \]
 \end{itemize}
 
-\subsection{Adding up all segments}
+\subsection*{Adding up all segments}
 The MB label's height above the PEG6 spacer, $z$, is the sum of the heights added by all five segments. Since each segment points in its own random direction, some push the label up and some pull it down, so they partly cancel. For independent segments, the average squared heights add together, so the spread of $z$ is
-\begin{equation}
+\[
 \sigma_z^2 = \avg{z^2} = N_K\cdot\frac{b^2}{3} = 0.96\,\mathrm{nm^2} \qquad\Longrightarrow\qquad \sigma_z = 0.98\nm.
-\label{eq:sigmaz}
-\end{equation}
+\]
 Here $\sigma_z$ is the standard deviation: the typical distance of the label above or below the spacer. The sum of several independent random pieces (in our case five segments) follows a bell-shaped (normal) distribution, so $z$ is normally distributed with an average of zero and a standard deviation of $0.98\nm$. The same distribution applies sideways, so each MB label can drift around $\sqrt{2}\,\sigma_z = 1.4\nm$ from its anchor.
 
+\dropdown
 \begin{itemize}
   \item The MB label's height is the sum of the heights of the five segments:
   \[ z = X_1 + X_2 + X_3 + X_4 + X_5. \]
@@ -176,19 +167,18 @@ Here $\sigma_z$ is the standard deviation: the typical distance of the label abo
   \item A random direction has no preferred axis, so the spread is the same in the sideways directions ($x$ and $y$) as in the vertical direction ($z$). The average squared sideways distance is $\avg{x^2} + \avg{y^2} = 2\sigma_z^2$, so the typical sideways drift is $\sqrt{2}\,\sigma_z = 1.4\nm$.
 \end{itemize}
 
-\subsection{Height of the PEG6 spacer}
+\subsection*{Height of the PEG6 spacer}
 The peptide sits on top of a PEG6 spacer, so we also need to know how tall the spacer is. The spacer is made up of six units of length $0.35\nm$, giving a fully stretched length of $2.1\nm$. Using the same Kuhn length as before, this is
-\begin{equation}
+\[
 n = \frac{6\times0.35}{0.76} = 2.76 \text{ Kuhn segments.}
-\label{eq:nspacer}
-\end{equation}
+\]
 Like the peptide, the spacer is flexible and curls into a loose coil rather than standing straight up. However, unlike the peptide, we cannot model it as a random chain. This is because PEG behaves slightly differently: its segments cannot overlap each other, so they push apart and the coil swells to be a bit bigger than a simple chain would be. This effect is called crowding. We can use Flory's theory, which balances the chain's tendency to curl up against the crowding of its segments to estimate the height of the PEG6 spacer, $\dpeg$:
-\begin{equation}
+\[
 \dpeg = n^{3/5}\cdot b = 1.40\nm.
-\label{eq:dpeg}
-\end{equation}
+\]
 Flory's theory was developed for long chains, and our spacer is only a few segments long, so this value is an estimate rather than an exact result. A simple random chain of the same length would be $\sqrt{n}\,b = 1.26\nm$ tall, and a fully stretched spacer would be $2.1\nm$ tall, so the true height should lie between these two limits. Our estimate of $1.40\nm$ sits within this range, slightly above the random-chain value because crowding makes the coil swell.
 
+\dropdown
 \begin{itemize}
   \item We model the spacer as a flexible chain of $n = 2.76$ segments, each of length $b$. We take its height above the gold, $\dpeg$, to be the typical size of this chain when it's coiled up. Two opposing effects set this height, stretching and crowding, both measured as free energy, $F$. We want to find the perfect balance between the two where we minimize the total free energy.
   \item \textbf{Stretching} -- A chain can curl up in far more ways than it can stretch out, so stretching it reduces the number of shapes it can take. This raises its free energy, so the chain resists being pulled longer, like a spring. The energy cost of stretching grows with the square of the size:
@@ -210,14 +200,14 @@ Flory's theory was developed for long chains, and our spacer is only a few segme
   \[ \dpeg = n^{3/5}\,b = 2.76^{0.6}\times0.76 = 1.40\nm. \]
 \end{itemize}
 
-\subsection{Probability distribution of the MB label distance}
+\subsection*{Probability distribution of the MB label distance}
 The normal distribution of $z$ is centred on zero, so half of it is negative, meaning the MB label would be below the spacer tip. In reality, the peptide cannot pass below the tip because the spacer and surrounding Fc-hexanethiol layer block the space beneath it (as shown in Figure~\ref{fig:probe}). We account for this by treating the tip as a floor that reflects the chain, meaning a label that would have ended a distance $u$ below the tip instead ends the same distance $u$ above the tip. Since the normal distribution is symmetric, reflecting the negative half simply doubles the positive half, like folding the bell curve in half. The label's distance from the gold is then $d = \dpeg + |z|$, with a distribution, $P(d)$, of
-\begin{equation}
+\[
 P(d) = \frac{2}{\sigma_z\sqrt{2\pi}}\,e^{-\frac{(d-\dpeg)^2}{2\sigma_z^2}}, \qquad d \ge \dpeg.
-\label{eq:pd}
-\end{equation}
-This is called a half-normal distribution. The label is most likely to sit just above the spacer tip, and on average it sits $2.18\nm$ from the gold. The peptide cannot stretch beyond its full length of $3.8\nm$, so labels lie no further than $d_{\max} = 1.40 + 3.8 = 5.2\nm$ from the gold. The half-normal distribution places only about 1 in 10,000 labels beyond this distance, so cutting it off here has no noticeable effect on the results.
+\]
+This is called a half-normal distribution. The label is most likely to sit just above the spacer tip, and on average it sits $2.18\nm$ from the gold. The peptide cannot stretch beyond its full length of $3.8\nm$, so labels lie no further than $d_{\max} = 1.40 + 3.8 = 5.2\nm$ from the gold. The half-normal distribution places only about 1 in 10,000 labels beyond this distance, so cutting it off here has no noticeable effect on the results. We check this folded distribution against simulated chains in Section~\ref{sec:validation}.
 
+\dropdown
 \begin{itemize}
   \item From the step `\textbf{Adding up all segments}', $z$ is normally distributed with mean $0$ and standard deviation $\sigma_z$:
   \[ f(z) = \frac{1}{\sigma_z\sqrt{2\pi}}\,e^{-\frac{z^2}{2\sigma_z^2}}. \]
@@ -241,22 +231,21 @@ This is called a half-normal distribution. The label is most likely to sit just 
   Adding the spacer height gives $\avg{d} = 1.40 + 0.78 = 2.18\nm$.
 \end{itemize}
 
-\subsection{How fast the label reacts}
+\subsection*{How fast the label reacts}
 The tether between the gold and the MB label is an insulator, so electrons cannot flow along it directly. Instead, they cross it by quantum tunnelling, which is when the electrons pass straight through the barrier even though they don't have the energy to go over it. The chance of this happening falls exponentially as the barrier gets thicker, so $k^0$, the number of times per second a label exchanges electrons with the gold, depends on the label's distance $d$ as
-\begin{equation}
+\[
 k^0(d) = k^0(0)\,e^{-\beta d}, \qquad \beta = 10\,\mathrm{nm^{-1}}.
-\label{eq:k0d}
-\end{equation}
+\]
 This value of $\beta$ matches measurements on similar molecular layers on gold~\cit{4,5}. These experiments measured how quickly electrons tunnel through chains of carbon atoms (alkanethiols) attached to gold. No equivalent value has been measured for PEG or peptide tethers, so we use the alkanethiol value as the closest available measurement. It means the rate falls tenfold for every $0.23\nm$ of extra distance, so a label only slightly further from the gold reacts much slower.
 
 To find the value of $k^0(0)$, we use a measured rate of $k^0 = 5.0\times10^4\,\mathrm{s^{-1}}$ for MB held $0.8\nm$ from the gold~\cit{6}. We chose this measurement because it uses the same redox label (MB) attached to a gold electrode, so it is the closest available match to our probe. This gives $k^0(0) = 1.5\times10^8\,\mathrm{s^{-1}}$. A label sitting right at the top of the spacer therefore reacts at
-\begin{equation}
+\[
 \kref = k^0(\dpeg) \approx 127\,\mathrm{s^{-1}}.
-\label{eq:kref}
-\end{equation}
+\]
 
+\dropdown
 \begin{itemize}
-  \item For quantum tunnelling to occur, we need to model the tether as an energy barrier of height $\Phi$ above the electron's energy. Inside the barrier, the Schr\"odinger's equation for the electron's wavefunction $\psi$ is
+  \item To model tunnelling, we treat the tether as an energy barrier of height $\Phi$ above the electron's energy. Inside the barrier, the Schr\"odinger equation for the electron's wavefunction $\psi$ is
   \[ -\frac{\hbar^2}{2m_e}\frac{d^2\psi}{dx^2} + \Phi\,\psi = 0, \]
   where $m_e$ is the electron's mass and $\hbar$ is the reduced Planck constant.
   \item Rearranging gives
@@ -272,7 +261,7 @@ To find the value of $k^0(0)$, we use a measured rate of $k^0 = 5.0\times10^4\,\
   This agrees with values measured for electron transfer through molecular layers on gold~\cit{4,5}, which we use.
   \item The rate falls by a factor of ten when $e^{-\beta\Delta d} = \frac{1}{10}$. Taking logarithms:
   \[ \Delta d = \frac{\ln 10}{\beta} = \frac{2.303}{10\,\mathrm{nm^{-1}}} = 0.23\nm. \]
-  \item Now we need to find $k^0(0)$. MB held $0.8\nm$ from gold has a measured rate of $5.0\times10^4\,\mathrm{s^{-1}}$~\cit{6}. Rearranging the $k^0(d)$ to find the rate at zero distance:
+  \item Now we need to find $k^0(0)$. MB held $0.8\nm$ from gold has a measured rate of $5.0\times10^4\,\mathrm{s^{-1}}$~\cit{6}. Rearranging the $k^0(d)$ equation to find the rate at zero distance:
   \begin{align*}
   k^0(0) = k^0(0.8)\,e^{\beta\times0.8} &= 5.0\times10^4\times e^{10\times0.8} = 5.0\times10^4\times2981\\
   &= 1.49\times10^8 \approx 1.5\times10^8\,\mathrm{s^{-1}}.
@@ -281,57 +270,37 @@ To find the value of $k^0(0)$, we use a measured rate of $k^0 = 5.0\times10^4\,\
   \[ \kref = 1.49\times10^8\times e^{-10\times1.398} = 1.49\times10^8\times8.5\times10^{-7} \approx 127\,\mathrm{s^{-1}}. \]
 \end{itemize}
 
-The MB labels sit between $1.40\nm$ (the spacer tip) and $5.2\nm$ from the gold, following the half-normal distribution above. Their reaction rate drops exponentially, so labels close to the gold react much faster than those further out.
+\textbf{Summary:} The MB labels sit between $1.40\nm$ (the spacer tip) and $5.2\nm$ from the gold, following the half-normal distribution above. Their reaction rate drops exponentially, so labels close to the gold react much faster than those further out.
 
 %=======================================================================
 \section{Signal from One Probe}
-\label{sec:oneprobe}
 
 Now we want to find how much electrical signal (current) is produced from a single MB label at a fixed distance while the square-wave voltage is applied. MB can either be reduced (by gaining two electrons from the gold) or oxidised (by giving them to the gold). This movement of electrons causes electrical current to flow. Both processes --- reduction and oxidation --- are happening simultaneously, just at different rates. The net current we measure is the difference between how often electrons move one way versus the other.
 
 \subsection{Rates of oxidation and reduction}
-The rate constants for oxidation and reduction are dependent on the voltage in the following way, known as the Butler--Volmer equations~\cit{7,8,9}:
-\begin{align}
-k_f &= k^0e^{-\alpha\xi} \label{eq:kf}\\
-k_b &= k^0e^{(1-\alpha)\xi} \label{eq:kb}
-\end{align}
+The rate constants for oxidation and reduction are dependent on the voltage in the following way, known as the Butler--Volmer equations~\cit{7--9}:
+\[ k_f = k^0e^{-\alpha\xi} \]
+\[ k_b = k^0e^{(1-\alpha)\xi} \]
 where $k_f$ and $k_b$ are the rate constants for reduction and oxidation respectively, $\alpha = 0.37$ is the transfer coefficient~\cit{6,10}, and $\xi$ is a value which converts the relative potential difference into thermal energy units via this equation:
-\begin{equation}
-\xi = \frac{n_eF(E - E^0)}{RT}
-\label{eq:xi}
-\end{equation}
-where $n_e = 2$ is the number of electrons transferred, $F$ is the Faraday constant, $R$ is the gas constant, $T$ is the temperature, and $E - E^0$ is just the voltage difference. $E^0$ is the formal potential of MB ($-0.25\,\mathrm{V}$ vs Ag/AgCl)~\cit{6}. The values of $\alpha$, $n_e$ and $E^0$ all come from measurements of MB attached to gold electrodes~\cit{6,10}, the same label and surface used in our sensor, which is why we chose them. MB gains or loses two electrons in each reaction, which is why $n_e = 2$.
+\[ \xi = \frac{n_eF(E - E^0)}{RT} \]
+where $n_e = 2$ is the number of electrons transferred, $F$ is the Faraday constant, $R$ is the gas constant, $T$ is the temperature, and $E - E^0$ is just the voltage difference. $E^0$ is the formal potential of MB ($-0.25\,\mathrm{V}$ vs Ag/AgCl)~\cit{6}. The values of $\alpha$, $n_e$ and $E^0$ all come from measurements of MB attached to gold electrodes~\cit{6,10}, the same label and surface used in our sensor, which is why we chose them. MB gains or loses two electrons in each reaction, and we treat the two electrons as moving together in a single step, which is why $n_e = 2$. We check how well the Butler--Volmer equations match measured rates in Section~\ref{sec:validation}.
 
 This tells us that at the formal potential of MB ($E = E^0$), $\xi = 0$. This means $k_f = k_b = k^0$. In other words, both oxidation and reduction occur at the same baseline rate. Furthermore, if we wait long enough at a fixed voltage, the amounts of reduced and oxidised MB settle into a steady balance:
-\begin{equation}
-k_f\Gox = k_b\Gred
-\label{eq:balance}
-\end{equation}
+\[ k_f\Gox = k_b\Gred \]
 where $\Gred$ and $\Gox$ are the amounts of reduced and oxidised MB per unit area respectively. This shows that the rate at which oxidised MB is converting into reduced MB exactly matches the rate at which reduced MB is converting back into oxidised MB. This means:
-\begin{equation}
-\frac{\Gred}{\Gox} = \frac{k_f}{k_b} = e^{-\xi}
-\label{eq:nernst}
-\end{equation}
-This derivation exactly matches the Nernst equation, a well-established and independently verified result in electrochemistry.
+\[ \frac{\Gred}{\Gox} = \frac{k_f}{k_b} = e^{-\xi} \]
+This is the Nernst equation, which shows the model behaves correctly at equilibrium.
 
 \subsection{Activity during one pulse}
 We now want to step up the voltage to some fixed value and hold it there for some short time $\tau$. Since $\Gox + \Gred = \Gtot$ (total MB is fixed), we can write the \emph{rate of change} of reduced MB as
-\begin{equation}
-\frac{d\Gred}{dt} = k_f\Gtot - K\Gred, \qquad K = k_f + k_b.
-\label{eq:drdt}
-\end{equation}
+\[ \frac{d\Gred}{dt} = k_f\Gtot - K\Gred, \qquad K = k_f + k_b. \]
 During a pulse the voltage is constant, so $k_f$ and $K$ are constants. Solving the differential equation shows that reduced MB relaxes exponentially towards its equilibrium amount, $\Geq$, the amount of reduced MB at equilibrium for that voltage, at a rate set by $K$:
-\begin{equation}
-\Gred(t) = \Geq + \big[\Gred(0) - \Geq\big]e^{-Kt}, \qquad \Geq = \frac{k_f\Gtot}{K}.
-\label{eq:redt}
-\end{equation}
+\[ \Gred(t) = \Geq + \big[\Gred(0) - \Geq\big]e^{-Kt}, \qquad \Geq = \frac{k_f\Gtot}{K}. \]
 The current comes from electrons moving as MB converts between its two forms. It is proportional to how far the MB still is from equilibrium, so it is largest just after the voltage jumps and decays exponentially as the MB settles:
-\begin{equation}
-I(t) = n_eFA\,K\big[\Gred(0) - \Geq\big]e^{-Kt}.
-\label{eq:it}
-\end{equation}
+\[ I(t) = n_eFA\,K\big[\Gred(0) - \Geq\big]e^{-Kt}. \]
 Here $A$ is the electrode area.
 
+\dropdown
 \begin{itemize}
   \item Reduced MB is formed when oxidised MB gains electrons, at rate $k_f\Gox$, and is lost when it gives them back, at rate $k_b\Gred$. The net rate of change is the difference:
   \[ \frac{d\Gred}{dt} = k_f\Gox - k_b\Gred. \]
@@ -349,7 +318,7 @@ Here $A$ is the electrode area.
   First, we can integrate the left-hand side from the start of the pulse ($t = 0$), to time $t$:
   \[ \int_0^t\frac{d}{ds}\big(\Gred e^{Ks}\big)\,ds = \Big[\Gred(s)\,e^{Ks}\Big]_0^t = \Gred(t)\,e^{Kt} - \Gred(0). \]
   Then we can integrate the right-hand side. During a pulse, $k_f$, $K$ and $\Gtot$ are all constant, so they can come outside the integral:
-  \[ \int_0^t k_f\Gtot e^{Ks}\,ds = k_f\Gtot\left[\frac{e^{Ks}}{K}\right]_0^t = \frac{k_f\Gtot}{K}\big(e^{Kt} - 1\big) = \Geq\big(e^{Kt} - 1\big), \]
+  \[ \int_0^t k_f\Gtot e^{Ks}\,ds = k_f\Gtot\left[\frac{e^{Ks}}{K}\right]_0^t = \frac{k_f\Gtot}{K}\big(e^{Kt} - 1\big) = \Geq\big(e^{Kt} - 1\big). \]
   Setting the two sides equal, we get
   \[ \Gred(t)e^{Kt} - \Gred(0) = \Geq\big(e^{Kt} - 1\big). \]
   Now we can solve for $\Gred(t)$:
@@ -368,26 +337,18 @@ Here $A$ is the electrode area.
 \end{itemize}
 
 \subsection{Understanding the square wave}
-In square-wave voltammetry (SWV), the voltage climbs in small steps~\cit{11,12}. At each step it is held for a time $\tau = \frac{1}{2f}$ at a high value (forward pulse) and then for $\tau$ at a low value (reverse pulse), where $f$ is the frequency ($10\,\mathrm{Hz}$) and the square-wave amplitude is $25\,\mathrm{mV}$ (our device). These are the settings used on our potentiostat; our sensor operates between 10 and $20\,\mathrm{Hz}$, and we use $10\,\mathrm{Hz}$ as our standard setting. A frequency of $10\,\mathrm{Hz}$ means each pulse lasts $50\,\mathrm{ms}$. The end of one pulse is the start of the next, so the amount of reduced MB at the end of one pulse is the starting amount for the next. The current is sampled at the end of each pulse, and the signal we plot at each step is the difference between the forward and reverse readings:
-\begin{equation}
-\Delta I = I_{\mathrm{fwd}} - I_{\mathrm{rev}}.
-\label{eq:deltai}
-\end{equation}
+In square-wave voltammetry (SWV), the voltage climbs in small steps~\cit{11,12}. At each step it is held for a time $\tau = \frac{1}{2f}$ at a high value (forward pulse) and then for $\tau$ at a low value (reverse pulse), where $f$ is the frequency ($10\,\mathrm{Hz}$) and the square-wave amplitude is $25\,\mathrm{mV}$. These are the settings used on our potentiostat; our sensor operates between 10 and $20\,\mathrm{Hz}$, and we use $10\,\mathrm{Hz}$ as our standard setting. A frequency of $10\,\mathrm{Hz}$ means each pulse lasts $50\,\mathrm{ms}$. The end of one pulse is the start of the next, so the amount of reduced MB at the end of one pulse is the starting amount for the next. The current is sampled at the end of each pulse, and the signal we plot at each step is the difference between the forward and reverse readings:
+\[ \Delta I = I_{\mathrm{fwd}} - I_{\mathrm{rev}}. \]
 The two pulses drive the MB in opposite directions, so their currents have opposite signs. This means subtracting them adds their sizes, giving a larger signal. Plotting $\Delta I$ against the staircase voltage gives the voltammogram, with a single peak near the formal potential of MB.
 
 \subsection{Finding the best speed for a label}
 To compare how fast a label reacts with how long each pulse lasts, we define
-\begin{equation}
-\kappa = \frac{k^0}{2f} = k^0\tau,
-\label{eq:kappa}
-\end{equation}
+\[ \kappa = \frac{k^0}{2f} = k^0\tau, \]
 which is the label's rate constant multiplied by the pulse length. A label that is too slow (small $\kappa$) barely reacts during a pulse, so it produces little current. A label that is too fast (large $\kappa$) finishes reacting early in the pulse, so its current will have already died away by the time it is measured at the end of the pulse. The largest signal comes from the labels in between, at
-\begin{equation}
-\kappa \approx \frac12.
-\label{eq:kappaopt}
-\end{equation}
+\[ \kappa \approx \frac12. \]
 A label sitting right at the top of the spacer has $\kappa = \frac{\kref}{2f} = \frac{127}{20} = 6.4$ at $10\,\mathrm{Hz}$. This is much faster than the best speed, so most of the signal must come from labels slightly further from the gold, where the rate is lower.
 
+\dropdown
 \begin{itemize}
   \item The peak occurs near the formal potential, $E = E^0$. There $\xi = 0$, so from the Butler--Volmer equations both rates are equal to $k^0$:
   \[ k_f = k^0e^0 = k^0, \qquad k_b = k^0e^0 = k^0, \qquad K = k_f + k_b = 2k^0. \]
@@ -403,35 +364,30 @@ A label sitting right at the top of the spacer has $\kappa = \frac{\kref}{2f} = 
   \[ 2\kappa = 1 \quad\Longrightarrow\quad \kappa = \frac12. \]
 \end{itemize}
 
-A single label gives a peak at $E^0$ whose height is largest when $\kappa\approx\frac12$. A label right at the spacer tip has $\kappa = \frac{127}{20} = 6.4$ at $10\,\mathrm{Hz}$, which is too fast, so most of the signal must come from labels slightly further out.
+\textbf{Summary:} A single label gives a peak at $E^0$ whose height is largest when $\kappa\approx\frac12$. A label right at the spacer tip has $\kappa = \frac{127}{20} = 6.4$ at $10\,\mathrm{Hz}$, which is too fast, so most of the signal must come from labels slightly further out.
 
 %=======================================================================
 \section{The Signal from the Whole Electrode}
-\label{sec:whole}
 
 Each MB label sits at its own distance $d$ from the gold, so each has its own rate constant $k^0(d)$ and produces its own signal. To find the total signal, we add up the contribution from every label, weighted by how likely a label is to be at each distance, $P(d)$, from Section~\ref{sec:label}. Only probes that have not been cut contribute, so if a fraction $F_k$ has been cut, a fraction of $(1 - F_k)$ remains. The total signal is
-\begin{equation}
-\Delta I(E) = (1 - F_k)\,\Gtot A\int_{\dpeg}^{d_{\max}}P(d)\,\Delta I_{\mathrm{one}}\bigl(E;k^0(d)\bigr)\,dd.
-\label{eq:wholeelectrode}
-\end{equation}
+\[ \Delta I(E) = (1 - F_k)\,\Gtot A\int_{\dpeg}^{d_{\max}}P(d)\,\Delta I_{\mathrm{one}}\big(E;k^0(d)\big)\,dd. \]
 where $\Delta I_{\mathrm{one}}$ is the signal from a single label with rate constant $k^0(d)$, found in Section~\ref{sec:oneprobe}, and $\Gtot A$ is the total amount of probe on the electrode. The integral has no simple formula, so we evaluate it numerically.
 
+\dropdown
 \begin{itemize}
-  \item We can imagine sorting the labels into thin bands of distance, each of width $dd$. From Section~\ref{sec:label}, the fraction of labels in the band at distance $d$ is $P(d)\,dd$. Every label in that band has the same rate constant $k^0(d)$, so each gives the same signal, $\Delta I_{\mathrm{one}}\bigl(E;k^0(d)\bigr)$.
+  \item We can imagine sorting the labels into thin bands of distance, each of width $dd$. From Section~\ref{sec:label}, the fraction of labels in the band at distance $d$ is $P(d)\,dd$. Every label in that band has the same rate constant $k^0(d)$, so each gives the same signal, $\Delta I_{\mathrm{one}}\big(E;k^0(d)\big)$.
   \item The amount of intact probe on the electrode is $(1 - F_k)\Gtot A$. Multiplying by the fraction in the band and by the signal per label gives that band's contribution:
-  \[ (1 - F_k)\,\Gtot A\times P(d)\,dd\times\Delta I_{\mathrm{one}}\bigl(E;k^0(d)\bigr). \]
-  \item Summing over every band, with each band's thickness being very small turns the sum into an integral over all possible distances, from the spacer tip, $\dpeg$, to the fully extended chain, $d_{\max}$:
-  \[ \Delta I(E) = (1 - F_k)\,\Gtot A\int_{\dpeg}^{d_{\max}}P(d)\,\Delta I_{\mathrm{one}}\bigl(E;k^0(d)\bigr)\,dd. \]
+  \[ (1 - F_k)\,\Gtot A\times P(d)\,dd\times\Delta I_{\mathrm{one}}\big(E;k^0(d)\big). \]
+  \item Summing over every band, and making each band very thin, turns the sum into an integral over all possible distances, from the spacer tip, $\dpeg$, to the fully extended chain, $d_{\max}$:
+  \[ \Delta I(E) = (1 - F_k)\,\Gtot A\int_{\dpeg}^{d_{\max}}P(d)\,\Delta I_{\mathrm{one}}\big(E;k^0(d)\big)\,dd. \]
   \item Now comes the problem of trying to evaluate this integral. Since $\Delta I_{\mathrm{one}}$ comes from simulating the square-wave pulses in Section~\ref{sec:oneprobe}, it has no simple formula, and the integral must be done numerically. We split the range of distances into 80 evenly spaced points, calculate $\Delta I_{\mathrm{one}}$ at each, and add up the contributions. Using more points changes the result by less than 0.001\%, so 80 points is plenty.
 \end{itemize}
 
 \subsection{Where is the optimum label distance?}
 As we discovered in Section~\ref{sec:oneprobe}, the signal from a single probe is largest when $\kappa\approx\frac12$. A label's speed falls with its distance from the gold, so we can find $d_\star$, the distance at which labels have the best speed and so produce the largest signal. Setting $\kappa(d) = \frac12$ and solving for $d$ gives
-\begin{equation}
-d_\star = \dpeg + \frac1\beta\ln\frac{\kref}{f} = 1.40 + \frac{1}{10}\ln\frac{127}{10} = 1.65\nm.
-\label{eq:dstar}
-\end{equation}
+\[ d_\star = \dpeg + \frac1\beta\ln\frac{\kref}{f} = 1.40 + \frac{1}{10}\ln\frac{127}{10} = 1.65\nm. \]
 
+\dropdown
 \begin{itemize}
   \item From Section~\ref{sec:label}, we found that the rate constant falls with distance:
   \[ k^0(d) = k^0(0)\,e^{-\beta d}. \]
@@ -461,11 +417,8 @@ So, most of the signal comes from a narrow band of labels about $0.25\nm$ above 
 \subsection{The key result}
 In the equation for the total signal, the cut fraction, $F_k$, appears only in front of the integral. Everything inside the integral, where the labels sit and how fast they react, is the same whether the probes have been cut or not. This is because cutting a probe simply removes it, and MMP-9 is equally likely to cut any probe, so the probes that remain have the same spread of distances as before.
 
-We can let $\Delta I(E;0)$ be the signal before any probes are cut. This means the signal after a fraction $F_k$ has been cut is therefore
-\begin{equation}
-\Delta I(E;F_k) = (1 - F_k)\,\Delta I(E;0).
-\label{eq:proportional}
-\end{equation}
+We can let $\Delta I(E;0)$ be the signal before any probes are cut. This means the signal after a fraction $F_k$ has been cut is
+\[ \Delta I(E;F_k) = (1 - F_k)\,\Delta I(E;0). \]
 The whole voltammogram simply shrinks in proportion to the number of intact probes. If half the probes are cut, the peak will be half as tall, while its position and shape will stay the same (Figure~\ref{fig:proportional}).
 
 \begin{figure}[H]
@@ -475,33 +428,23 @@ The whole voltammogram simply shrinks in proportion to the number of intact prob
 \label{fig:proportional}
 \end{figure}
 
-Adding up the signal from every label on the electrode shows that the peak height is exactly proportional to the number of intact probes, while its position and shape do not change. Most of the signal comes from a narrow band of labels around $0.25\nm$ above the spacer tip. Evaluating the total signal for a fresh electrode at $10\,\mathrm{Hz}$ gives a peak of $15.9\,\mathrm{nA}$ at $-251\,\mathrm{mV}$.
+\textbf{Summary:} Adding up the signal from every label on the electrode shows that the peak height is exactly proportional to the number of intact probes, while its position and shape do not change. Most of the signal comes from a narrow band of labels around $0.25\nm$ above the spacer tip. Evaluating the total signal for a fresh electrode at $10\,\mathrm{Hz}$ gives a peak of $15.9\,\mathrm{nA}$ at $-251\,\mathrm{mV}$.
 
 %=======================================================================
 \section{Reading Out How Many Probes Were Cut}
 \label{sec:readout}
 
 In Section~\ref{sec:whole} we showed that the height of the MB peak in the square-wave voltammogram, the maximum net current the electrode produces, is proportional to the number of intact probes. If a fraction $F_k$ of the probes has been cut, the peak shrinks to $(1 - F_k)$ of its original height:
-\begin{equation}
-\Delta I(T) = (1 - F_k)\,\Delta I(0),
-\label{eq:deltait}
-\end{equation}
+\[ \Delta I(T) = (1 - F_k)\,\Delta I(0), \]
 where $\Delta I(0)$ is the peak height before incubation, when no probes have been cut, and $\Delta I(T)$ is the peak height after an incubation time $T$. We therefore scan each electrode twice, once before adding the wound fluid, and once after incubation. Dividing the second peak by the first gives the fraction of probes still intact:
-\begin{equation}
-\frac{\Delta I(T)}{\Delta I(0)} = 1 - F_k.
-\label{eq:ratio}
-\end{equation}
+\[ \frac{\Delta I(T)}{\Delta I(0)} = 1 - F_k. \]
 Rearranging gives the fraction that were cut:
-\begin{equation}
-F_k = 1 - \frac{\Delta I(T)}{\Delta I(0)}
-\label{eq:fk_readout}
-\end{equation}
+\[ F_k = 1 - \frac{\Delta I(T)}{\Delta I(0)} \]
 For example, if the peak falls from $15.9\,\mathrm{nA}$ to $7.7\,\mathrm{nA}$, then
-\begin{equation}
-F_k = 1 - \frac{7.7}{15.9} = 0.52,
-\label{eq:fk_example}
-\end{equation}
+\[ F_k = 1 - \frac{7.7}{15.9} = 0.52, \]
 so 52\% of the probes were cut.
+
+This assumes that probes are only lost by being cut. If any probes came away from the gold during the incubation, the peak would also fall, and this would be read as extra cutting.
 
 %=======================================================================
 \section{Calculating How Fast MMP-9 Cuts the Probes}
@@ -510,51 +453,40 @@ so 52\% of the probes were cut.
 So far, the model links the fraction of probes cut, $F_k$, to the peak we measure. The last step is to link $F_k$ to the amount of MMP-9 in the wound fluid, by working out how quickly the enzyme cuts the probes.
 
 MMP-9 cuts each probe in two stages. First, the enzyme (let us call it E) finds a probe (let us call it S) and binds to it, forming an enzyme-probe complex (ES). The complex can either fall apart again, releasing the intact probe, or the enzyme can cut the peptide. Once it has cut, the enzyme is released unchanged and is free to move on to another probe:
-\begin{equation}
-\text{E} + \text{S}\;\underset{k_{-1}}{\overset{k_1}{\rightleftharpoons}}\;\text{ES}\;\xrightarrow{\;\kcat\;}\;\text{E} + \text{cut probe}.
-\label{eq:scheme}
-\end{equation}
+\[ \text{E} + \text{S}\;\underset{k_{-1}}{\overset{k_1}{\rightleftharpoons}}\;\text{ES}\;\xrightarrow{\;\kcat\;}\;\text{E} + \text{cut probe}. \]
 Here $k_1$ is the rate at which the enzyme binds a probe, $k_{-1}$ is the rate at which the complex falls apart, and $\kcat$ is the rate at which the bound enzyme cuts the probe. Together these define the Michaelis constant,
-\begin{equation}
-\Km = \frac{k_{-1} + \kcat}{k_1},
-\label{eq:km}
-\end{equation}
-which measures how readily the enzyme binds its target; a small $\Km$ means the enzyme binds tightly. Because the enzyme is never used up, a small amount of MMP-9 can cut many probes over time. The more MMP-9 there is, the faster this happens.
+\[ K_m = \frac{k_{-1} + \kcat}{k_1}, \]
+which measures how readily the enzyme binds its target; a small $K_m$ means the enzyme binds tightly. Because the enzyme is never used up, a small amount of MMP-9 can cut many probes over time. The more MMP-9 there is, the faster this happens.
 
 \subsection{Calculating the rate of cutting}
 Let $S_T$ be the number of probes still intact. Using the reaction scheme above, the rate at which probes are cut is
-\begin{equation}
-\frac{dS_T}{dt} = -\frac{\kcat[\text{E}]}{\Km + [\text{E}]}\,S_T \;\approx\; -\keff\MMP\,S_T.
-\label{eq:dstdt}
-\end{equation}
-The minus sign shows that the number of intact probes is falling. The simplification on the right holds because the MMP-9 concentration in wound fluid, $[\text{E}]$, is far smaller than $\Km = 1.3\,\mathrm{mM}$~\cit{13}, so $\Km + [\text{E}]\approx \Km$. The cutting rate is then simply proportional to both the number of intact probes and the MMP-9 concentration.
+\[ \frac{dS_T}{dt} = -\frac{\kcat[\text{E}]}{K_m + [\text{E}]}\,S_T \;\approx\; -\keff\MMP\,S_T. \]
+The minus sign shows that the number of intact probes is falling. The simplification on the right holds because the MMP-9 concentration in wound fluid, $[\text{E}]$, is far smaller than $K_m = 1.28\,\mathrm{mM}$~\cit{13}, so $K_m + [\text{E}]\approx K_m$. The cutting rate is then simply proportional to both the number of intact probes and the MMP-9 concentration.
 
-For our peptide in solution, $\frac{\kcat}{\Km} = 67{,}500\,\mathrm{M^{-1}\,s^{-1}}$, with $\kcat = 86.4\,\mathrm{s^{-1}}$~\cit{13}. Kridel et al.\ measured these values for MMP-9 cutting the same peptide sequence that we use, SGKIPRTLTA, which is why we chose them. On the electrode, the enzyme must reach probes that are tethered and surrounded by other molecules, so it cuts them more slowly. We account for this with a surface efficiency of 0.20, giving an effective rate constant of
-\begin{equation}
-\keff = 0.20\times67{,}500 = 13{,}500\,\mathrm{M^{-1}\,s^{-1}}.
-\label{eq:keff}
-\end{equation}
+For our peptide in solution, $\frac{\kcat}{K_m} = 67{,}500\,\mathrm{M^{-1}\,s^{-1}}$, with $\kcat = 86.4\,\mathrm{s^{-1}}$~\cit{13}. Kridel et al.\ measured these values for MMP-9 cutting the same peptide sequence that we use, SGKIPRTLTA, which is why we chose them. On the electrode, the enzyme must reach probes that are tethered and surrounded by other molecules, so it cuts them more slowly. We account for this with a surface efficiency of 0.20, giving an effective rate constant of
+\[ \keff = 0.20\times67{,}500 = 13{,}500\,\mathrm{M^{-1}\,s^{-1}}. \]
 The surface efficiency has not yet been measured for our electrode, so 0.20 is an estimate. Enzymes generally cut tethered targets more slowly than free ones, so we expect the true value to lie somewhere between 0.01 (very much slower) and 1 (as fast as in solution), and 0.20 is a central estimate within this range. In practice, the surface efficiency can be measured directly by testing the sensor with known concentrations of MMP-9.
 
+\dropdown
 \begin{itemize}
   \item The enzyme-probe complex, ES, forms and breaks apart very quickly, within about $\frac{1}{\kcat}\approx12\,\mathrm{ms}$. The probes, on the other hand, are used up over minutes. So the amount of ES quickly settles to a steady level and stays there while the probes are slowly cut. This is the \textbf{quasi-steady-state approximation}. At steady state, ES forms as fast as it is lost:
   \[ \underbrace{k_1[\text{E}][\text{S}]}_{\text{formed}} = \underbrace{(k_{-1} + \kcat)[\text{ES}]}_{\text{lost by falling apart or cutting}}. \]
-  Dividing both sides by $k_1$, and using the definition $\Km = \frac{k_{-1} + \kcat}{k_1}$:
-  \[ [\text{E}][\text{S}] = \Km[\text{ES}]. \]
+  Dividing both sides by $k_1$, and using the definition $K_m = \frac{k_{-1} + \kcat}{k_1}$:
+  \[ [\text{E}][\text{S}] = K_m[\text{ES}]. \]
   The intact probes $S_T$ are either free (S) or bound in a complex (ES), so $[\text{S}] = S_T - [\text{ES}]$. Substituting this in we get
-  \[ [\text{E}]\big(S_T - [\text{ES}]\big) = \Km[\text{ES}]. \]
+  \[ [\text{E}]\big(S_T - [\text{ES}]\big) = K_m[\text{ES}]. \]
   Now we can solve this for $[\text{ES}]$. Expanding and collecting the $[\text{ES}]$ terms on one side gives
-  \[ [\text{E}]S_T = [\text{ES}]\big(\Km + [\text{E}]\big), \]
-  So,
-  \[ [\text{ES}] = \frac{[\text{E}]}{\Km + [\text{E}]}\,S_T. \]
+  \[ [\text{E}]S_T = [\text{ES}]\big(K_m + [\text{E}]\big), \]
+  so
+  \[ [\text{ES}] = \frac{[\text{E}]}{K_m + [\text{E}]}\,S_T. \]
   \item Each complex cuts its probe at rate $\kcat$, and each cut removes one intact probe, so
-  \[ \frac{dS_T}{dt} = -\kcat[\text{ES}] = -\frac{\kcat[\text{E}]}{\Km + [\text{E}]}\,S_T. \]
-  \item A chronic wound has about 30 nM of MMP-9, while $\Km = 1.3\,\mathrm{mM}$. The ratio is
-  \[ \frac{[\text{E}]}{\Km} = \frac{30\times10^{-9}}{1.3\times10^{-3}} = 2.3\times10^{-5}, \]
-  which is tiny, so $\Km + [\text{E}]\approx \Km$ and
-  \[ \frac{dS_T}{dt}\approx-\frac{\kcat}{\Km}\MMP\,S_T. \]
-  \item The value $\frac{\kcat}{\Km} = 67{,}500\,\mathrm{M^{-1}\,s^{-1}}$ was measured for the peptide moving freely in solution~\cit{13}. On the electrode, each probe is tethered at one end and surrounded by other molecules, so MMP-9 cannot reach it as easily, and it is cut more slowly. We account for this with a surface efficiency $\eta = 0.20$, an estimate of how much more slowly MMP-9 cuts tethered probes. Plugging this in we get
-  \[ \keff = \eta\,\frac{\kcat}{\Km} = 0.20\times67{,}500 = 13{,}500\,\mathrm{M^{-1}\,s^{-1}}, \]
+  \[ \frac{dS_T}{dt} = -\kcat[\text{ES}] = -\frac{\kcat[\text{E}]}{K_m + [\text{E}]}\,S_T. \]
+  \item A chronic wound has about 30 nM of MMP-9, while $K_m = 1.28\,\mathrm{mM}$. The ratio is
+  \[ \frac{[\text{E}]}{K_m} = \frac{30\times10^{-9}}{1.28\times10^{-3}} = 2.3\times10^{-5}, \]
+  which is tiny, so $K_m + [\text{E}]\approx K_m$ and
+  \[ \frac{dS_T}{dt}\approx-\frac{\kcat}{K_m}\MMP\,S_T. \]
+  \item The value $\frac{\kcat}{K_m} = 67{,}500\,\mathrm{M^{-1}\,s^{-1}}$ was measured for the peptide moving freely in solution~\cit{13}. On the electrode, each probe is tethered at one end and surrounded by other molecules, so MMP-9 cannot reach it as easily, and it is cut more slowly. We account for this with a surface efficiency $\eta = 0.20$, an estimate of how much more slowly MMP-9 cuts tethered probes. Plugging this in we get
+  \[ \keff = \eta\,\frac{\kcat}{K_m} = 0.20\times67{,}500 = 13{,}500\,\mathrm{M^{-1}\,s^{-1}}. \]
   The rate equation then becomes
   \[ \frac{dS_T}{dt} = -\keff\MMP\,S_T. \]
   Multiplying $\keff$ by the MMP-9 concentration gives the chance per second that any one probe is cut. For a chronic wound (30 nM) this is about $4\times10^{-4}\,\mathrm{s^{-1}}$.
@@ -562,12 +494,10 @@ The surface efficiency has not yet been measured for our electrode, so 0.20 is a
 
 \subsection{Cut fraction over time}
 The rate equation says that every intact probe has the same chance per second of being cut, so the number of intact probes falls exponentially with time. Solving it over an incubation time $T$ gives the fraction of probes that have been cut:
-\begin{equation}
-F_k(T) = 1 - e^{-\keff\MMP\,T}
-\label{eq:fkt}
-\end{equation}
-At the start of the incubation ($T = 0$), no probes have been cut, so $F_k = 0$. As the incubation continues, $F_k$ rises towards 1 as nearly every probe is eventually cut. The higher the MMP-9 concentration, the faster this happens. This equation completes the model; it links the MMP-9 level in the wound to the fraction of probes cut, which in turn sets the peak height we measure.
+\[ F_k(T) = 1 - e^{-\keff\MMP\,T} \]
+At the start of the incubation ($T = 0$), no probes have been cut, so $F_k = 0$. As the incubation continues, $F_k$ rises towards 1 as nearly every probe is eventually cut. The higher the MMP-9 concentration, the faster this happens. Here we assume that the MMP-9 concentration stays the same throughout the incubation, since the enzyme is not used up, and that all of the MMP-9 in the sample is active. This equation completes the model; it links the MMP-9 level in the wound to the fraction of probes cut, which in turn sets the peak height we measure.
 
+\dropdown
 \begin{itemize}
   \item From the previous step, the number of intact probes $S_T$ changes as
   \[ \frac{dS_T}{dt} = -\keff\MMP\,S_T. \]
@@ -586,7 +516,7 @@ At the start of the incubation ($T = 0$), no probes have been cut, so $F_k = 0$.
 \end{itemize}
 
 %=======================================================================
-\section{Results and Validation}
+\section{Results}
 \label{sec:results}
 
 \subsection{Healing vs. chronic}
@@ -607,6 +537,7 @@ Chronic & 30 nM & 52\% & 7.7 nA \\
 \label{tab:healing_chronic}
 \end{table}
 
+\dropdown
 \begin{itemize}
   \item 30 minutes is $T = 30\times60 = 1800\,\mathrm{s}$, and the effective rate constant is $\keff = 13{,}500\,\mathrm{M^{-1}\,s^{-1}}$.
   \item \textbf{Chronic wound} ($30\,\mathrm{nM} = 30\times10^{-9}\,\mathrm{M}$) -- The exponent is
@@ -632,10 +563,7 @@ A chronic wound cuts over half of the probes in 30 minutes, while a healing woun
 
 \subsection{How quickly the probes are cut}
 A useful way to compare the two wound types is the \emph{half-time}, $t_{1/2}$: the time it takes for half of the probes to be cut. Setting $F_k = \frac12$ in the cut-fraction equation gives
-\begin{equation}
-e^{-\keff\MMP\,t_{1/2}} = \frac12 \quad\Longrightarrow\quad t_{1/2} = \frac{\ln 2}{\keff\MMP}.
-\label{eq:halftime}
-\end{equation}
+\[ e^{-\keff\MMP\,t_{1/2}} = \frac12 \quad\Longrightarrow\quad t_{1/2} = \frac{\ln 2}{\keff\MMP}. \]
 For a chronic wound (30 nM) this is about 29 minutes, while for a healing wound (6 nM) it is about 143 minutes. Because the half-time is inversely proportional to the MMP-9 concentration, five times more MMP-9 cuts the probes five times faster.
 
 The table below shows how the cut fraction and the peak height change over the course of an incubation:
@@ -643,9 +571,9 @@ The table below shows how the cut fraction and the peak height change over the c
 \begin{table}[H]
 \centering
 \footnotesize\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{lcccc}
 \toprule
-& \multicolumn{2}{c}{Healing (6 nM)} & \multicolumn{2}{c}{Chronic (30 nM)} \\
+ & \multicolumn{2}{c}{Healing (6 nM)} & \multicolumn{2}{c}{Chronic (30 nM)} \\
 Incubation time & Probes cut & Peak & Probes cut & Peak \\
 \midrule
 10 min & 5\% & 15.1 nA & 22\% & 12.5 nA \\
@@ -660,52 +588,24 @@ Incubation time & Probes cut & Peak & Probes cut & Peak \\
 \subsection{When the two wound types are easiest to tell apart}
 The difference in cut fraction between the two wound types grows at first, as the chronic wound cuts its probes much faster. Eventually it shrinks again, because both electrodes run out of intact probes. The difference is largest at about 83 minutes, when the chronic wound has cut 53 percentage points more of the probes than the healing wound (Figure~\ref{fig:calibration}C). However, the difference is already 38 percentage points after 30 minutes and 17 percentage points after only 10 minutes. A 30-minute incubation therefore gives a clear separation while keeping the test quick enough to be useful at the bedside.
 
-\subsection{Validation}
+%=======================================================================
+\section{Validation}
 \label{sec:validation}
 
 We checked the model in four ways: that the mathematics is solved correctly, that it behaves the way square-wave voltammetry is known to behave, that its electron-transfer rates match real measurements, and how it compares with published square-wave data.
 
 \textbf{Checking the mathematics.} The model is implemented in Python, with ten automated tests that check each step. The exact solution for a single pulse (Section~\ref{sec:oneprobe}) agrees with a standard numerical equation solver to within $5\times10^{-13}$, the label distance distribution adds up to a total probability of 1, and the peak height is proportional to the fraction of intact probes to within the precision of the computer. We also tested the folded distribution from Section~\ref{sec:label} against 400,000 simulated chains, which give an average label distance of $2.19\nm$, matching our value of $2.18\nm$.
 
-\textbf{Checking known square-wave behaviour.} The full simulation places the largest single-probe signal at $\kappa = 0.44$, close to our simple estimate of $\kappa = \frac12$. This agrees with the established theory of square-wave voltammetry, which predicts the largest signal when a label's rate constant is similar to the square-wave frequency~\cit{6,11}. The model also makes a prediction we can test directly on our sensor: doubling the frequency from 10 to $20\,\mathrm{Hz}$ should increase the peak by a factor of 2.04, and the peak should be about $58\,\mathrm{mV}$ wide at $10\,\mathrm{Hz}$.
+\textbf{Checking known square-wave behaviour.} The full simulation places the largest single-probe signal at $\kappa = 0.44$, close to our simple estimate of $\kappa = \frac12$. This agrees with the theory of square-wave voltammetry, which predicts the largest signal when a label's rate constant is similar to the square-wave frequency~\cit{6,11}. The model also makes a prediction we can test directly on our sensor: doubling the frequency from 10 to $20\,\mathrm{Hz}$ should increase the peak by a factor of 2.04, and the peak should be about $58\,\mathrm{mV}$ wide at $10\,\mathrm{Hz}$.
 
-\textbf{Comparison with measured electron-transfer rates.} To test the Butler--Volmer equations against real data, we compared them with Chidsey's direct measurements of electron-transfer rates for a redox molecule held at a fixed distance from gold~\cit{5}. At the formal potential, where our SWV peak sits, the model's predicted rate agrees with the measured value to within 10--12\%. Further from the formal potential, the Butler--Volmer equations overestimate the rate, which is a known limitation~\cit{5}. However, our $25\,\mathrm{mV}$ square-wave pulse keeps the voltage close to the formal potential, where the equations hold well.
+\textbf{Comparison with measured electron-transfer rates.} To test the Butler--Volmer equations against real data, we compared them with Chidsey's measurements of electron-transfer rates for a redox molecule held at a fixed distance from gold~\cit{5}. At the formal potential, where our SWV peak sits, the model's predicted rate agrees with the measured value to within 10--12\%. Further from the formal potential, the Butler--Volmer equations overestimate the rate~\cit{5}. However, the peak we measure sits at the formal potential, and the $25\,\mathrm{mV}$ pulse only moves the voltage a small distance from it, so the voltage stays in the range where the equations work well.
 
-\textbf{Comparison with published SWV data.} The closest published SWV experiment, for MB on gold at 20 to $1000\,\mathrm{Hz}$~\cit{6}, uses labels that react far faster than the ones that produce our signal ($\kappa$ of 25 or more, compared with about $\frac12$ for ours). The two are therefore in different regimes and are not expected to agree. The one remaining difference is the peak width: the published peak is about $80\,\mathrm{mV}$ wide, wider than any peak our model gives for a single reaction rate. This suggests that a real surface has a spread of reaction rates.
+\textbf{Comparison with published SWV data.} The closest published SWV experiment, for MB on gold at 20 to $1000\,\mathrm{Hz}$~\cit{6}, uses labels that react much faster than the ones that produce our signal ($\kappa$ of 25 or more, compared with about $\frac12$ for ours), so the two are not expected to agree. The main difference is the width of the peak: the published peak is about $80\,\mathrm{mV}$ wide, which is wider than the $58\,\mathrm{mV}$ peak our model predicts. This suggests that on a real surface, labels at the same distance do not all react at exactly the same rate.
 
-The mathematics of the model has been checked, it behaves as square-wave theory predicts, and its electron-transfer rates agree with real measurements at the formal potential. The absolute current is less certain, but the cut fraction, which is what the sensor reads out, is robust.
-
-%=======================================================================
-\section{Assumptions and Limitations}
-\label{sec:assumptions}
-
-\subsection{Assumptions}
-\begin{itemize}
-  \item \textbf{The probes act independently.} The probes are $7.4\nm$ apart, much further than the $2.8\nm$ at which neighbouring labels could interact (Section~\ref{sec:surface}).
-  \item \textbf{The peptide behaves as a freely jointed chain.} This is a standard model for short, unfolded peptides~\cit{3}. The spacer height is estimated using Flory's theory (Section~\ref{sec:label}).
-  \item \textbf{The peptide cannot pass below the spacer tip.} We model this by folding the distribution at the tip, which agrees closely with simulated chains (Section~\ref{sec:validation}).
-  \item \textbf{Electrons tunnel through the tether at the same rate as through alkanethiol layers.} No measurement is available for PEG or peptide tethers, so we use the closest measured value~\cit{4,5}.
-  \item \textbf{Electron transfer follows the Butler--Volmer equations,} with MB transferring two electrons in a single step~\cit{6,10}. This was checked against measured rates at the formal potential~\cit{5}.
-  \item \textbf{A cut probe gives no signal, and MMP-9 is equally likely to cut any probe.} This is what makes the peak height exactly proportional to the number of intact probes (Section~\ref{sec:whole}).
-  \item \textbf{Probes are only lost by being cut.} We assume no probes are lost in other ways during the incubation, for example by detaching from the gold.
-  \item \textbf{The MMP-9 concentration stays constant during the incubation,} and is far smaller than $\Km$ (Section~\ref{sec:kinetics}). We also assume all of the MMP-9 is active.
-  \item \textbf{The enzyme cuts tethered probes at 20\% of its rate in solution} (surface efficiency $\eta = 0.20$, Section~\ref{sec:kinetics}).
-\end{itemize}
-
-\subsection{Limitations}
-\begin{itemize}
-  \item \textbf{The model has not yet been compared with measurements from our own sensor.} The predicted peak of $15.9\,\mathrm{nA}$ should therefore be treated as an estimate, since it depends on the coverage and spacer height, neither of which has been measured on our electrodes.
-  \item \textbf{The surface efficiency has not been measured.} It controls how quickly MMP-9 cuts the probes, so it must be found by testing the sensor with known MMP-9 concentrations before the sensor can give exact concentrations.
-  \item \textbf{The model treats every label at a given distance as having the same reaction rate,} so it predicts a narrower peak than seen in published data~\cit{6}. This affects the shape and size of the peak, but not the cut fraction.
-  \item \textbf{Measurement noise is not included.} Every real scan has some random error, so the model does not yet give the lowest MMP-9 concentration the sensor can detect. This requires repeated scans on a real electrode.
-  \item \textbf{Probe loss that is not caused by MMP-9 would be read as extra cutting.} If some probes detach from the gold during incubation, the peak would fall even without MMP-9, making a wound appear worse than it is. This can be checked by incubating an electrode in a sample with no MMP-9.
-  \item \textbf{Real wound fluid is more complex than the model.} Other enzymes, natural MMP-9 inhibitors and proteins sticking to the electrode could all affect the result, and are not included in the model.
-  \item \textbf{The Fc-hexanethiol is not modelled.} Its ferrocene group reacts at a very different voltage from MB, outside the range we scan for the MB peak, so we leave it out of the model.
-\end{itemize}
+The mathematics of the model has been checked, it behaves as square-wave theory predicts, and its electron-transfer rates agree with real measurements at the formal potential. The absolute current is less certain, because the coverage and spacer height have not yet been measured on our electrodes, but the cut fraction, which is what the sensor reads out, is not affected by this.
 
 %=======================================================================
 \section{Conclusion}
-\label{sec:conclusion}
 
 The model shows that the height of the MB peak is exactly proportional to the number of intact probes, so it falls in direct proportion to the fraction of probes MMP-9 has cut. Comparing each electrode before and after incubation therefore gives the cut fraction directly, and enzyme kinetics turns this into an MMP-9 concentration.
 
@@ -731,7 +631,7 @@ $\alpha,\ n_e$ & Transfer coefficient, electrons & 0.37, 2 & \cit{6,10} \\
 $E^0$ & Formal potential of MB & $-0.25\,\mathrm{V}$ vs Ag/AgCl & \cit{6} \\
 $f$ & SWV frequency & $10\,\mathrm{Hz}$ & Our device \\
 $E_{\mathrm{sw}}$ & Square-wave amplitude & $25\,\mathrm{mV}$ & Our device \\
-$\Km$ & Michaelis constant & $1.3\,\mathrm{mM}$ & \cit{13} \\
+$\Km$ & Michaelis constant & $1.28\,\mathrm{mM}$ & \cit{13} \\
 $\kcat$ & MMP-9 turnover rate & $86.4\,\mathrm{s^{-1}}$ & \cit{13} \\
 $\kcat/\Km$ & MMP-9 cutting rate (solution) & $67\,500\,\mathrm{M^{-1}s^{-1}}$ & \cit{13} \\
 $\eta$ & Surface efficiency & 0.20 & Section~\ref{sec:kinetics} \\
