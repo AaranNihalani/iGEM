@@ -609,6 +609,15 @@ We checked the model in four ways: that the mathematics is solved correctly, tha
 
 \textbf{Comparison with measured electron-transfer rates.} To test the Butler--Volmer equations against real data, we compared them with Chidsey's measurements of electron-transfer rates for a redox molecule held at a fixed distance from gold~\cit{5}. At the formal potential, where our SWV peak sits, the model's predicted rate agrees with the measured value to within 10--12\%. Further from the formal potential, the Butler--Volmer equations overestimate the rate~\cit{5}. However, the peak we measure sits at the formal potential, and the $25\,\mathrm{mV}$ pulse only moves the voltage a small distance from it, so the voltage stays in the range where the equations work well.
 
+\textbf{Comparison with a measured voltammogram.} Figure~\ref{fig:model_vs_measured} overlays the model's predicted voltammogram for a fresh electrode on a measured scan from our cleavable electrode series, after 10 minutes of incubation. Both curves are normalised to their peak height, since the absolute heights differ. The measured MB peak sits at $-244\,\mathrm{mV}$, close to the predicted $-251\,\mathrm{mV}$. This agreement is partly by construction: the model places the peak at the formal potential it is given, so this is a consistency check rather than an independent test. The measured peak is broader than the model's and shows additional structure near $-165\,\mathrm{mV}$, which the model does not include. We therefore use the position as a consistency check and do not claim the shape is validated.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{swvr_40_model_vs_measured.pdf}
+\caption{Predicted voltammogram for a fresh electrode (blue) and a measured SWV scan from the cleavable series after 10 minutes of incubation with 20 nM MMP-9 (green). Both are normalised to peak height. The peak positions agree ($-251\,\mathrm{mV}$ predicted, $-244\,\mathrm{mV}$ measured), but the measured peak is broader and has additional structure the model does not include. This is a single uncontrolled run.}
+\label{fig:model_vs_measured}
+\end{figure}
+
 \textbf{Comparison with published SWV data.} The closest published SWV experiment, for MB on gold at 20 to $1000\,\mathrm{Hz}$~\cit{6}, uses labels that react much faster than the ones that produce our signal ($\kappa$ of 25 or more, compared with about $\frac12$ for ours), so the two are not expected to agree. The main difference is the width of the peak: the published peak is about $80\,\mathrm{mV}$ wide, which is wider than the $58\,\mathrm{mV}$ peak our model predicts. This suggests that on a real surface, labels at the same distance do not all react at exactly the same rate.
 
 The mathematics of the model has been checked, it behaves as square-wave theory predicts, and its electron-transfer rates agree with real measurements at the formal potential. The absolute current is less certain, because the coverage and spacer height have not yet been measured on our electrodes, but the cut fraction, which is what the sensor reads out, is not affected by this.
