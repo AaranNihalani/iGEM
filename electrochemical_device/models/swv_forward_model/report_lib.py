@@ -20,9 +20,12 @@ FIG_DIR = m.FIGURES
 NUMBERS = {}          # name -> (value, format string); spliced into the report .tex
 
 # ---------------------------------------------------------------- style
-C = dict(navy="#1F3A5F", blue="#2E7DB5", sky="#8FBFE0", orange="#D9822B",
-         green="#3C9D6A", red="#C0392B", grey="#6B7280", light="#E5E7EB",
-         purple="#7B5EA7", gold="#D4A72C")
+# Palette anchored on the site's own tokens (ink/green/gold/sky from
+# styles/theme.css), extended to a validated 8-hue categorical set
+# (see electrochemical_device/reports/PALETTE.md for the validation run).
+C = dict(navy="#173B34", blue="#0C86AA", sky="#B2DFDB", orange="#eb6834",
+         green="#15876A", red="#e34948", grey="#8A9892", light="#F5EADA",
+         purple="#4a3aa7", gold="#C79A2E")
 
 plt.rcParams.update({
     "font.family": "STIXGeneral", "mathtext.fontset": "stix",
@@ -31,8 +34,10 @@ plt.rcParams.update({
     "axes.spines.top": False, "axes.spines.right": False,
     "axes.linewidth": 0.8, "lines.linewidth": 1.8,
     "figure.dpi": 100, "savefig.bbox": "tight", "savefig.pad_inches": 0.05,
-    "axes.grid": True, "grid.color": "#E5E7EB", "grid.linewidth": 0.6,
-    "axes.axisbelow": True,
+    "axes.grid": True, "grid.color": "#E3E8E1", "grid.linewidth": 0.6,
+    "axes.axisbelow": True, "text.color": "#173B34",
+    "axes.labelcolor": "#173B34", "xtick.color": "#173B34", "ytick.color": "#173B34",
+    "axes.edgecolor": "#8A9892",
 })
 
 

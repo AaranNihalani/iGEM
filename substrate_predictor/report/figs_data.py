@@ -84,9 +84,11 @@ def fig_similarity():
             J[i, j] = len(sets[a] & sets[b]) / len(sets[a] | sets[b]) if i != j else np.nan
             P[i, j] = np.corrcoef(lo[a], lo[b])[0, 1]
     fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.5))
-    for ax, M, title, cmap, vmax, fmt in ((axes[0], J, "Shared positive windows (Jaccard)", "Blues", np.nanmax(J), "{:.3f}"),
-                                          (axes[1], P, "PSSM similarity (Pearson r of log-odds)", "RdBu_r", 1, "{:.2f}")):
-        im = ax.imshow(M, cmap=cmap, vmin=-vmax if cmap == "RdBu_r" else 0, vmax=vmax)
+    for ax, M, title, cmap, diverging, vmax, fmt in (
+        (axes[0], J, "Shared positive windows (Jaccard)", SEQ_GREEN, False, np.nanmax(J), "{:.3f}"),
+        (axes[1], P, "PSSM similarity (Pearson r of log-odds)", DIV_GREEN_RED, True, 1, "{:.2f}"),
+    ):
+        im = ax.imshow(M, cmap=cmap, vmin=-vmax if diverging else 0, vmax=vmax)
         ax.set_xticks(range(n)); ax.set_yticks(range(n))
         ax.set_xticklabels([SHORT[p] for p in ORDER], rotation=45, ha="right", fontsize=8); ax.set_yticklabels([SHORT[p] for p in ORDER], fontsize=8)
         ax.grid(False); ax.set_title(title, fontsize=9)

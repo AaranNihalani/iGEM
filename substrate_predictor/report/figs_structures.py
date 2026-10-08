@@ -85,8 +85,8 @@ def fig_pipeline():
     either. Arrows are then drawn edge-to-edge between the real, final box geometries.
     """
     ACCENT = COL["MMP9"]
-    TINT = "#eef1f4"
-    ACCENT_TINT = "#eaf5ef"
+    TINT = "#E3E8E1"
+    ACCENT_TINT = "#E0F2F1"
     TITLE_FS, BODY_FS, PAD, LINE_GAP, TITLE_GAP = 8.6, 6.6, 4.2, 2.0, 2.0
     COL_GAP, ROW_GAP = 9.0, 7.5
 

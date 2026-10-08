@@ -6,8 +6,8 @@ from spred.panel import Panel
 
 MET = ROOT / "results" / "methodology"
 MODEL_ORDER = ["prior", "composition-LR", "one-hot LR", "VHSE LR", "PSSM", "one-hot GBM", "VHSE GBM"]
-MODEL_COL = {"prior": "#b8bec7", "composition-LR": "#9aa5b5", "one-hot LR": "#4c78a8", "VHSE LR": "#e45756", "PSSM": "#54a24b",
-             "one-hot GBM": "#b279a2", "VHSE GBM": "#f2a541"}
+MODEL_COL = {"prior": "#9FAEA7", "composition-LR": "#6b7f78", "one-hot LR": "#e34948", "VHSE LR": "#15876A", "PSSM": "#C79A2E",
+             "one-hot GBM": "#4a3aa7", "VHSE GBM": "#eb6834"}
 
 
 def fig_model_comparison():

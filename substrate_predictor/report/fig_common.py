@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import pandas as pd
 
@@ -22,9 +23,13 @@ ORDER = ["MMP2", "MMP8", "MMP9", "MMP14", "NE", "LASB", "FECAL"]
 LABEL = {"MMP2": "MMP-2", "MMP8": "MMP-8", "MMP9": "MMP-9", "MMP14": "MMP-14", "NE": "Neutrophil elastase",
          "LASB": "LasB", "FECAL": "Digestive serine proteases"}
 SHORT = {"MMP2": "MMP-2", "MMP8": "MMP-8", "MMP9": "MMP-9", "MMP14": "MMP-14", "NE": "NE", "LASB": "LasB", "FECAL": "Digestive serine"}
-COL = {"MMP2": "#6A4C93", "MMP8": "#1982C4", "MMP9": "#2A9D6F", "MMP14": "#E28A00", "NE": "#C8455A", "LASB": "#8A6D3B",
-       "FECAL": "#5F6B7A"}
-INK, MUTE, GRID = "#1c2430", "#6b7686", "#e6e9ee"
+# Palette anchored on the site's own tokens (ink/green/gold/sky from
+# styles/theme.css), extended to a validated 8-hue categorical set
+# (see electrochemical_device/reports/PALETTE.md for the validation run).
+# MMP-9 (our sensor target) takes the primary site green.
+COL = {"MMP2": "#0C86AA", "MMP8": "#4a3aa7", "MMP9": "#15876A", "MMP14": "#C79A2E", "NE": "#e34948", "LASB": "#eb6834",
+       "FECAL": "#8A9892"}
+INK, MUTE, GRID = "#173B34", "#6b7f78", "#E3E8E1"
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans", "font.size": 9, "axes.titlesize": 10, "axes.titleweight": "bold",
@@ -40,6 +45,16 @@ def save(fig, name):
     fig.savefig(FIG / f"{name}.png", dpi=110)
     plt.close(fig)
     print("saved", name)
+
+
+# Sequential (magnitude) and diverging (polarity) colormaps built from the same
+# site-anchored tokens as the categorical palette, for heatmaps (replaces
+# matplotlib's stock "Blues"/"RdBu_r"). One hue light->dark for sequential;
+# two opposing hues + a neutral midpoint for diverging.
+SEQ_GREEN = LinearSegmentedColormap.from_list("seq_green", ["#F5EADA", "#B2DFDB", "#15876A", "#173B34"])
+DIV_GREEN_RED = LinearSegmentedColormap.from_list(
+    "div_green_red", ["#e34948", "#f0a6a0", "#EDEAE1", "#8fcdbf", "#15876A"]
+)
 
 
 def panel_letter(ax, letter, x=-0.12, y=1.14):

@@ -125,7 +125,7 @@ def fig_score_distributions():
         groups = [("target", (y == 1))] + [(SHORT[c], (src == c) & (y == 0)) for c in ORDER if c != pid and ((src == c) & (y == 0)).sum() > 20] + [("random", src == "background")]
         parts = ax.violinplot([u[m] for _, m in groups], positions=range(len(groups)), showmedians=True, widths=0.85)
         for i, b in enumerate(parts["bodies"]):
-            b.set_facecolor(COL[pid] if i == 0 else "#9aa5b5" if groups[i][0] != "random" else "#d8dde5"); b.set_alpha(0.85); b.set_edgecolor("none")
+            b.set_facecolor(COL[pid] if i == 0 else "#9FAEA7" if groups[i][0] != "random" else "#D9DED6"); b.set_alpha(0.85); b.set_edgecolor("none")
         for k in ("cmedians", "cbars", "cmins", "cmaxes"):
             parts[k].set_color(INK); parts[k].set_linewidth(0.8)
         ax.set_xticks(range(len(groups))); ax.set_xticklabels([g for g, _ in groups], rotation=35, ha="right", fontsize=7.5)

@@ -31,7 +31,7 @@ def _peptide_coil(x0, y0, n=10, seed=3, step=0.38, wall=None):
 def _draw_fc(ax, x, y, s=0.14):
     """Ferrocene: two rings sandwiching an iron atom."""
     ax.add_patch(Ellipse((x, y - 0.11), 0.30, 0.09, fc=C["orange"], ec="none", zorder=4))
-    ax.add_patch(Circle((x, y), 0.055, fc="#7A4E1D", ec="none", zorder=5))
+    ax.add_patch(Circle((x, y), 0.055, fc="#6B5218", ec="none", zorder=5))
     ax.add_patch(Ellipse((x, y + 0.11), 0.30, 0.09, fc=C["orange"], ec="none", zorder=4))
 
 
@@ -77,8 +77,8 @@ def _probe(ax, x0, cleaved, seed):
 
 def _slab(ax, xmax):
     ax.add_patch(Rectangle((-0.3, -0.55), xmax + 0.6, 0.55, fc=C["gold"], ec="none", zorder=1))
-    ax.text(xmax / 2, -0.28, "gold electrode", ha="center", va="center", fontsize=7.5, color="#5A4300")
-    ax.add_patch(Rectangle((-0.3, 0.0), xmax + 0.6, 6.4, fc="#F3F8FC", ec="none", zorder=0))
+    ax.text(xmax / 2, -0.28, "gold electrode", ha="center", va="center", fontsize=7.5, color="#6B5218")
+    ax.add_patch(Rectangle((-0.3, 0.0), xmax + 0.6, 6.4, fc="#E0F2F1", ec="none", zorder=0))
 
 
 def _fc_layer(ax, xs):
@@ -106,8 +106,8 @@ def fig01_assembly():
             ax.text(2.3, 6.25, "MB-peptide-PEG6 probe (intact)", ha="center", fontsize=8,
                     fontweight="bold", color=C["navy"])
             ax.annotate("Fc-hexanethiol\n(diluent)", xy=(fc_x[1], 1.3),
-                        xytext=(-0.15, 2.5), fontsize=7, color="#8A4B0F",
-                        arrowprops=dict(arrowstyle="-", color="#8A4B0F", lw=0.8))
+                        xytext=(-0.15, 2.5), fontsize=7, color="#6B5218",
+                        arrowprops=dict(arrowstyle="-", color="#6B5218", lw=0.8))
             ax.annotate("PEG6 spacer\n(tip 1.4 nm above gold)", xy=(2.3, 0.7), xytext=(3.05, 1.6),
                         fontsize=7, color=C["grey"],
                         arrowprops=dict(arrowstyle="-", color=C["grey"], lw=0.8))
