@@ -1,0 +1,14 @@
+File #,Time (min),Signal peak (nA),Signal peak potential (mV),Signal % of first scan,Notes
+1,0,364.166,2.3,100.0,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+2,5,,,,missing: empty .xlsx export
+3,10,,,,missing: empty .xlsx export
+4,15,235.535,73.7,64.7,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+5,20,242.462,71.7,66.6,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+6,25,250.519,79.7,68.8,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+7,30,256.805,75.7,70.5,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+8,35,259.43,83.6,71.2,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+9,40,263.153,83.6,72.3,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+10,45,267.365,83.6,73.4,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+11,50,,,,missing: empty .xlsx export
+12,55,270.782,75.7,74.4,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
+13,60,272.125,73.7,74.7,"not MB or Fc (outside both their windows); real local peak, -50 to +150 mV window"
