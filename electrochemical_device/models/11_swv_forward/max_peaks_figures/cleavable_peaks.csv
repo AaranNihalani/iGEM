@@ -1,6 +1,6 @@
 File #,Time (min),MB peak (nA),MB peak potential (mV),MB included,MB % of first scan,Fc peak (nA),Fc peak potential (mV),Fc included,Fc % of first scan,MB/Fc ratio,Ratio included,Notes
 1,0,15.552,-170.3,Y,100.0,17.218,301.8,Y,100.0,0.903,Y,ok
-2,5,,,,,,,,,,,missing: empty .xlsx export
+2,8,9.674,-244.1,Y,62.2,8.45,289.5,Y,49.1,1.145,Y,ok
 3,10,8.728,-244.1,Y,56.1,7.993,249.9,Y,46.4,1.092,Y,ok
 4,15,9.271,-240.1,Y,59.6,8.777,390.7,Y,51.0,1.056,Y,ok
 5,20,7.767,-244.1,Y,49.9,8.084,295.5,Y,47.0,0.961,Y,ok
