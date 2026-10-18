@@ -175,14 +175,9 @@ def fig_pipeline():
     arrow(geo[5], geo[6], accent=True)
 
     total_w = x - COL_GAP + 1.0
-    foot_h = 13.0
-    total_h = top + foot_h
+    total_h = top
     ax.set_xlim(0, total_w)
-    ax.set_ylim(-foot_h, top)
-    ax.plot([1, total_w - 1], [-foot_h * 0.45, -foot_h * 0.45], color=GRID, lw=1.0, zorder=1)
-    ax.text(total_w / 2, -foot_h * 0.72, "Evaluation: similarity-clustered 5-fold CV · nested regularisation · "
-                                          "cluster-bootstrap CIs · external validation on measured kinetics (Kridel 2001)",
-            ha="center", fontsize=6.8, color=MUTE, style="italic")
+    ax.set_ylim(0, top)
     # 1 data unit == 1 pt: figure size in inches must equal the data extent in points / 72
     fig.set_size_inches(total_w / 72, total_h / 72)
     save(fig, "F01_pipeline")
